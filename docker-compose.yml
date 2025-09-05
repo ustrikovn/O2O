@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: o2o-postgres
+    environment:
+      POSTGRES_DB: o2o_db
+      POSTGRES_USER: o2o_user
+      POSTGRES_PASSWORD: o2o_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - o2o-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: o2o-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - o2o-network
+
+volumes:
+  postgres_data:
+
+networks:
+  o2o-network:
+    driver: bridge

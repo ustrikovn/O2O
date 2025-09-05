@@ -1,0 +1,25 @@
+# CI/CD пайплайн для O2O платформы
+# 
+# Структура веток:
+# main - основная ветка для разработки
+# dev - ветка для тестирования фич
+# uat - ветка для пользовательского тестирования  
+# prod - продакшн ветка
+#
+# Этот файл будет настроен позже для автоматического деплоя
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, dev, uat, prod ]
+  pull_request:
+    branches: [ main, dev, uat ]
+
+jobs:
+  # Пока оставляем пустым, настроим позже
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Placeholder
+        run: echo "CI/CD будет настроен позже"

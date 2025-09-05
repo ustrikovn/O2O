@@ -1,0 +1,44 @@
+{
+  "name": "o2o-platform",
+  "version": "1.0.0",
+  "description": "Платформа для проведения one-to-one встреч с сотрудниками",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\"",
+    "build": "npm run frontend:build && npm run backend:build",
+    "start": "npm run backend:start",
+    "backend:dev": "cd backend && npm run dev",
+    "backend:build": "cd backend && npm run build",
+    "backend:start": "cd backend && npm run start",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build",
+    "frontend:preview": "cd frontend && npm run preview",
+    "db:migrate": "cd backend && npx prisma migrate dev",
+    "db:studio": "cd backend && npx prisma studio",
+    "db:generate": "cd backend && npx prisma generate",
+    "test": "npm run backend:test && npm run frontend:test",
+    "backend:test": "cd backend && npm test",
+    "frontend:test": "cd frontend && npm test",
+    "lint": "npm run backend:lint && npm run frontend:lint",
+    "backend:lint": "cd backend && npm run lint",
+    "frontend:lint": "cd frontend && npm run lint",
+    "setup": "npm install && cd backend && npm install && cd ../frontend && npm install"
+  },
+  "keywords": [
+    "one-to-one",
+    "hr",
+    "management",
+    "feedback",
+    "ai",
+    "llm"
+  ],
+  "author": "Miuli",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ]
+}
