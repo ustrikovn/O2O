@@ -1,0 +1,2164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Profiler UI Kit - Каталог компонентов</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --primary-blue: #4A90E2;
+            --accent-green: #50E3C2;
+            --accent-purple: #9013FE;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+        }
+        
+        .glass-button {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            transition: all 300ms ease-in-out;
+        }
+        
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+        
+        .sidebar-item.active {
+            background: rgba(74, 144, 226, 0.15);
+            border-left: 3px solid var(--primary-blue);
+        }
+        
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 200ms ease-in-out;
+        }
+        
+        /* Card Styles - точная копия из эталонов */
+        .profile-card {
+            transition: all 300ms ease;
+        }
+        
+        .profile-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+        }
+        
+        .meeting-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Glass Input Styles - точная копия из эталонов */
+        .glass-input {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+        }
+        
+        .glass-input:focus-within {
+            border-color: var(--primary-blue);
+        }
+        
+        /* Progress Bar Styles - точная копия из эталонов */
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease-in-out;
+        }
+        
+        /* Tag Styles */
+        .skill-tag {
+            background: rgba(80, 227, 194, 0.15);
+            border: 1px solid rgba(80, 227, 194, 0.3);
+            color: #1f2937;
+            display: inline-block;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            transition: all 150ms ease-in-out;
+        }
+        
+        .skill-tag:hover {
+            background: rgba(80, 227, 194, 0.25);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+    <!-- Main Container -->
+    <div class="flex min-h-screen" id="top">
+        <!-- Sidebar -->
+        <div class="w-64 glass-card h-screen fixed p-5 flex flex-col z-10 overflow-y-auto">
+            <div class="mb-10 mt-3">
+                <a href="#top" class="block group cursor-pointer">
+                    <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 group-hover:opacity-80 transition-opacity">AI Profiler</h1>
+                    <p class="text-xs text-gray-500 group-hover:text-gray-700 transition-colors">UI Kit Catalog</p>
+                </a>
+            </div>
+            
+            <nav class="flex-1">
+                <ul class="space-y-3">
+                    <li>
+                        <a href="#buttons" class="flex items-center p-3 rounded-lg sidebar-item active">
+                            <i data-feather="square" class="mr-3"></i>
+                            <span>Кнопки</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#cards" class="flex items-center p-3 rounded-lg sidebar-item">
+                            <i data-feather="credit-card" class="mr-3"></i>
+                            <span>Карточки</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#forms" class="flex items-center p-3 rounded-lg sidebar-item">
+                            <i data-feather="edit-3" class="mr-3"></i>
+                            <span>Формы</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#progress" class="flex items-center p-3 rounded-lg sidebar-item">
+                            <i data-feather="activity" class="mr-3"></i>
+                            <span>Прогресс</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#navigation" class="flex items-center p-3 rounded-lg sidebar-item">
+                            <i data-feather="menu" class="mr-3"></i>
+                            <span>Навигация</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#avatars" class="flex items-center p-3 rounded-lg sidebar-item">
+                            <i data-feather="user" class="mr-3"></i>
+                            <span>Аватары</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#tags" class="flex items-center p-3 rounded-lg sidebar-item">
+                            <i data-feather="tag" class="mr-3"></i>
+                            <span>Теги</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#icons" class="flex items-center p-3 rounded-lg sidebar-item">
+                            <i data-feather="feather" class="mr-3"></i>
+                            <span>Иконки</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#badges" class="flex items-center p-3 rounded-lg sidebar-item">
+                            <i data-feather="award" class="mr-3"></i>
+                            <span>Значки</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#glass" class="flex items-center p-3 rounded-lg sidebar-item">
+                            <i data-feather="layers" class="mr-3"></i>
+                            <span>Glass Morphism</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#colors" class="flex items-center p-3 rounded-lg sidebar-item">
+                            <i data-feather="droplet" class="mr-3"></i>
+                            <span>Цвета</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#gradients" class="flex items-center p-3 rounded-lg sidebar-item">
+                            <i data-feather="disc" class="mr-3"></i>
+                            <span>Градиенты</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#typography" class="flex items-center p-3 rounded-lg sidebar-item">
+                            <i data-feather="type" class="mr-3"></i>
+                            <span>Шрифты</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="mt-auto pt-5 border-t border-white/10">
+                <div class="flex items-center">
+                    <div class="relative">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%234A90E2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='14'%3EUK%3C/text%3E%3C/svg%3E" alt="UI Kit" class="w-10 h-10 rounded-full">
+                        <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium">UI Kit v1.0</p>
+                        <p class="text-xs text-gray-500">Готов к использованию</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 ml-64 p-8">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold">UI Kit</h1>
+                    <p class="text-gray-600">Система дизайна для AI Profiler HR платформы</p>
+                </div>
+            </div>
+            
+            <!-- Buttons Section -->
+            <section id="buttons" class="glass-card p-8 mb-8">
+                <h2 class="text-2xl font-semibold mb-4">Кнопки</h2>
+                <p class="text-gray-600 mb-6">Glass Button компоненты из эталонных дизайнов</p>
+                
+                <!-- Button with Icon (все кнопки из эталона) -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Кнопки с иконками</h3>
+                    <p class="text-gray-600 mb-4">Все кнопки из эталонов - иконка всегда слева</p>
+                    
+                    <div class="flex flex-wrap items-center gap-4 mb-4">
+                        <button class="glass-button px-4 py-2 text-sm flex items-center">
+                            <i data-feather="plus" class="mr-1"></i> Schedule
+                        </button>
+                        
+                        <button class="glass-button px-4 py-2 text-sm flex items-center">
+                            <i data-feather="eye" class="mr-1"></i> View Profile
+                        </button>
+                        
+                        <button class="glass-button px-4 py-2 text-sm flex items-center">
+                            <i data-feather="calendar" class="mr-1"></i> Schedule
+                        </button>
+                        
+                        <button class="glass-button px-4 py-2 flex items-center">
+                            <i data-feather="filter" class="mr-2"></i> Filter
+                        </button>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;button class="glass-button px-4 py-2 text-sm flex items-center"&gt;<br/>
+&nbsp;&nbsp;&lt;i data-feather="plus" class="mr-1"&gt;&lt;/i&gt; Schedule<br/>
+&lt;/button&gt;
+                    </div>
+                </div>
+                
+                <!-- Text Only Button -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Кнопка только с текстом</h3>
+                    <p class="text-gray-600 mb-4">Из эталона: кнопки "View All"</p>
+                    
+                    <div class="flex flex-wrap items-center gap-4 mb-4">
+                        <button class="glass-button px-4 py-2 text-sm">
+                            View All
+                        </button>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;button class="glass-button px-4 py-2 text-sm"&gt;<br/>
+&nbsp;&nbsp;View All<br/>
+&lt;/button&gt;
+                    </div>
+                </div>
+                
+                <!-- Icon Only Button -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Кнопка только с иконкой</h3>
+                    <p class="text-gray-600 mb-4">Из эталона: кнопка уведомлений с bell иконкой</p>
+                    
+                    <div class="flex flex-wrap items-center gap-4 mb-4">
+                        <button class="glass-button p-2 relative">
+                            <i data-feather="bell"></i>
+                            <span class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">3</span>
+                        </button>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;button class="glass-button p-2 relative"&gt;<br/>
+&nbsp;&nbsp;&lt;i data-feather="bell"&gt;&lt;/i&gt;<br/>
+&nbsp;&nbsp;&lt;span class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"&gt;3&lt;/span&gt;<br/>
+&lt;/button&gt;
+                    </div>
+                </div>
+                
+                <!-- Full Width Button -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Полноширинная кнопка</h3>
+                    <p class="text-gray-600 mb-4">Из эталона: "View Detailed Analysis"</p>
+                    
+                    <div class="mb-4">
+                        <button class="glass-button w-full py-2 text-sm">
+                            View Detailed Analysis
+                        </button>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;button class="glass-button w-full py-2 text-sm"&gt;<br/>
+&nbsp;&nbsp;View Detailed Analysis<br/>
+&lt;/button&gt;
+                    </div>
+                </div>
+                
+                <!-- CSS Styles -->
+                <div>
+                    <h3 class="text-lg font-medium mb-3">CSS стили (точная копия из эталонов)</h3>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+.glass-button {<br/>
+&nbsp;&nbsp;background: rgba(255, 255, 255, 0.15);<br/>
+&nbsp;&nbsp;backdrop-filter: blur(10px);<br/>
+&nbsp;&nbsp;border: 1px solid rgba(255, 255, 255, 0.2);<br/>
+&nbsp;&nbsp;border-radius: 8px;<br/>
+&nbsp;&nbsp;transition: all 300ms ease-in-out;<br/>
+}<br/><br/>
+.glass-button:hover {<br/>
+&nbsp;&nbsp;background: rgba(255, 255, 255, 0.25);<br/>
+&nbsp;&nbsp;transform: translateY(-2px);<br/>
+}
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Cards Section -->
+            <section id="cards" class="glass-card p-8 mb-8">
+                <h2 class="text-2xl font-semibold mb-4">Карточки</h2>
+                <p class="text-gray-600 mb-6">Различные типы карточек из эталонных дизайнов</p>
+                
+                <!-- Stats Cards -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Карточки статистики</h3>
+                    <p class="text-gray-600 mb-4">Из эталона: карточки с метриками и трендами</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+                        <div class="glass-card p-6">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-gray-600">Upcoming Meetings</p>
+                                    <h3 class="text-2xl font-bold mt-1">12</h3>
+                                </div>
+                                <div class="p-3 rounded-lg bg-blue-100">
+                                    <i data-feather="calendar" class="text-blue-500"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex items-center text-green-500 text-sm">
+                                    <i data-feather="trending-up" class="mr-1"></i>
+                                    <span>5% increase</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-card p-6">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-gray-600">Active Employees</p>
+                                    <h3 class="text-2xl font-bold mt-1">84</h3>
+                                </div>
+                                <div class="p-3 rounded-lg bg-green-100">
+                                    <i data-feather="users" class="text-green-500"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex items-center text-green-500 text-sm">
+                                    <i data-feather="trending-up" class="mr-1"></i>
+                                    <span>2 new hires</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-card p-6">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-gray-600">Avg. Engagement</p>
+                                    <h3 class="text-2xl font-bold mt-1">87%</h3>
+                                </div>
+                                <div class="p-3 rounded-lg bg-purple-100">
+                                    <i data-feather="heart" class="text-purple-500"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex items-center text-red-500 text-sm">
+                                    <i data-feather="trending-down" class="mr-1"></i>
+                                    <span>3% decrease</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-card p-6">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-gray-600">AI Insights</p>
+                                    <h3 class="text-2xl font-bold mt-1">24</h3>
+                                </div>
+                                <div class="p-3 rounded-lg bg-yellow-100">
+                                    <i data-feather="cpu" class="text-yellow-500"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex items-center text-green-500 text-sm">
+                                    <i data-feather="trending-up" class="mr-1"></i>
+                                    <span>8 new insights</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;div class="glass-card p-6"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="flex justify-between items-start"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;div&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p class="text-gray-600"&gt;Upcoming Meetings&lt;/p&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;h3 class="text-2xl font-bold mt-1"&gt;12&lt;/h3&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;/div&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;div class="p-3 rounded-lg bg-blue-100"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;i data-feather="calendar" class="text-blue-500"&gt;&lt;/i&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;/div&gt;<br/>
+&nbsp;&nbsp;&lt;/div&gt;<br/>
+&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <!-- Meeting Cards -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Карточки встреч</h3>
+                    <p class="text-gray-600 mb-4">Из эталона: карточки "Upcoming One-to-Ones"</p>
+                    
+                    <!-- Ограничиваем ширину как в эталоне -->
+                    <div class="max-w-2xl">
+                        <div class="space-y-4 mb-4">
+                            <div class="meeting-card glass-card p-4 transition-all duration-300">
+                                <div class="flex items-center">
+                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect width='50' height='50' fill='%2350E3C2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='12'%3ESJ%3C/text%3E%3C/svg%3E" alt="Employee" class="w-12 h-12 rounded-full">
+                                    <div class="ml-4 flex-1">
+                                        <h3 class="font-semibold">Sarah Johnson</h3>
+                                        <p class="text-sm text-gray-600">Product Designer</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="font-medium">Today, 2:30 PM</p>
+                                        <p class="text-sm text-gray-600">Conference Room B</p>
+                                    </div>
+                                </div>
+                                <div class="mt-3 flex items-center">
+                                    <span class="text-xs px-2 py-1 rounded-full bg-blue-100/30 text-blue-600">Career Development</span>
+                                    <span class="text-xs px-2 py-1 rounded-full bg-green-100/30 text-green-600 ml-2">Performance Review</span>
+                                </div>
+                            </div>
+                            
+                            <div class="meeting-card glass-card p-4 transition-all duration-300">
+                                <div class="flex items-center">
+                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect width='50' height='50' fill='%239013FE'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='12'%3EMC%3C/text%3E%3C/svg%3E" alt="Employee" class="w-12 h-12 rounded-full">
+                                    <div class="ml-4 flex-1">
+                                        <h3 class="font-semibold">Michael Chen</h3>
+                                        <p class="text-sm text-gray-600">Frontend Developer</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="font-medium">Tomorrow, 10:00 AM</p>
+                                        <p class="text-sm text-gray-600">Virtual Meeting</p>
+                                    </div>
+                                </div>
+                                <div class="mt-3 flex items-center">
+                                    <span class="text-xs px-2 py-1 rounded-full bg-purple-100/30 text-purple-600">Goal Setting</span>
+                                    <span class="text-xs px-2 py-1 rounded-full bg-yellow-100/30 text-yellow-600 ml-2">Feedback Session</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;div class="meeting-card glass-card p-4 transition-all duration-300"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="flex items-center"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;img src="avatar.svg" class="w-12 h-12 rounded-full"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;div class="ml-4 flex-1"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;h3 class="font-semibold"&gt;Sarah Johnson&lt;/h3&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p class="text-sm text-gray-600"&gt;Product Designer&lt;/p&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;/div&gt;<br/>
+&nbsp;&nbsp;&lt;/div&gt;<br/>
+&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <!-- Profile Cards -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Карточки профилей</h3>
+                    <p class="text-gray-600 mb-4">Из эталона profiles.html: карточки сотрудников</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
+                        <div class="profile-card glass-card p-6">
+                            <div class="flex items-center mb-5">
+                                <div class="relative">
+                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%2350E3C2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3ESJ%3C/text%3E%3C/svg%3E" alt="Employee" class="w-16 h-16 rounded-full">
+                                    <div class="absolute bottom-0 right-0 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
+                                </div>
+                                <div class="ml-4">
+                                    <h2 class="font-bold text-lg">Sarah Johnson</h2>
+                                    <p class="text-gray-600 text-sm">Senior Product Designer</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-5">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Engagement Score</span>
+                                    <span>92%</span>
+                                </div>
+                                <div class="w-full h-1.5 bg-gray-200 rounded-full">
+                                    <div class="h-1.5 bg-green-500 rounded-full" style="width: 92%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between pt-4 border-t border-white/10">
+                                <button class="glass-button px-4 py-2 text-sm flex items-center">
+                                    <i data-feather="eye" class="mr-1"></i> View Profile
+                                </button>
+                                <button class="glass-button px-4 py-2 text-sm flex items-center">
+                                    <i data-feather="calendar" class="mr-1"></i> Schedule
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;div class="profile-card glass-card p-6"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="flex items-center mb-5"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;img src="avatar.svg" class="w-16 h-16 rounded-full"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;div class="ml-4"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;h2 class="font-bold text-lg"&gt;Sarah Johnson&lt;/h2&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p class="text-gray-600 text-sm"&gt;Senior Product Designer&lt;/p&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;/div&gt;<br/>
+&nbsp;&nbsp;&lt;/div&gt;<br/>
+&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <!-- AI Insight Cards -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Карточки AI инсайтов</h3>
+                    <p class="text-gray-600 mb-4">Из эталона: карточки с аналитикой и рекомендациями</p>
+                    
+                    <div class="space-y-4 mb-4">
+                        <div class="glass-card p-4">
+                            <div class="flex">
+                                <div class="mr-3 mt-1">
+                                    <div class="w-10 h-10 rounded-full bg-blue-100/30 flex items-center justify-center">
+                                        <i data-feather="trending-up" class="text-blue-500"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold">Team Engagement Trend</h3>
+                                    <p class="text-sm text-gray-600 mt-1">Overall engagement has increased by 12% over the last month. Key drivers include improved work-life balance and recognition programs.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-card p-4">
+                            <div class="flex">
+                                <div class="mr-3 mt-1">
+                                    <div class="w-10 h-10 rounded-full bg-purple-100/30 flex items-center justify-center">
+                                        <i data-feather="alert-triangle" class="text-purple-500"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold">Potential Retention Risk</h3>
+                                    <p class="text-sm text-gray-600 mt-1">Two employees in the engineering department show early signs of disengagement. Suggested intervention: schedule one-to-ones within next week.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;div class="glass-card p-4"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="flex"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;div class="mr-3 mt-1"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;div class="w-10 h-10 rounded-full bg-blue-100/30 flex items-center justify-center"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;i data-feather="trending-up" class="text-blue-500"&gt;&lt;/i&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/div&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;/div&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;div&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;h3 class="font-semibold"&gt;Team Engagement Trend&lt;/h3&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p class="text-sm text-gray-600 mt-1"&gt;Description...&lt;/p&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;/div&gt;<br/>
+&nbsp;&nbsp;&lt;/div&gt;<br/>
+&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <!-- CSS Styles -->
+                <div>
+                    <h3 class="text-lg font-medium mb-3">CSS стили карточек (точная копия из эталонов)</h3>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+/* Базовая glass карточка */<br/>
+.glass-card {<br/>
+&nbsp;&nbsp;background: rgba(255, 255, 255, 0.1);<br/>
+&nbsp;&nbsp;backdrop-filter: blur(20px) saturate(180%);<br/>
+&nbsp;&nbsp;border: 1px solid rgba(255, 255, 255, 0.2);<br/>
+&nbsp;&nbsp;box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);<br/>
+&nbsp;&nbsp;border-radius: 16px;<br/>
+}<br/><br/>
+/* Карточка профиля */<br/>
+.profile-card {<br/>
+&nbsp;&nbsp;transition: all 300ms ease;<br/>
+}<br/><br/>
+.profile-card:hover {<br/>
+&nbsp;&nbsp;transform: translateY(-5px);<br/>
+&nbsp;&nbsp;box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);<br/>
+}<br/><br/>
+/* Карточка встречи */<br/>
+.meeting-card:hover {<br/>
+&nbsp;&nbsp;transform: translateY(-2px);<br/>
+&nbsp;&nbsp;box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);<br/>
+}
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Forms Section -->
+            <section id="forms" class="glass-card p-8 mb-8">
+                <h2 class="text-2xl font-semibold mb-4">Формы</h2>
+                <p class="text-gray-600 mb-6">Glass Input компоненты из эталонных дизайнов</p>
+                
+                <!-- Glass Input with Icon -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Glass Input с иконкой</h3>
+                    <p class="text-gray-600 mb-4">Из эталонов: поисковые поля с иконкой поиска</p>
+                    
+                    <div class="space-y-4 mb-4">
+                        <!-- Search input from index.html -->
+                        <div class="flex items-center space-x-4">
+                            <div class="glass-input flex items-center px-4 py-2">
+                                <i data-feather="search" class="text-gray-500 mr-2"></i>
+                                <input type="text" placeholder="Search..." class="bg-transparent outline-none w-40">
+                            </div>
+                            <span class="text-sm text-gray-500">Из index.html</span>
+                        </div>
+                        
+                        <!-- Search input from profiles.html -->
+                        <div class="flex items-center space-x-4">
+                            <div class="glass-input flex items-center px-4 py-2">
+                                <i data-feather="search" class="text-gray-500 mr-2"></i>
+                                <input type="text" placeholder="Search employees..." class="bg-transparent outline-none w-48">
+                            </div>
+                            <span class="text-sm text-gray-500">Из profiles.html</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;div class="glass-input flex items-center px-4 py-2"&gt;<br/>
+&nbsp;&nbsp;&lt;i data-feather="search" class="text-gray-500 mr-2"&gt;&lt;/i&gt;<br/>
+&nbsp;&nbsp;&lt;input type="text" placeholder="Search..." class="bg-transparent outline-none w-40"&gt;<br/>
+&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <!-- Basic Glass Input -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Основной Glass Input</h3>
+                    <p class="text-gray-600 mb-4">Базовые варианты glass input полей</p>
+                    
+                    <div class="space-y-4 mb-4 max-w-md">
+                        <!-- Basic text input -->
+                        <div class="glass-input px-4 py-2">
+                            <input type="text" placeholder="Basic text input" class="bg-transparent outline-none w-full">
+                        </div>
+                        
+                        <!-- Email input -->
+                        <div class="glass-input px-4 py-2">
+                            <input type="email" placeholder="Email address" class="bg-transparent outline-none w-full">
+                        </div>
+                        
+                        <!-- Password input -->
+                        <div class="glass-input px-4 py-2">
+                            <input type="password" placeholder="Password" class="bg-transparent outline-none w-full">
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;div class="glass-input px-4 py-2"&gt;<br/>
+&nbsp;&nbsp;&lt;input type="text" placeholder="Basic text input" class="bg-transparent outline-none w-full"&gt;<br/>
+&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <!-- Glass Input with Different Icons -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Glass Input с разными иконками</h3>
+                    <p class="text-gray-600 mb-4">Варианты с различными иконками на основе эталонного стиля</p>
+                    
+                    <div class="space-y-4 mb-4 max-w-md">
+                        <!-- User input -->
+                        <div class="glass-input flex items-center px-4 py-2">
+                            <i data-feather="user" class="text-gray-500 mr-2"></i>
+                            <input type="text" placeholder="Username" class="bg-transparent outline-none w-full">
+                        </div>
+                        
+                        <!-- Mail input -->
+                        <div class="glass-input flex items-center px-4 py-2">
+                            <i data-feather="mail" class="text-gray-500 mr-2"></i>
+                            <input type="email" placeholder="Email address" class="bg-transparent outline-none w-full">
+                        </div>
+                        
+                        <!-- Lock input -->
+                        <div class="glass-input flex items-center px-4 py-2">
+                            <i data-feather="lock" class="text-gray-500 mr-2"></i>
+                            <input type="password" placeholder="Password" class="bg-transparent outline-none w-full">
+                        </div>
+                        
+                        <!-- Phone input -->
+                        <div class="glass-input flex items-center px-4 py-2">
+                            <i data-feather="phone" class="text-gray-500 mr-2"></i>
+                            <input type="tel" placeholder="Phone number" class="bg-transparent outline-none w-full">
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;div class="glass-input flex items-center px-4 py-2"&gt;<br/>
+&nbsp;&nbsp;&lt;i data-feather="user" class="text-gray-500 mr-2"&gt;&lt;/i&gt;<br/>
+&nbsp;&nbsp;&lt;input type="text" placeholder="Username" class="bg-transparent outline-none w-full"&gt;<br/>
+&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <!-- Glass Textarea -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Glass Textarea</h3>
+                    <p class="text-gray-600 mb-4">Многострочное поле в glass стиле</p>
+                    
+                    <div class="mb-4 max-w-md">
+                        <div class="glass-input px-4 py-2">
+                            <textarea placeholder="Enter your message..." rows="4" class="bg-transparent outline-none w-full resize-none"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;div class="glass-input px-4 py-2"&gt;<br/>
+&nbsp;&nbsp;&lt;textarea placeholder="Enter your message..." rows="4" class="bg-transparent outline-none w-full resize-none"&gt;&lt;/textarea&gt;<br/>
+&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <!-- Form Example -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Пример формы</h3>
+                    <p class="text-gray-600 mb-4">Полная форма с glass инпутами и кнопкой</p>
+                    
+                    <div class="max-w-md mb-4">
+                        <form class="space-y-4" onsubmit="event.preventDefault(); alert('Это демо формы в UI Kit каталоге');">
+                            <div class="glass-input flex items-center px-4 py-2">
+                                <i data-feather="user" class="text-gray-500 mr-2"></i>
+                                <input type="text" placeholder="Full Name" class="bg-transparent outline-none w-full">
+                            </div>
+                            
+                            <div class="glass-input flex items-center px-4 py-2">
+                                <i data-feather="mail" class="text-gray-500 mr-2"></i>
+                                <input type="email" placeholder="Email Address" class="bg-transparent outline-none w-full">
+                            </div>
+                            
+                            <div class="glass-input px-4 py-2">
+                                <textarea placeholder="Message" rows="3" class="bg-transparent outline-none w-full resize-none"></textarea>
+                            </div>
+                            
+                            <button type="submit" class="glass-button px-6 py-2 text-sm flex items-center w-full justify-center">
+                                <i data-feather="send" class="mr-2"></i>
+                                Send Message
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;form class="space-y-4"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="glass-input flex items-center px-4 py-2"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;i data-feather="user" class="text-gray-500 mr-2"&gt;&lt;/i&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;input type="text" placeholder="Full Name" class="bg-transparent outline-none w-full"&gt;<br/>
+&nbsp;&nbsp;&lt;/div&gt;<br/>
+&nbsp;&nbsp;&lt;button class="glass-button px-6 py-2 text-sm"&gt;Send&lt;/button&gt;<br/>
+&lt;/form&gt;
+                    </div>
+                </div>
+                
+                <!-- CSS Styles -->
+                <div>
+                    <h3 class="text-lg font-medium mb-3">CSS стили (точная копия из эталонов)</h3>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+.glass-input {<br/>
+&nbsp;&nbsp;background: rgba(255, 255, 255, 0.1);<br/>
+&nbsp;&nbsp;backdrop-filter: blur(10px);<br/>
+&nbsp;&nbsp;border: 1px solid rgba(255, 255, 255, 0.2);<br/>
+&nbsp;&nbsp;border-radius: 8px;<br/>
+}<br/><br/>
+/* Внутренний input всегда transparent */<br/>
+.glass-input input,<br/>
+.glass-input textarea {<br/>
+&nbsp;&nbsp;background: transparent;<br/>
+&nbsp;&nbsp;outline: none;<br/>
+&nbsp;&nbsp;color: inherit;<br/>
+}<br/><br/>
+.glass-input::placeholder {<br/>
+&nbsp;&nbsp;color: rgba(107, 114, 128, 0.8);<br/>
+}
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Progress Section -->
+            <section id="progress" class="glass-card p-8 mb-8">
+                <h2 class="text-2xl font-semibold mb-4">Прогресс</h2>
+                <p class="text-gray-600 mb-6">Прогресс-бары и индикаторы из эталонных дизайнов</p>
+                
+                <!-- Progress Bars with Labels -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Прогресс-бары с подписями</h3>
+                    <p class="text-gray-600 mb-4">Из эталонов: показатели с названиями и процентами</p>
+                    
+                    <div class="space-y-4 mb-4 max-w-md">
+                        <!-- From profiles.html -->
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Engagement Score</span>
+                                <span>92%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill bg-green-500" style="width: 92%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Performance Rating</span>
+                                <span>94%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill bg-blue-500" style="width: 94%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Career Growth</span>
+                                <span>76%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill bg-yellow-500" style="width: 76%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Skills Match</span>
+                                <span>65%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill bg-red-500" style="width: 65%"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- From index.html -->
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Technical Leadership</span>
+                                <span>78%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill bg-blue-500" style="width: 78%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Communication</span>
+                                <span>85%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill bg-green-500" style="width: 85%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Innovation</span>
+                                <span>64%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill bg-purple-500" style="width: 64%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Adaptability</span>
+                                <span>91%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill bg-yellow-500" style="width: 91%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;div class="flex justify-between text-sm mb-1"&gt;<br/>
+&nbsp;&nbsp;&lt;span&gt;Engagement Score&lt;/span&gt;<br/>
+&nbsp;&nbsp;&lt;span&gt;92%&lt;/span&gt;<br/>
+&lt;/div&gt;<br/>
+&lt;div class="progress-bar"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="progress-fill bg-green-500" style="width: 92%"&gt;&lt;/div&gt;<br/>
+&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <!-- Simple Progress Bars -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Простые прогресс-бары</h3>
+                    <p class="text-gray-600 mb-4">Базовые варианты без подписей</p>
+                    
+                    <div class="space-y-4 mb-4 max-w-md">
+                        <!-- Green progress -->
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-green-500" style="width: 85%"></div>
+                        </div>
+                        
+                        <!-- Blue progress -->
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-blue-500" style="width: 72%"></div>
+                        </div>
+                        
+                        <!-- Yellow progress -->
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-yellow-500" style="width: 58%"></div>
+                        </div>
+                        
+                        <!-- Red progress -->
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-red-500" style="width: 34%"></div>
+                        </div>
+                        
+                        <!-- Purple progress -->
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-purple-500" style="width: 91%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;div class="progress-bar"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="progress-fill bg-green-500" style="width: 85%"&gt;&lt;/div&gt;<br/>
+&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <!-- Different Sizes -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Разные размеры</h3>
+                    <p class="text-gray-600 mb-4">Варианты высоты прогресс-баров</p>
+                    
+                    <div class="space-y-4 mb-4 max-w-md">
+                        <!-- Small (4px) -->
+                        <div>
+                            <p class="text-sm mb-2">Small (4px)</p>
+                            <div class="progress-bar" style="height: 4px;">
+                                <div class="progress-fill bg-blue-500" style="width: 70%"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Default (6px) -->
+                        <div>
+                            <p class="text-sm mb-2">Default (6px)</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill bg-green-500" style="width: 70%"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Large (8px) -->
+                        <div>
+                            <p class="text-sm mb-2">Large (8px)</p>
+                            <div class="progress-bar" style="height: 8px;">
+                                <div class="progress-fill bg-purple-500" style="width: 70%"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Extra Large (12px) -->
+                        <div>
+                            <p class="text-sm mb-2">Extra Large (12px)</p>
+                            <div class="progress-bar" style="height: 12px;">
+                                <div class="progress-fill bg-yellow-500" style="width: 70%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;div class="progress-bar" style="height: 8px;"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="progress-fill bg-purple-500" style="width: 70%"&gt;&lt;/div&gt;<br/>
+&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <!-- CSS Styles -->
+                <div>
+                    <h3 class="text-lg font-medium mb-3">CSS стили (точная копия из эталонов)</h3>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+/* Из index.html */<br/>
+.progress-bar {<br/>
+&nbsp;&nbsp;width: 100%;<br/>
+&nbsp;&nbsp;height: 6px;<br/>
+&nbsp;&nbsp;background-color: rgba(255, 255, 255, 0.2);<br/>
+&nbsp;&nbsp;border-radius: 3px;<br/>
+&nbsp;&nbsp;overflow: hidden;<br/>
+}<br/><br/>
+.progress-fill {<br/>
+&nbsp;&nbsp;height: 100%;<br/>
+&nbsp;&nbsp;border-radius: 3px;<br/>
+&nbsp;&nbsp;transition: width 0.3s ease-in-out;<br/>
+}<br/><br/>
+/* Из profiles.html (альтернативная версия) */<br/>
+.progress-bar {<br/>
+&nbsp;&nbsp;height: 6px;<br/>
+&nbsp;&nbsp;border-radius: 3px;<br/>
+&nbsp;&nbsp;overflow: hidden;<br/>
+&nbsp;&nbsp;background: rgba(255, 255, 255, 0.1);<br/>
+}
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Navigation Section -->
+            <section id="navigation" class="glass-card p-8 mb-8">
+                <h2 class="text-2xl font-semibold mb-4">Навигация</h2>
+                <p class="text-gray-600 mb-6">Навигационные элементы из эталонных дизайнов</p>
+                
+                <!-- Sidebar Navigation -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Боковая навигация</h3>
+                    <p class="text-gray-600 mb-4">Из эталонов: основная навигация приложения</p>
+                    
+                    <div class="max-w-sm mb-4">
+                        <!-- Sidebar demo -->
+                        <div class="glass-card p-5 w-64">
+                            <div class="mb-6">
+                                <h1 class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">AI Profiler</h1>
+                                <p class="text-xs text-gray-500">Employee Intelligence System</p>
+                            </div>
+                            
+                            <nav>
+                                <ul class="space-y-3">
+                                    <li>
+                                        <a href="#" class="flex items-center p-3 rounded-lg sidebar-item active">
+                                            <i data-feather="home" class="mr-3" style="width: 18px; height: 18px;"></i>
+                                            <span>Dashboard</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="flex items-center p-3 rounded-lg sidebar-item">
+                                            <i data-feather="calendar" class="mr-3" style="width: 18px; height: 18px;"></i>
+                                            <span>Meetings</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="flex items-center p-3 rounded-lg sidebar-item">
+                                            <i data-feather="users" class="mr-3" style="width: 18px; height: 18px;"></i>
+                                            <span>Profiles</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="flex items-center p-3 rounded-lg sidebar-item">
+                                            <i data-feather="bar-chart-2" class="mr-3" style="width: 18px; height: 18px;"></i>
+                                            <span>Analytics</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="flex items-center p-3 rounded-lg sidebar-item">
+                                            <i data-feather="cpu" class="mr-3" style="width: 18px; height: 18px;"></i>
+                                            <span>AI Insights</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="flex items-center p-3 rounded-lg sidebar-item">
+                                            <i data-feather="settings" class="mr-3" style="width: 18px; height: 18px;"></i>
+                                            <span>Settings</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;nav&gt;<br/>
+&nbsp;&nbsp;&lt;ul class="space-y-3"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;li&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;a href="#" class="flex items-center p-3 rounded-lg sidebar-item active"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;i data-feather="home" class="mr-3"&gt;&lt;/i&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;span&gt;Dashboard&lt;/span&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/a&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;/li&gt;<br/>
+&nbsp;&nbsp;&lt;/ul&gt;<br/>
+&lt;/nav&gt;
+                    </div>
+                </div>
+                
+                <!-- Navigation Item States -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Состояния элементов навигации</h3>
+                    <p class="text-gray-600 mb-4">Различные состояния sidebar-item</p>
+                    
+                    <div class="space-y-3 mb-4 max-w-sm" style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); padding: 1rem; border-radius: 12px;">
+                        <!-- Active state - всегда активен -->
+                        <a href="#" class="flex items-center p-3 rounded-lg sidebar-item active" onclick="event.preventDefault();">
+                            <i data-feather="home" class="mr-3" style="width: 18px; height: 18px;"></i>
+                            <span>Активное состояние</span>
+                        </a>
+                        
+                        <!-- Normal state - обычное, никак не реагирует -->
+                        <a href="#" class="flex items-center p-3 rounded-lg sidebar-item-disabled" onclick="event.preventDefault();">
+                            <i data-feather="calendar" class="mr-3" style="width: 18px; height: 18px;"></i>
+                            <span>Обычное состояние</span>
+                        </a>
+                        
+                        <!-- Hover state - всегда выглядит как при hover -->
+                        <a href="#" class="flex items-center p-3 rounded-lg sidebar-item-hover-example" onclick="event.preventDefault();" style="background: rgba(255, 255, 255, 0.1); border-left: 3px solid #4A90E2;">
+                            <i data-feather="users" class="mr-3" style="width: 18px; height: 18px;"></i>
+                            <span>При наведении</span>
+                        </a>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+/* Эталон стили из index.html: */<br/><br/>
+.sidebar-item.active {<br/>
+&nbsp;&nbsp;background: rgba(74, 144, 226, 0.15);<br/>
+&nbsp;&nbsp;border-left: 3px solid var(--primary-blue);<br/>
+}<br/><br/>
+.sidebar-item:hover {<br/>
+&nbsp;&nbsp;background: rgba(255, 255, 255, 0.1);<br/>
+&nbsp;&nbsp;transition: all 200ms ease-in-out;<br/>
+}<br/><br/>
+/* HTML структура: */<br/>
+&lt;a href="#" class="flex items-center p-3 rounded-lg sidebar-item active"&gt;<br/>
+&nbsp;&nbsp;&lt;i data-feather="home" class="mr-3"&gt;&lt;/i&gt;<br/>
+&nbsp;&nbsp;&lt;span&gt;Dashboard&lt;/span&gt;<br/>
+&lt;/a&gt;
+                    </div>
+                </div>
+                
+                <!-- Navigation with Icons -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Иконки навигации</h3>
+                    <p class="text-gray-600 mb-4">Все иконки feather из эталонов</p>
+                    
+                    <div class="grid grid-cols-2 gap-2 mb-4 max-w-md">
+                        <a href="#" class="flex items-center p-2 rounded-lg sidebar-item" onclick="event.preventDefault();">
+                            <i data-feather="home" class="mr-2" style="width: 16px; height: 16px;"></i>
+                            <span class="text-sm">home</span>
+                        </a>
+                        
+                        <a href="#" class="flex items-center p-2 rounded-lg sidebar-item" onclick="event.preventDefault();">
+                            <i data-feather="calendar" class="mr-2" style="width: 16px; height: 16px;"></i>
+                            <span class="text-sm">calendar</span>
+                        </a>
+                        
+                        <a href="#" class="flex items-center p-2 rounded-lg sidebar-item" onclick="event.preventDefault();">
+                            <i data-feather="users" class="mr-2" style="width: 16px; height: 16px;"></i>
+                            <span class="text-sm">users</span>
+                        </a>
+                        
+                        <a href="#" class="flex items-center p-2 rounded-lg sidebar-item" onclick="event.preventDefault();">
+                            <i data-feather="bar-chart-2" class="mr-2" style="width: 16px; height: 16px;"></i>
+                            <span class="text-sm">bar-chart-2</span>
+                        </a>
+                        
+                        <a href="#" class="flex items-center p-2 rounded-lg sidebar-item" onclick="event.preventDefault();">
+                            <i data-feather="cpu" class="mr-2" style="width: 16px; height: 16px;"></i>
+                            <span class="text-sm">cpu</span>
+                        </a>
+                        
+                        <a href="#" class="flex items-center p-2 rounded-lg sidebar-item" onclick="event.preventDefault();">
+                            <i data-feather="settings" class="mr-2" style="width: 16px; height: 16px;"></i>
+                            <span class="text-sm">settings</span>
+                        </a>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;a href="#" class="flex items-center p-3 rounded-lg sidebar-item"&gt;<br/>
+&nbsp;&nbsp;&lt;i data-feather="home" class="mr-3"&gt;&lt;/i&gt;<br/>
+&nbsp;&nbsp;&lt;span&gt;Dashboard&lt;/span&gt;<br/>
+&lt;/a&gt;
+                    </div>
+                </div>
+                
+                <!-- User Profile Section -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Профиль пользователя</h3>
+                    <p class="text-gray-600 mb-4">Нижняя часть sidebar из эталонов</p>
+                    
+                    <div class="max-w-sm mb-4">
+                        <div class="pt-5 border-t border-white/10">
+                            <div class="flex items-center">
+                                <div class="relative">
+                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%234A90E2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='14'%3EAM%3C/text%3E%3C/svg%3E" alt="User" class="w-10 h-10 rounded-full">
+                                    <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium">Alex Morgan</p>
+                                    <p class="text-xs text-gray-500">HR Manager</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;div class="pt-5 border-t border-white/10"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="flex items-center"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;img src="avatar.svg" class="w-10 h-10 rounded-full"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;div class="ml-3"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p class="text-sm font-medium"&gt;Alex Morgan&lt;/p&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p class="text-xs text-gray-500"&gt;HR Manager&lt;/p&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;/div&gt;<br/>
+&nbsp;&nbsp;&lt;/div&gt;<br/>
+&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <!-- CSS Styles -->
+                <div>
+                    <h3 class="text-lg font-medium mb-3">CSS стили навигации (точная копия из эталонов)</h3>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+.sidebar-item {<br/>
+&nbsp;&nbsp;transition: all 200ms ease-in-out;<br/>
+&nbsp;&nbsp;text-decoration: none;<br/>
+&nbsp;&nbsp;color: inherit;<br/>
+&nbsp;&nbsp;border-left: 3px solid transparent;<br/>
+}<br/><br/>
+.sidebar-item.active {<br/>
+&nbsp;&nbsp;background: rgba(74, 144, 226, 0.15);<br/>
+&nbsp;&nbsp;border-left: 3px solid var(--primary-blue);<br/>
+}<br/><br/>
+.sidebar-item:hover {<br/>
+&nbsp;&nbsp;background: rgba(255, 255, 255, 0.1);<br/>
+&nbsp;&nbsp;transition: all 200ms ease-in-out;<br/>
+}<br/><br/>
+/* Структура sidebar */<br/>
+&lt;div class="w-64 glass-card h-screen fixed p-5 flex flex-col z-10"&gt;<br/>
+&nbsp;&nbsp;&lt;nav class="flex-1"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;ul class="space-y-3"&gt;...&lt;/ul&gt;<br/>
+&nbsp;&nbsp;&lt;/nav&gt;<br/>
+&nbsp;&nbsp;&lt;div class="mt-auto"&gt;...&lt;/div&gt;<br/>
+&lt;/div&gt;
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Avatars Section -->
+            <section id="avatars" class="glass-card p-8 mb-8">
+                <h2 class="text-2xl font-semibold mb-4">Аватары</h2>
+                <p class="text-gray-600 mb-6">Аватары и профильные изображения из эталонных дизайнов</p>
+                
+                <!-- Basic Avatars -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Основные аватары</h3>
+                    <p class="text-gray-600 mb-4">Разные размеры аватаров с инициалами</p>
+                    
+                    <div class="flex items-end gap-6 mb-4">
+                        <!-- Small Avatar (w-10 h-10) -->
+                        <div class="text-center">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%234A90E2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='14'%3EAM%3C/text%3E%3C/svg%3E" alt="User" class="w-10 h-10 rounded-full">
+                            <p class="text-xs mt-2 text-gray-500">40x40 (w-10)</p>
+                        </div>
+                        
+                        <!-- Medium Avatar (w-12 h-12) -->
+                        <div class="text-center">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect width='50' height='50' fill='%2350E3C2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='12'%3ESJ%3C/text%3E%3C/svg%3E" alt="Employee" class="w-12 h-12 rounded-full">
+                            <p class="text-xs mt-2 text-gray-500">48x48 (w-12)</p>
+                        </div>
+                        
+                        <!-- Large Avatar (w-16 h-16) -->
+                        <div class="text-center">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%239013FE'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3EMC%3C/text%3E%3C/svg%3E" alt="Employee" class="w-16 h-16 rounded-full">
+                            <p class="text-xs mt-2 text-gray-500">64x64 (w-16)</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;!-- Малый аватар --&gt;<br/>
+&lt;img src="avatar.svg" class="w-10 h-10 rounded-full"&gt;<br/><br/>
+&lt;!-- Средний аватар --&gt;<br/>
+&lt;img src="avatar.svg" class="w-12 h-12 rounded-full"&gt;<br/><br/>
+&lt;!-- Большой аватар --&gt;<br/>
+&lt;img src="avatar.svg" class="w-16 h-16 rounded-full"&gt;
+                    </div>
+                </div>
+                
+                <!-- Avatars with Status -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Аватары со статусом</h3>
+                    <p class="text-gray-600 mb-4">Аватары с индикаторами онлайн/офлайн статуса</p>
+                    
+                    <div class="flex items-end gap-6 mb-4">
+                        <!-- Small with Online Status -->
+                        <div class="text-center">
+                            <div class="relative">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%234A90E2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='14'%3EAM%3C/text%3E%3C/svg%3E" alt="User" class="w-10 h-10 rounded-full">
+                                <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                            </div>
+                            <p class="text-xs mt-2 text-gray-500">Онлайн</p>
+                        </div>
+                        
+                        <!-- Large with Online Status -->
+                        <div class="text-center">
+                            <div class="relative">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%2350E3C2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3ESJ%3C/text%3E%3C/svg%3E" alt="Employee" class="w-16 h-16 rounded-full">
+                                <div class="absolute bottom-0 right-0 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
+                            </div>
+                            <p class="text-xs mt-2 text-gray-500">Онлайн</p>
+                        </div>
+                        
+                        <!-- Away Status -->
+                        <div class="text-center">
+                            <div class="relative">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%239013FE'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3EMC%3C/text%3E%3C/svg%3E" alt="Employee" class="w-16 h-16 rounded-full">
+                                <div class="absolute bottom-0 right-0 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white"></div>
+                            </div>
+                            <p class="text-xs mt-2 text-gray-500">Отошел</p>
+                        </div>
+                        
+                        <!-- Offline Status -->
+                        <div class="text-center">
+                            <div class="relative">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23F39C12'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3ELT%3C/text%3E%3C/svg%3E" alt="Employee" class="w-16 h-16 rounded-full">
+                                <div class="absolute bottom-0 right-0 w-4 h-4 bg-red-400 rounded-full border-2 border-white"></div>
+                            </div>
+                            <p class="text-xs mt-2 text-gray-500">Оффлайн</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;!-- Аватар со статусом онлайн --&gt;<br/>
+&lt;div class="relative"&gt;<br/>
+&nbsp;&nbsp;&lt;img src="avatar.svg" class="w-16 h-16 rounded-full"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="absolute bottom-0 right-0 w-4 h-4 bg-green-400 rounded-full border-2 border-white"&gt;&lt;/div&gt;<br/>
+&lt;/div&gt;<br/><br/>
+&lt;!-- Статус "отошел" --&gt;<br/>
+&lt;div class="absolute bottom-0 right-0 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white"&gt;&lt;/div&gt;<br/><br/>
+&lt;!-- Статус "оффлайн" --&gt;<br/>
+&lt;div class="absolute bottom-0 right-0 w-4 h-4 bg-red-400 rounded-full border-2 border-white"&gt;&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <!-- Photo Avatars -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Аватары с фотографией</h3>
+                    <p class="text-gray-600 mb-4">Реалистичные аватары для демонстрации</p>
+                    
+                    <div class="flex items-end gap-6 mb-4">
+                        <!-- Photo Avatar 1 -->
+                        <div class="text-center">
+                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face&auto=format" alt="User Photo" class="w-16 h-16 rounded-full object-cover">
+                            <p class="text-xs mt-2 text-gray-500">Мужской портрет</p>
+                        </div>
+                        
+                        <!-- Photo Avatar 2 -->
+                        <div class="text-center">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face&auto=format" alt="User Photo" class="w-16 h-16 rounded-full object-cover">
+                            <p class="text-xs mt-2 text-gray-500">Женский портрет</p>
+                        </div>
+                        
+                        <!-- Photo Avatar with Status -->
+                        <div class="text-center">
+                            <div class="relative">
+                                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face&auto=format" alt="User Photo" class="w-16 h-16 rounded-full object-cover">
+                                <div class="absolute bottom-0 right-0 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
+                            </div>
+                            <p class="text-xs mt-2 text-gray-500">Фото + статус</p>
+                        </div>
+                        
+                        <!-- Different sizes -->
+                        <div class="text-center">
+                            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&h=120&fit=crop&crop=face&auto=format" alt="User Photo" class="w-12 h-12 rounded-full object-cover">
+                            <p class="text-xs mt-2 text-gray-500">48x48</p>
+                        </div>
+                        
+                        <div class="text-center">
+                            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face&auto=format" alt="User Photo" class="w-10 h-10 rounded-full object-cover">
+                            <p class="text-xs mt-2 text-gray-500">40x40</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;!-- Фото аватар --&gt;<br/>
+&lt;img src="photo.jpg" class="w-16 h-16 rounded-full object-cover"&gt;<br/><br/>
+&lt;!-- С индикатором статуса --&gt;<br/>
+&lt;div class="relative"&gt;<br/>
+&nbsp;&nbsp;&lt;img src="photo.jpg" class="w-16 h-16 rounded-full object-cover"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="absolute bottom-0 right-0 w-4 h-4 bg-green-400 rounded-full border-2 border-white"&gt;&lt;/div&gt;<br/>
+&lt;/div&gt;<br/><br/>
+&lt;!-- object-cover обеспечивает правильное кадрирование фото --&gt;
+                    </div>
+                </div>
+                
+                <!-- Avatar Colors -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Цветовая палитра аватаров</h3>
+                    <p class="text-gray-600 mb-4">Все цвета из эталонов для генерации аватаров</p>
+                    
+                    <div class="flex flex-wrap gap-4 mb-4">
+                        <div>
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%234A90E2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3EAM%3C/text%3E%3C/svg%3E" alt="Avatar" class="w-12 h-12 rounded-full">
+                            <p class="text-xs text-center mt-1">#4A90E2</p>
+                        </div>
+                        <div>
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%2350E3C2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3ESJ%3C/text%3E%3C/svg%3E" alt="Avatar" class="w-12 h-12 rounded-full">
+                            <p class="text-xs text-center mt-1">#50E3C2</p>
+                        </div>
+                        <div>
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%239013FE'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3EMC%3C/text%3E%3C/svg%3E" alt="Avatar" class="w-12 h-12 rounded-full">
+                            <p class="text-xs text-center mt-1">#9013FE</p>
+                        </div>
+                        <div>
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23FF6B6B'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3EER%3C/text%3E%3C/svg%3E" alt="Avatar" class="w-12 h-12 rounded-full">
+                            <p class="text-xs text-center mt-1">#FF6B6B</p>
+                        </div>
+                        <div>
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%2318B663'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3EDK%3C/text%3E%3C/svg%3E" alt="Avatar" class="w-12 h-12 rounded-full">
+                            <p class="text-xs text-center mt-1">#18B663</p>
+                        </div>
+                        <div>
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23F39C12'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3ELT%3C/text%3E%3C/svg%3E" alt="Avatar" class="w-12 h-12 rounded-full">
+                            <p class="text-xs text-center mt-1">#F39C12</p>
+                        </div>
+                        <div>
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%2334495E'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3ERG%3C/text%3E%3C/svg%3E" alt="Avatar" class="w-12 h-12 rounded-full">
+                            <p class="text-xs text-center mt-1">#34495E</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;!-- Генерация SVG аватара с инициалами --&gt;<br/>
+data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E<br/>
+%3Crect width='64' height='64' fill='%234A90E2'/%3E<br/>
+%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;font-family='Arial' font-size='16'%3EAM%3C/text%3E<br/>
+%3C/svg%3E<br/><br/>
+&lt;!-- Цвета из эталонов --&gt;<br/>
+Primary Blue: #4A90E2 | Accent Green: #50E3C2 | Purple: #9013FE<br/>
+Red: #FF6B6B | Success: #18B663 | Orange: #F39C12 | Dark: #34495E
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Tags Section -->
+            <section id="tags" class="glass-card p-8 mb-8">
+                <h2 class="text-2xl font-semibold mb-4">Теги</h2>
+                <p class="text-gray-600 mb-6">Теги навыков и категорий из эталонных дизайнов</p>
+                
+                <!-- Basic Tags -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Базовые теги</h3>
+                    <p class="text-gray-600 mb-4">Основные теги навыков из profiles.html</p>
+                    
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="skill-tag">UI Design</span>
+                        <span class="skill-tag">Prototyping</span>
+                        <span class="skill-tag">Figma</span>
+                        <span class="skill-tag">User Research</span>
+                        <span class="skill-tag">React</span>
+                        <span class="skill-tag">JavaScript</span>
+                        <span class="skill-tag">TypeScript</span>
+                        <span class="skill-tag">CSS</span>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;!-- Базовый тег --&gt;<br/>
+&lt;span class="skill-tag"&gt;React&lt;/span&gt;<br/><br/>
+&lt;!-- Группа тегов --&gt;<br/>
+&lt;div class="flex flex-wrap gap-2"&gt;<br/>
+&nbsp;&nbsp;&lt;span class="skill-tag"&gt;JavaScript&lt;/span&gt;<br/>
+&nbsp;&nbsp;&lt;span class="skill-tag"&gt;TypeScript&lt;/span&gt;<br/>
+&nbsp;&nbsp;&lt;span class="skill-tag"&gt;React&lt;/span&gt;<br/>
+&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <!-- Usage Examples -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Примеры использования</h3>
+                    <p class="text-gray-600 mb-4">Как теги используются в эталонах</p>
+                    
+                    <div class="space-y-6">
+                        <!-- Example from profiles.html -->
+                        <div>
+                            <h4 class="text-sm font-medium mb-2 text-gray-700">Пример из профиля сотрудника</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="skill-tag">UI Design</span>
+                                <span class="skill-tag">Prototyping</span>
+                                <span class="skill-tag">Figma</span>
+                                <span class="skill-tag">User Research</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Another example -->
+                        <div>
+                            <h4 class="text-sm font-medium mb-2 text-gray-700">Пример разработчика</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="skill-tag">React</span>
+                                <span class="skill-tag">JavaScript</span>
+                                <span class="skill-tag">TypeScript</span>
+                                <span class="skill-tag">CSS</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Single tag example -->
+                        <div>
+                            <h4 class="text-sm font-medium mb-2 text-gray-700">Одиночные теги</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="skill-tag">Machine Learning</span>
+                                <span class="skill-tag">Docker</span>
+                                <span class="skill-tag">Content Strategy</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tag Styles Demo -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">CSS стили тегов</h3>
+                    <p class="text-gray-600 mb-4">Точная копия стилей из эталона</p>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+/* Стили из profiles.html */<br/>
+.skill-tag {<br/>
+&nbsp;&nbsp;background: rgba(80, 227, 194, 0.15);<br/>
+&nbsp;&nbsp;border: 1px solid rgba(80, 227, 194, 0.3);<br/>
+&nbsp;&nbsp;color: var(--text-primary);<br/>
+&nbsp;&nbsp;display: inline-block;<br/>
+&nbsp;&nbsp;font-size: 0.75rem;<br/>
+&nbsp;&nbsp;padding: 0.25rem 0.5rem;<br/>
+&nbsp;&nbsp;border-radius: 9999px;<br/>
+&nbsp;&nbsp;transition: all 150ms ease-in-out;<br/>
+}<br/><br/>
+.skill-tag:hover {<br/>
+&nbsp;&nbsp;background: rgba(80, 227, 194, 0.25);<br/>
+&nbsp;&nbsp;transform: translateY(-1px);<br/>
+}<br/><br/>
+/* Цвет: Accent Green #50E3C2 с прозрачностью */
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Icons Section -->
+            <section id="icons" class="glass-card p-8 mb-8">
+                <h2 class="text-2xl font-semibold mb-4">Иконки</h2>
+                <p class="text-gray-600 mb-6">Иконки Feather используемые в эталонных дизайнах</p>
+                
+                <!-- Navigation Icons -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Навигационные иконки</h3>
+                    <p class="text-gray-600 mb-4">Иконки из sidebar навигации</p>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
+                        <div class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <i data-feather="home" class="mb-2" style="width: 24px; height: 24px;"></i>
+                            <span class="text-xs text-gray-600">home</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <i data-feather="calendar" class="mb-2" style="width: 24px; height: 24px;"></i>
+                            <span class="text-xs text-gray-600">calendar</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <i data-feather="users" class="mb-2" style="width: 24px; height: 24px;"></i>
+                            <span class="text-xs text-gray-600">users</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <i data-feather="bar-chart-2" class="mb-2" style="width: 24px; height: 24px;"></i>
+                            <span class="text-xs text-gray-600">bar-chart-2</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <i data-feather="cpu" class="mb-2" style="width: 24px; height: 24px;"></i>
+                            <span class="text-xs text-gray-600">cpu</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <i data-feather="settings" class="mb-2" style="width: 24px; height: 24px;"></i>
+                            <span class="text-xs text-gray-600">settings</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;!-- Навигационная иконка --&gt;<br/>
+&lt;i data-feather="home" class="mr-3"&gt;&lt;/i&gt;<br/><br/>
+&lt;!-- С цветом --&gt;<br/>
+&lt;i data-feather="calendar" class="text-blue-500"&gt;&lt;/i&gt;<br/><br/>
+&lt;!-- Размер --&gt;<br/>
+&lt;i data-feather="users" style="width: 18px; height: 18px;"&gt;&lt;/i&gt;
+                    </div>
+                </div>
+                
+                <!-- Action Icons -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Иконки действий</h3>
+                    <p class="text-gray-600 mb-4">Иконки для кнопок и интерактивных элементов</p>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
+                        <div class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <i data-feather="eye" class="mb-2" style="width: 24px; height: 24px;"></i>
+                            <span class="text-xs text-gray-600">eye</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <i data-feather="plus" class="mb-2" style="width: 24px; height: 24px;"></i>
+                            <span class="text-xs text-gray-600">plus</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <i data-feather="search" class="mb-2" style="width: 24px; height: 24px;"></i>
+                            <span class="text-xs text-gray-600">search</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <i data-feather="filter" class="mb-2" style="width: 24px; height: 24px;"></i>
+                            <span class="text-xs text-gray-600">filter</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <i data-feather="bell" class="mb-2" style="width: 24px; height: 24px;"></i>
+                            <span class="text-xs text-gray-600">bell</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <i data-feather="menu" class="mb-2" style="width: 24px; height: 24px;"></i>
+                            <span class="text-xs text-gray-600">menu</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Status Icons -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Статусные иконки</h3>
+                    <p class="text-gray-600 mb-4">Иконки с цветами для отображения состояний</p>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <i data-feather="trending-up" class="mb-2 text-green-500" style="width: 24px; height: 24px;"></i>
+                            <span class="text-xs text-gray-600">trending-up (green)</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <i data-feather="trending-down" class="mb-2 text-red-500" style="width: 24px; height: 24px;"></i>
+                            <span class="text-xs text-gray-600">trending-down (red)</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <i data-feather="alert-triangle" class="mb-2 text-yellow-500" style="width: 24px; height: 24px;"></i>
+                            <span class="text-xs text-gray-600">alert-triangle (yellow)</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <i data-feather="heart" class="mb-2 text-purple-500" style="width: 24px; height: 24px;"></i>
+                            <span class="text-xs text-gray-600">heart (purple)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Technical Info -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Техническая информация</h3>
+                    <p class="text-gray-600 mb-4">Подключение и использование Feather Icons</p>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;!-- Подключение Feather Icons --&gt;<br/>
+&lt;script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"&gt;&lt;/script&gt;<br/><br/>
+&lt;!-- Использование --&gt;<br/>
+&lt;i data-feather="home"&gt;&lt;/i&gt;<br/>
+&lt;i data-feather="calendar" class="text-blue-500"&gt;&lt;/i&gt;<br/>
+&lt;i data-feather="users" style="width: 18px; height: 18px;"&gt;&lt;/i&gt;<br/><br/>
+&lt;!-- Инициализация --&gt;<br/>
+&lt;script&gt;<br/>
+&nbsp;&nbsp;feather.replace();<br/>
+&lt;/script&gt;<br/><br/>
+&lt;!-- Официальный сайт: https://feathericons.com/ --&gt;
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Badges Section -->
+            <section id="badges" class="glass-card p-8 mb-8">
+                <h2 class="text-2xl font-semibold mb-4">Значки</h2>
+                <p class="text-gray-600 mb-6">Значки и индикаторы из эталонных дизайнов</p>
+                
+                <!-- Notification Badge -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Значок уведомлений</h3>
+                    <p class="text-gray-600 mb-4">Красный значок с цифрой из index.html</p>
+                    
+                    <div class="flex items-center gap-6 mb-4">
+                        <button class="glass-button p-2 relative">
+                            <i data-feather="bell" style="width: 18px; height: 18px;"></i>
+                            <span class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">3</span>
+                        </button>
+                        
+                        <button class="glass-button p-2 relative">
+                            <i data-feather="bell" style="width: 18px; height: 18px;"></i>
+                            <span class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">9</span>
+                        </button>
+                        
+                        <button class="glass-button p-2 relative">
+                            <i data-feather="bell" style="width: 18px; height: 18px;"></i>
+                            <span class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">12</span>
+                        </button>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;button class="glass-button p-2 relative"&gt;<br/>
+&nbsp;&nbsp;&lt;i data-feather="bell"&gt;&lt;/i&gt;<br/>
+&nbsp;&nbsp;&lt;span class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"&gt;3&lt;/span&gt;<br/>
+&lt;/button&gt;
+                    </div>
+                </div>
+                
+                <!-- Status Indicators -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Статус индикаторы</h3>
+                    <p class="text-gray-600 mb-4">Цветные точки статуса из аватаров</p>
+                    
+                    <div class="flex items-end gap-6 mb-4">
+                        <div class="text-center">
+                            <div class="relative w-16 h-16 mb-2">
+                                <div class="w-16 h-16 bg-gray-200 rounded-full"></div>
+                                <div class="absolute bottom-0 right-0 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
+                            </div>
+                            <p class="text-xs text-gray-500">Онлайн</p>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="relative w-16 h-16 mb-2">
+                                <div class="w-16 h-16 bg-gray-200 rounded-full"></div>
+                                <div class="absolute bottom-0 right-0 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white"></div>
+                            </div>
+                            <p class="text-xs text-gray-500">Отошел</p>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="relative w-16 h-16 mb-2">
+                                <div class="w-16 h-16 bg-gray-200 rounded-full"></div>
+                                <div class="absolute bottom-0 right-0 w-4 h-4 bg-red-400 rounded-full border-2 border-white"></div>
+                            </div>
+                            <p class="text-xs text-gray-500">Оффлайн</p>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="relative w-16 h-16 flex items-center justify-center mb-2">
+                                <div class="w-10 h-10 bg-gray-200 rounded-full"></div>
+                                <div class="absolute bottom-2 right-2 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                            </div>
+                            <p class="text-xs text-gray-500">Малый</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;!-- Большой статус (w-4 h-4) --&gt;<br/>
+&lt;div class="absolute bottom-0 right-0 w-4 h-4 bg-green-400 rounded-full border-2 border-white"&gt;&lt;/div&gt;<br/><br/>
+&lt;!-- Малый статус (w-3 h-3) --&gt;<br/>
+&lt;div class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white"&gt;&lt;/div&gt;
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Glass Morphism Section -->
+            <section id="glass" class="glass-card p-8 mb-8">
+                <h2 class="text-2xl font-semibold mb-4">Glass Morphism</h2>
+                <p class="text-gray-600 mb-6">Стеклянные эффекты из эталонных дизайнов</p>
+                
+                <!-- Glass Card -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Glass Card</h3>
+                    <p class="text-gray-600 mb-4">Основной glass-card эффект</p>
+                    
+                    <div class="max-w-md mb-4">
+                        <div class="glass-card p-6">
+                            <h4 class="text-lg font-semibold mb-2">Glass Card</h4>
+                            <p class="text-gray-600">Карточка с стеклянным эффектом blur и полупрозрачностью.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+.glass-card {<br/>
+&nbsp;&nbsp;background: var(--glass-bg); /* rgba(255, 255, 255, 0.1) */<br/>
+&nbsp;&nbsp;backdrop-filter: blur(20px) saturate(180%);<br/>
+&nbsp;&nbsp;border: 1px solid var(--glass-border); /* rgba(255, 255, 255, 0.2) */<br/>
+&nbsp;&nbsp;box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);<br/>
+&nbsp;&nbsp;border-radius: 16px;<br/>
+}
+                    </div>
+                </div>
+                
+                <!-- Glass Button -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Glass Button</h3>
+                    <p class="text-gray-600 mb-4">Стеклянные кнопки с hover эффектами</p>
+                    
+                    <div class="flex gap-4 mb-4">
+                        <button class="glass-button px-4 py-2">Glass Button</button>
+                        <button class="glass-button px-4 py-2 flex items-center">
+                            <i data-feather="eye" class="mr-2" style="width: 16px; height: 16px;"></i>
+                            С иконкой
+                        </button>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+.glass-button {<br/>
+&nbsp;&nbsp;background: rgba(255, 255, 255, 0.15);<br/>
+&nbsp;&nbsp;backdrop-filter: blur(10px);<br/>
+&nbsp;&nbsp;border: 1px solid rgba(255, 255, 255, 0.2);<br/>
+&nbsp;&nbsp;border-radius: 8px;<br/>
+&nbsp;&nbsp;transition: all 300ms ease-in-out;<br/>
+}<br/><br/>
+.glass-button:hover {<br/>
+&nbsp;&nbsp;background: rgba(255, 255, 255, 0.25);<br/>
+&nbsp;&nbsp;transform: translateY(-2px);<br/>
+}
+                    </div>
+                </div>
+                
+                <!-- Glass Input -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Glass Input</h3>
+                    <p class="text-gray-600 mb-4">Стеклянные поля ввода</p>
+                    
+                    <div class="max-w-sm mb-4">
+                        <div class="glass-input flex items-center px-4 py-2">
+                            <i data-feather="search" class="text-gray-500 mr-2" style="width: 18px; height: 18px;"></i>
+                            <input type="text" placeholder="Search employees..." class="bg-transparent border-none outline-none flex-1">
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+.glass-input {<br/>
+&nbsp;&nbsp;background: rgba(255, 255, 255, 0.1);<br/>
+&nbsp;&nbsp;backdrop-filter: blur(10px);<br/>
+&nbsp;&nbsp;border: 1px solid rgba(255, 255, 255, 0.2);<br/>
+&nbsp;&nbsp;border-radius: 8px;<br/>
+}<br/><br/>
+.glass-input:focus-within {<br/>
+&nbsp;&nbsp;border-color: var(--primary-blue);<br/>
+}
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Colors Section -->
+            <section id="colors" class="glass-card p-8 mb-8">
+                <h2 class="text-2xl font-semibold mb-4">Цвета</h2>
+                <p class="text-gray-600 mb-6">Цветовая палитра из эталонных дизайнов</p>
+                
+                <!-- Primary Colors -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Основные цвета</h3>
+                    <p class="text-gray-600 mb-4">CSS переменные из эталонов</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="flex items-center p-4 rounded-lg border border-gray-200">
+                            <div class="w-12 h-12 rounded-lg mr-4" style="background-color: #4A90E2;"></div>
+                            <div>
+                                <div class="font-medium">Primary Blue</div>
+                                <div class="text-sm text-gray-500">#4A90E2</div>
+                                <div class="text-xs text-gray-400">--primary-blue</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center p-4 rounded-lg border border-gray-200">
+                            <div class="w-12 h-12 rounded-lg mr-4" style="background-color: #50E3C2;"></div>
+                            <div>
+                                <div class="font-medium">Accent Green</div>
+                                <div class="text-sm text-gray-500">#50E3C2</div>
+                                <div class="text-xs text-gray-400">--accent-green</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center p-4 rounded-lg border border-gray-200">
+                            <div class="w-12 h-12 rounded-lg mr-4" style="background-color: #9013FE;"></div>
+                            <div>
+                                <div class="font-medium">Accent Purple</div>
+                                <div class="text-sm text-gray-500">#9013FE</div>
+                                <div class="text-xs text-gray-400">--accent-purple</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Glass Colors -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Glass цвета</h3>
+                    <p class="text-gray-600 mb-4">Полупрозрачные цвета для glass эффектов</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div class="flex items-center p-4 rounded-lg border border-gray-200">
+                            <div class="w-12 h-12 rounded-lg mr-4 border border-gray-300" style="background-color: rgba(255, 255, 255, 0.1);"></div>
+                            <div>
+                                <div class="font-medium">Glass Background</div>
+                                <div class="text-sm text-gray-500">rgba(255, 255, 255, 0.1)</div>
+                                <div class="text-xs text-gray-400">--glass-bg</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center p-4 rounded-lg border border-gray-200">
+                            <div class="w-12 h-12 rounded-lg mr-4 border border-gray-300" style="background-color: rgba(255, 255, 255, 0.2);"></div>
+                            <div>
+                                <div class="font-medium">Glass Border</div>
+                                <div class="text-sm text-gray-500">rgba(255, 255, 255, 0.2)</div>
+                                <div class="text-xs text-gray-400">--glass-border</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Status Colors -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Статусные цвета</h3>
+                    <p class="text-gray-600 mb-4">Цвета для статус индикаторов и уведомлений</p>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div class="flex items-center p-4 rounded-lg border border-gray-200">
+                            <div class="w-8 h-8 rounded-full mr-3 bg-green-400"></div>
+                            <div>
+                                <div class="font-medium text-sm">Онлайн</div>
+                                <div class="text-xs text-gray-500">bg-green-400</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center p-4 rounded-lg border border-gray-200">
+                            <div class="w-8 h-8 rounded-full mr-3 bg-yellow-400"></div>
+                            <div>
+                                <div class="font-medium text-sm">Отошел</div>
+                                <div class="text-xs text-gray-500">bg-yellow-400</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center p-4 rounded-lg border border-gray-200">
+                            <div class="w-8 h-8 rounded-full mr-3 bg-red-400"></div>
+                            <div>
+                                <div class="font-medium text-sm">Оффлайн</div>
+                                <div class="text-xs text-gray-500">bg-red-400</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center p-4 rounded-lg border border-gray-200">
+                            <div class="w-8 h-8 rounded-full mr-3 bg-red-500"></div>
+                            <div>
+                                <div class="font-medium text-sm">Уведомления</div>
+                                <div class="text-xs text-gray-500">bg-red-500</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- CSS Variables -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">CSS переменные</h3>
+                    <p class="text-gray-600 mb-4">Точная копия из эталонов</p>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+:root {<br/>
+&nbsp;&nbsp;--glass-bg: rgba(255, 255, 255, 0.1);<br/>
+&nbsp;&nbsp;--glass-border: rgba(255, 255, 255, 0.2);<br/>
+&nbsp;&nbsp;--primary-blue: #4A90E2;<br/>
+&nbsp;&nbsp;--accent-green: #50E3C2;<br/>
+&nbsp;&nbsp;--accent-purple: #9013FE;<br/>
+}
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Gradients Section -->
+            <section id="gradients" class="glass-card p-8 mb-8">
+                <h2 class="text-2xl font-semibold mb-4">Градиенты</h2>
+                <p class="text-gray-600 mb-6">Градиентные эффекты из эталонных дизайнов</p>
+                
+                <!-- Background Gradient -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Фоновый градиент</h3>
+                    <p class="text-gray-600 mb-4">Градиент фона body из эталонов</p>
+                    
+                    <div class="mb-4">
+                        <div class="w-full h-32 rounded-lg" style="background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);"></div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+body {<br/>
+&nbsp;&nbsp;background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);<br/>
+}
+                    </div>
+                </div>
+                
+                <!-- Text Gradient -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Градиентный текст</h3>
+                    <p class="text-gray-600 mb-4">Заголовок "AI Profiler" из эталонов</p>
+                    
+                    <div class="mb-4">
+                        <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">AI Profiler</h1>
+                        <p class="text-xs text-gray-500 mt-1">Employee Intelligence System</p>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600"&gt;<br/>
+&nbsp;&nbsp;AI Profiler<br/>
+&lt;/h1&gt;
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Typography Section -->
+            <section id="typography" class="glass-card p-8 mb-8">
+                <h2 class="text-2xl font-semibold mb-4">Шрифты</h2>
+                <p class="text-gray-600 mb-6">Типографика из эталонных дизайнов</p>
+                
+                <!-- Font Family -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Семейство шрифтов</h3>
+                    <p class="text-gray-600 mb-4">Inter из Google Fonts</p>
+                    
+                    <div class="mb-4">
+                        <div class="p-4 border border-gray-200 rounded-lg">
+                            <p class="text-lg">Inter Regular 400</p>
+                            <p class="text-sm text-gray-500">font-family: 'Inter', sans-serif;</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"&gt;<br/><br/>
+body {<br/>
+&nbsp;&nbsp;font-family: 'Inter', sans-serif;<br/>
+}
+                    </div>
+                </div>
+                
+                <!-- Font Weights -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Веса шрифтов</h3>
+                    <p class="text-gray-600 mb-4">Используемые веса из эталонов</p>
+                    
+                    <div class="space-y-3 mb-4">
+                        <div class="p-4 border border-gray-200 rounded-lg">
+                            <p class="font-light text-lg">Inter Light 300</p>
+                            <p class="text-sm text-gray-500">font-weight: 300;</p>
+                        </div>
+                        
+                        <div class="p-4 border border-gray-200 rounded-lg">
+                            <p class="font-normal text-lg">Inter Regular 400</p>
+                            <p class="text-sm text-gray-500">font-weight: 400;</p>
+                        </div>
+                        
+                        <div class="p-4 border border-gray-200 rounded-lg">
+                            <p class="font-medium text-lg">Inter Medium 500</p>
+                            <p class="text-sm text-gray-500">font-weight: 500;</p>
+                        </div>
+                        
+                        <div class="p-4 border border-gray-200 rounded-lg">
+                            <p class="font-semibold text-lg">Inter Semibold 600</p>
+                            <p class="text-sm text-gray-500">font-weight: 600;</p>
+                        </div>
+                        
+                        <div class="p-4 border border-gray-200 rounded-lg">
+                            <p class="font-bold text-lg">Inter Bold 700</p>
+                            <p class="text-sm text-gray-500">font-weight: 700;</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Typography Examples -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Примеры из эталонов</h3>
+                    <p class="text-gray-600 mb-4">Реальные примеры типографики</p>
+                    
+                    <div class="space-y-4">
+                        <div class="p-4 border border-gray-200 rounded-lg">
+                            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 mb-1">AI Profiler</h1>
+                            <p class="text-xs text-gray-500">Заголовок приложения (2xl, bold, gradient)</p>
+                        </div>
+                        
+                        <div class="p-4 border border-gray-200 rounded-lg">
+                            <h3 class="font-semibold mb-1">Sarah Johnson</h3>
+                            <p class="text-sm text-gray-500">Имя сотрудника (semibold)</p>
+                        </div>
+                        
+                        <div class="p-4 border border-gray-200 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-1">Senior UX Designer</p>
+                            <p class="text-xs text-gray-500">Должность (sm, gray-600)</p>
+                        </div>
+                        
+                        <div class="p-4 border border-gray-200 rounded-lg">
+                            <span class="skill-tag">UI Design</span>
+                            <p class="text-xs text-gray-500 mt-2">Тег навыка (xs)</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+    
+    <script>
+        feather.replace();
+        
+        // Navigation handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarItems = document.querySelectorAll('.sidebar-item');
+            
+            sidebarItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove active class from all items
+                    sidebarItems.forEach(el => el.classList.remove('active'));
+                    
+                    // Add active class to clicked item
+                    this.classList.add('active');
+                    
+                    // Scroll to target section
+                    const href = this.getAttribute('href');
+                    if (href && href.startsWith('#')) {
+                        const targetSection = document.querySelector(href);
+                        if (targetSection) {
+                            targetSection.scrollIntoView({ 
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
+                        }
+                    }
+                });
+            });
+            
+            // Set active state based on scroll position
+            window.addEventListener('scroll', function() {
+                const sections = document.querySelectorAll('section[id]');
+                let currentSection = '';
+                
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 100;
+                    if (window.scrollY >= sectionTop) {
+                        currentSection = section.getAttribute('id');
+                    }
+                });
+                
+                sidebarItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.getAttribute('href') === `#${currentSection}`) {
+                        item.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
