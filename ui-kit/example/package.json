@@ -1,0 +1,22 @@
+{
+  "name": "o2o-ui-example",
+  "version": "1.0.0",
+  "description": "Example implementation of O2O UI Kit",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^7.1.5"
+  },
+  "keywords": [
+    "ui-kit",
+    "example",
+    "hr",
+    "dashboard"
+  ],
+  "author": "Miuli",
+  "license": "MIT"
+}
