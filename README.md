@@ -27,7 +27,7 @@
 
 - **Frontend**: React.js + TypeScript + Tailwind CSS + Vite
 - **Backend**: Node.js + Express.js + TypeScript
-- **База данных**: PostgreSQL + Prisma ORM
+- **База данных**: PostgreSQL
 - **AI/ML**: OpenAI API, Anthropic Claude
 - **Инфраструктура**: Docker, Vercel/Railway
 

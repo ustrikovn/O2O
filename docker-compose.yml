@@ -1,31 +1,64 @@
 version: '3.8'
 
 services:
+  # PostgreSQL база данных
   postgres:
-    image: postgres:15
-    container_name: o2o-postgres
+    image: postgres:15-alpine
+    container_name: o2o_postgres
+    restart: unless-stopped
     environment:
       POSTGRES_DB: o2o_db
       POSTGRES_USER: o2o_user
-      POSTGRES_PASSWORD: o2o_password
+      POSTGRES_PASSWORD: o2o_secure_password_2024
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
     networks:
-      - o2o-network
+      - o2o_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U o2o_user -d o2o_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: o2o-redis
+  # Backend API (опционально для полного запуска)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: o2o_backend
+    restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=o2o_db
+      - DB_USER=o2o_user
+      - DB_PASSWORD=o2o_secure_password_2024
+      - PORT=3001
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - backend_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
-      - o2o-network
+      - o2o_network
+    profiles:
+      - full
 
 volumes:
   postgres_data:
+    driver: local
+  backend_uploads:
+    driver: local
 
 networks:
-  o2o-network:
+  o2o_network:
     driver: bridge
