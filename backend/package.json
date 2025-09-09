@@ -2,12 +2,17 @@
   "name": "o2o-backend",
   "version": "1.0.0",
   "description": "Backend API для платформы O2O one-to-one встреч",
-  "main": "src/server.js",
+  "main": "dist/app/server.js",
   "type": "module",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "db:migrate": "node src/database/migrate.js"
+    "build": "tsc",
+    "start": "node dist/app/server.js",
+    "dev": "tsx watch src/app/server.ts",
+    "dev:js": "nodemon src/server.js",
+    "db:migrate": "tsx src/shared/database/migrate.ts",
+    "db:migrate:js": "node src/database/migrate.js",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "compression": "^1.8.1",
@@ -21,7 +26,16 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "@types/compression": "^1.7.5",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^20.10.6",
+    "@types/pg": "^8.11.0",
+    "@types/uuid": "^9.0.7",
+    "nodemon": "^3.0.2",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
   },
   "keywords": [
     "one-to-one",
