@@ -308,13 +308,72 @@ body {
 }
 
 .sidebar-item.active {
-  background: rgba(74, 144, 226, 0.15);
-  border-left: 3px solid var(--primary-blue);
+  background: rgba(74, 144, 226, 0.15) !important;
+  border-left: 3px solid var(--primary-blue) !important;
 }
 
-.sidebar-item:hover {
+.sidebar-item:hover:not(.active) {
   background: rgba(255, 255, 255, 0.1) !important;
   transition: all 200ms ease-in-out;
+}
+
+/* Активное состояние должно оставаться неизменным при hover */
+.sidebar-item.active:hover {
+  background: rgba(74, 144, 226, 0.15) !important;
+  border-left: 3px solid var(--primary-blue) !important;
+}
+
+/* Система квадратных контейнеров для аватаров */
+.avatar-container {
+  position: relative;
+  display: inline-block;
+}
+
+.avatar-container-sm {
+  width: 2.5rem; /* 40px */
+  height: 2.5rem;
+}
+
+.avatar-container-md {
+  width: 3rem; /* 48px */
+  height: 3rem;
+}
+
+.avatar-container-lg {
+  width: 4rem; /* 64px */
+  height: 4rem;
+}
+
+.avatar-container .avatar-image {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-container .status-indicator {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  border: 2px solid white;
+  border-radius: 50%;
+}
+
+.avatar-container-sm .status-indicator {
+  width: 0.75rem; /* 12px */
+  height: 0.75rem;
+}
+
+.avatar-container-md .status-indicator {
+  width: 1rem; /* 16px */
+  height: 1rem;
+}
+
+.avatar-container-lg .status-indicator {
+  width: 1rem; /* 16px */
+  height: 1rem;
 }
 
 .sidebar-item-disabled {

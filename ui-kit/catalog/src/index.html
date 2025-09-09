@@ -46,13 +46,90 @@
         }
         
         .sidebar-item.active {
-            background: rgba(74, 144, 226, 0.15);
-            border-left: 3px solid var(--primary-blue);
+            background: rgba(74, 144, 226, 0.15) !important;
+            border-left: 3px solid var(--primary-blue) !important;
         }
         
-        .sidebar-item:hover {
+        .sidebar-item:hover:not(.active) {
             background: rgba(255, 255, 255, 0.1);
             transition: all 200ms ease-in-out;
+        }
+        
+        /* Активное состояние должно оставаться неизменным при hover */
+        .sidebar-item.active:hover {
+            background: rgba(74, 144, 226, 0.15) !important;
+            border-left: 3px solid var(--primary-blue) !important;
+        }
+        
+        /* ПРИНУДИТЕЛЬНЫЕ стили для демо кнопки активного состояния */
+        .sidebar-item.active {
+            background: rgba(74, 144, 226, 0.15) !important;
+            border-left: 3px solid #4A90E2 !important;
+        }
+        
+        .sidebar-item.active,
+        .sidebar-item.active:hover,
+        .sidebar-item.active:focus,
+        .sidebar-item.active:active {
+            background: rgba(74, 144, 226, 0.15) !important;
+            border-left: 3px solid #4A90E2 !important;
+        }
+        
+        /* Система квадратных контейнеров для аватаров */
+        .avatar-container {
+            position: relative;
+            display: inline-block;
+        }
+        
+        /* Квадратные контейнеры разных размеров */
+        .avatar-container-sm {
+            width: 2.5rem; /* 40px */
+            height: 2.5rem;
+        }
+        
+        .avatar-container-md {
+            width: 3rem; /* 48px */
+            height: 3rem;
+        }
+        
+        .avatar-container-lg {
+            width: 4rem; /* 64px */
+            height: 4rem;
+        }
+        
+        /* Аватар внутри контейнера всегда круглый и центрированный */
+        .avatar-container .avatar-image {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        /* Статус всегда в правом нижнем углу квадратного контейнера */
+        .avatar-container .status-indicator {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            border: 2px solid white;
+            border-radius: 50%;
+        }
+        
+        /* Размеры статуса в зависимости от размера контейнера */
+        .avatar-container-sm .status-indicator {
+            width: 0.75rem; /* 12px */
+            height: 0.75rem;
+        }
+        
+        .avatar-container-md .status-indicator {
+            width: 1rem; /* 16px */
+            height: 1rem;
+        }
+        
+        .avatar-container-lg .status-indicator {
+            width: 1rem; /* 16px */
+            height: 1rem;
         }
         
         /* Card Styles - точная копия из эталонов */
@@ -1126,7 +1203,7 @@
                     
                     <div class="space-y-3 mb-4 max-w-sm" style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); padding: 1rem; border-radius: 12px;">
                         <!-- Active state - всегда активен -->
-                        <a href="#" class="flex items-center p-3 rounded-lg sidebar-item active" onclick="event.preventDefault();">
+                        <a href="#" class="flex items-center p-3 rounded-lg sidebar-item active" onclick="event.preventDefault();" style="background: rgba(74, 144, 226, 0.15) !important; border-left: 3px solid #4A90E2 !important;">
                             <i data-feather="home" class="mr-3" style="width: 18px; height: 18px;"></i>
                             <span>Активное состояние</span>
                         </a>
@@ -1318,51 +1395,50 @@
                     <div class="flex items-end gap-6 mb-4">
                         <!-- Small with Online Status -->
                         <div class="text-center">
-                            <div class="relative">
-                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%234A90E2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='14'%3EAM%3C/text%3E%3C/svg%3E" alt="User" class="w-10 h-10 rounded-full">
-                                <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                            <div class="avatar-container avatar-container-sm">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%234A90E2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='14'%3EAM%3C/text%3E%3C/svg%3E" alt="User" class="avatar-image w-10 h-10">
+                                <div class="status-indicator bg-green-400"></div>
                             </div>
                             <p class="text-xs mt-2 text-gray-500">Онлайн</p>
                         </div>
                         
                         <!-- Large with Online Status -->
                         <div class="text-center">
-                            <div class="relative">
-                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%2350E3C2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3ESJ%3C/text%3E%3C/svg%3E" alt="Employee" class="w-16 h-16 rounded-full">
-                                <div class="absolute bottom-0 right-0 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
+                            <div class="avatar-container avatar-container-lg">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%2350E3C2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3ESJ%3C/text%3E%3C/svg%3E" alt="Employee" class="avatar-image w-16 h-16">
+                                <div class="status-indicator bg-green-400"></div>
                             </div>
                             <p class="text-xs mt-2 text-gray-500">Онлайн</p>
                         </div>
                         
                         <!-- Away Status -->
                         <div class="text-center">
-                            <div class="relative">
-                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%239013FE'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3EMC%3C/text%3E%3C/svg%3E" alt="Employee" class="w-16 h-16 rounded-full">
-                                <div class="absolute bottom-0 right-0 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white"></div>
+                            <div class="avatar-container avatar-container-lg">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%239013FE'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3EMC%3C/text%3E%3C/svg%3E" alt="Employee" class="avatar-image w-16 h-16">
+                                <div class="status-indicator bg-yellow-400"></div>
                             </div>
                             <p class="text-xs mt-2 text-gray-500">Отошел</p>
                         </div>
                         
                         <!-- Offline Status -->
                         <div class="text-center">
-                            <div class="relative">
-                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23F39C12'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3ELT%3C/text%3E%3C/svg%3E" alt="Employee" class="w-16 h-16 rounded-full">
-                                <div class="absolute bottom-0 right-0 w-4 h-4 bg-red-400 rounded-full border-2 border-white"></div>
+                            <div class="avatar-container avatar-container-lg">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23F39C12'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3ELT%3C/text%3E%3C/svg%3E" alt="Employee" class="avatar-image w-16 h-16">
+                                <div class="status-indicator bg-red-400"></div>
                             </div>
                             <p class="text-xs mt-2 text-gray-500">Оффлайн</p>
                         </div>
                     </div>
                     
                     <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
-&lt;!-- Аватар со статусом онлайн --&gt;<br/>
-&lt;div class="relative"&gt;<br/>
-&nbsp;&nbsp;&lt;img src="avatar.svg" class="w-16 h-16 rounded-full"&gt;<br/>
-&nbsp;&nbsp;&lt;div class="absolute bottom-0 right-0 w-4 h-4 bg-green-400 rounded-full border-2 border-white"&gt;&lt;/div&gt;<br/>
+&lt;!-- Новая система: квадратный контейнер --&gt;<br/>
+&lt;div class="avatar-container avatar-container-lg"&gt;<br/>
+&nbsp;&nbsp;&lt;img src="avatar.svg" class="avatar-image w-16 h-16"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="status-indicator bg-green-400"&gt;&lt;/div&gt;<br/>
 &lt;/div&gt;<br/><br/>
-&lt;!-- Статус "отошел" --&gt;<br/>
-&lt;div class="absolute bottom-0 right-0 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white"&gt;&lt;/div&gt;<br/><br/>
-&lt;!-- Статус "оффлайн" --&gt;<br/>
-&lt;div class="absolute bottom-0 right-0 w-4 h-4 bg-red-400 rounded-full border-2 border-white"&gt;&lt;/div&gt;
+&lt;!-- Статусы в одном месте независимо от размера --&gt;<br/>
+&lt;div class="status-indicator bg-yellow-400"&gt;&lt;/div&gt; &lt;!-- отошел --&gt;<br/>
+&lt;div class="status-indicator bg-red-400"&gt;&lt;/div&gt; &lt;!-- оффлайн --&gt;
                     </div>
                 </div>
                 
@@ -1374,46 +1450,56 @@
                     <div class="flex items-end gap-6 mb-4">
                         <!-- Photo Avatar 1 -->
                         <div class="text-center">
-                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face&auto=format" alt="User Photo" class="w-16 h-16 rounded-full object-cover">
-                            <p class="text-xs mt-2 text-gray-500">Мужской портрет</p>
+                            <div class="avatar-container avatar-container-lg">
+                                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face&auto=format" alt="User Photo" class="avatar-image w-16 h-16">
+                            </div>
+                            <p class="text-xs mt-3 text-gray-500">Мужской портрет</p>
                         </div>
                         
                         <!-- Photo Avatar 2 -->
                         <div class="text-center">
-                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face&auto=format" alt="User Photo" class="w-16 h-16 rounded-full object-cover">
-                            <p class="text-xs mt-2 text-gray-500">Женский портрет</p>
+                            <div class="avatar-container avatar-container-lg">
+                                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face&auto=format" alt="User Photo" class="avatar-image w-16 h-16">
+                            </div>
+                            <p class="text-xs mt-3 text-gray-500">Женский портрет</p>
                         </div>
                         
                         <!-- Photo Avatar with Status -->
                         <div class="text-center">
-                            <div class="relative">
-                                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face&auto=format" alt="User Photo" class="w-16 h-16 rounded-full object-cover">
-                                <div class="absolute bottom-0 right-0 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
+                            <div class="avatar-container avatar-container-lg">
+                                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face&auto=format" alt="User Photo" class="avatar-image w-16 h-16">
+                                <div class="status-indicator bg-green-400"></div>
                             </div>
-                            <p class="text-xs mt-2 text-gray-500">Фото + статус</p>
+                            <p class="text-xs mt-3 text-gray-500">Фото + статус</p>
                         </div>
                         
                         <!-- Different sizes -->
                         <div class="text-center">
-                            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&h=120&fit=crop&crop=face&auto=format" alt="User Photo" class="w-12 h-12 rounded-full object-cover">
-                            <p class="text-xs mt-2 text-gray-500">48x48</p>
+                            <div class="avatar-container avatar-container-md">
+                                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&h=120&fit=crop&crop=face&auto=format" alt="User Photo" class="avatar-image w-12 h-12">
+                            </div>
+                            <p class="text-xs mt-3 text-gray-500">48x48</p>
                         </div>
                         
                         <div class="text-center">
-                            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face&auto=format" alt="User Photo" class="w-10 h-10 rounded-full object-cover">
-                            <p class="text-xs mt-2 text-gray-500">40x40</p>
+                            <div class="avatar-container avatar-container-sm">
+                                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face&auto=format" alt="User Photo" class="avatar-image w-10 h-10">
+                            </div>
+                            <p class="text-xs mt-3 text-gray-500">40x40</p>
                         </div>
                     </div>
                     
                     <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
-&lt;!-- Фото аватар --&gt;<br/>
-&lt;img src="photo.jpg" class="w-16 h-16 rounded-full object-cover"&gt;<br/><br/>
-&lt;!-- С индикатором статуса --&gt;<br/>
-&lt;div class="relative"&gt;<br/>
-&nbsp;&nbsp;&lt;img src="photo.jpg" class="w-16 h-16 rounded-full object-cover"&gt;<br/>
-&nbsp;&nbsp;&lt;div class="absolute bottom-0 right-0 w-4 h-4 bg-green-400 rounded-full border-2 border-white"&gt;&lt;/div&gt;<br/>
+&lt;!-- Фото аватар в квадратном контейнере --&gt;<br/>
+&lt;div class="avatar-container avatar-container-lg"&gt;<br/>
+&nbsp;&nbsp;&lt;img src="photo.jpg" class="avatar-image w-16 h-16"&gt;<br/>
 &lt;/div&gt;<br/><br/>
-&lt;!-- object-cover обеспечивает правильное кадрирование фото --&gt;
+&lt;!-- С индикатором статуса --&gt;<br/>
+&lt;div class="avatar-container avatar-container-lg"&gt;<br/>
+&nbsp;&nbsp;&lt;img src="photo.jpg" class="avatar-image w-16 h-16"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="status-indicator bg-green-400"&gt;&lt;/div&gt;<br/>
+&lt;/div&gt;<br/><br/>
+&lt;!-- object-cover автоматически включен в .avatar-image --&gt;
                     </div>
                 </div>
                 
@@ -1734,43 +1820,49 @@ Red: #FF6B6B | Success: #18B663 | Orange: #F39C12 | Dark: #34495E
                     
                     <div class="flex items-end gap-6 mb-4">
                         <div class="text-center">
-                            <div class="relative w-16 h-16 mb-2">
-                                <div class="w-16 h-16 bg-gray-200 rounded-full"></div>
-                                <div class="absolute bottom-0 right-0 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
+                            <div class="avatar-container avatar-container-lg mb-2">
+                                <div class="avatar-image w-16 h-16 bg-gray-200"></div>
+                                <div class="status-indicator bg-green-400"></div>
                             </div>
                             <p class="text-xs text-gray-500">Онлайн</p>
                         </div>
                         
                         <div class="text-center">
-                            <div class="relative w-16 h-16 mb-2">
-                                <div class="w-16 h-16 bg-gray-200 rounded-full"></div>
-                                <div class="absolute bottom-0 right-0 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white"></div>
+                            <div class="avatar-container avatar-container-lg mb-2">
+                                <div class="avatar-image w-16 h-16 bg-gray-200"></div>
+                                <div class="status-indicator bg-yellow-400"></div>
                             </div>
                             <p class="text-xs text-gray-500">Отошел</p>
                         </div>
                         
                         <div class="text-center">
-                            <div class="relative w-16 h-16 mb-2">
-                                <div class="w-16 h-16 bg-gray-200 rounded-full"></div>
-                                <div class="absolute bottom-0 right-0 w-4 h-4 bg-red-400 rounded-full border-2 border-white"></div>
+                            <div class="avatar-container avatar-container-lg mb-2">
+                                <div class="avatar-image w-16 h-16 bg-gray-200"></div>
+                                <div class="status-indicator bg-red-400"></div>
                             </div>
                             <p class="text-xs text-gray-500">Оффлайн</p>
                         </div>
                         
                         <div class="text-center">
-                            <div class="relative w-16 h-16 flex items-center justify-center mb-2">
-                                <div class="w-10 h-10 bg-gray-200 rounded-full"></div>
-                                <div class="absolute bottom-2 right-2 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                            <div class="avatar-container avatar-container-sm mb-2">
+                                <div class="avatar-image w-10 h-10 bg-gray-200"></div>
+                                <div class="status-indicator bg-green-400"></div>
                             </div>
                             <p class="text-xs text-gray-500">Малый</p>
                         </div>
                     </div>
                     
                     <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
-&lt;!-- Большой статус (w-4 h-4) --&gt;<br/>
-&lt;div class="absolute bottom-0 right-0 w-4 h-4 bg-green-400 rounded-full border-2 border-white"&gt;&lt;/div&gt;<br/><br/>
-&lt;!-- Малый статус (w-3 h-3) --&gt;<br/>
-&lt;div class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white"&gt;&lt;/div&gt;
+&lt;!-- Статус индикатор в квадратном контейнере --&gt;<br/>
+&lt;div class="avatar-container avatar-container-lg"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="avatar-image w-16 h-16 bg-gray-200"&gt;&lt;/div&gt;<br/>
+&nbsp;&nbsp;&lt;div class="status-indicator bg-green-400"&gt;&lt;/div&gt;<br/>
+&lt;/div&gt;<br/><br/>
+&lt;!-- Малый статус индикатор --&gt;<br/>
+&lt;div class="avatar-container avatar-container-sm"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="avatar-image w-10 h-10 bg-gray-200"&gt;&lt;/div&gt;<br/>
+&nbsp;&nbsp;&lt;div class="status-indicator bg-green-400"&gt;&lt;/div&gt;<br/>
+&lt;/div&gt;
                     </div>
                 </div>
             </section>
