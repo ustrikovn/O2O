@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O2O - Платформа для One-to-One встреч</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <style>
+        /* Встроенные стили из ui-kit */
+        :root {
+          /* Glass Morphism Colors */
+          --glass-bg: rgba(255, 255, 255, 0.1);
+          --glass-border: rgba(255, 255, 255, 0.2);
+          --glass-button-bg: rgba(255, 255, 255, 0.15);
+          --glass-button-hover: rgba(255, 255, 255, 0.25);
+          --glass-input-bg: rgba(255, 255, 255, 0.1);
+          
+          /* Brand Colors */
+          --primary-blue: #4A90E2;
+          --accent-green: #50E3C2;
+          --accent-purple: #9013FE;
+          
+          /* Status Colors */
+          --success: #18B663;
+          --warning: #F39C12;
+          --error: #FF6B6B;
+          --info: #34495E;
+          
+          /* Text Colors */
+          --text-primary: #1f2937;
+          --text-secondary: #6b7280;
+          --text-muted: #9ca3af;
+          
+          /* Spacing */
+          --spacing-xs: 0.25rem;
+          --spacing-sm: 0.5rem;
+          --spacing-md: 1rem;
+          --spacing-lg: 1.5rem;
+          --spacing-xl: 2rem;
+          --spacing-2xl: 3rem;
+          
+          /* Border Radius */
+          --radius-sm: 0.5rem;
+          --radius-md: 0.75rem;
+          --radius-lg: 1rem;
+          --radius-xl: 1.5rem;
+          
+          /* Shadows */
+          --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+          --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+          --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
+          --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.1);
+          
+          /* Typography */
+          --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+          --font-size-xs: 0.75rem;
+          --font-size-sm: 0.875rem;
+          --font-size-base: 1rem;
+          --font-size-lg: 1.125rem;
+          --font-size-xl: 1.25rem;
+          --font-size-2xl: 1.5rem;
+          --font-size-3xl: 1.875rem;
+          
+          /* Transitions */
+          --transition-fast: 150ms ease-in-out;
+          --transition-base: 300ms ease-in-out;
+          --transition-slow: 500ms ease-in-out;
+        }
+
+        /* Reset and Base */
+        *, *::before, *::after {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
+
+        html {
+          font-family: var(--font-family);
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+          font-family: var(--font-family);
+          background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+          color: var(--text-primary);
+          min-height: 100vh;
+          line-height: 1.6;
+          overflow-x: hidden;
+        }
+
+        /* Glass Morphism Base Classes */
+        .glass-card {
+          background: var(--glass-bg);
+          backdrop-filter: blur(20px) saturate(180%);
+          border: 1px solid var(--glass-border);
+          box-shadow: var(--shadow-lg);
+          border-radius: var(--radius-xl);
+        }
+
+        .glass-button {
+          background: var(--glass-button-bg);
+          backdrop-filter: blur(10px);
+          border: 1px solid var(--glass-border);
+          border-radius: var(--radius-sm);
+          transition: all var(--transition-base);
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-family: inherit;
+          font-weight: 500;
+          text-decoration: none;
+          outline: none;
+        }
+
+        .glass-button:hover {
+          background: var(--glass-button-hover);
+          transform: translateY(-2px);
+        }
+
+        /* Flexbox Utilities */
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .flex-1 { flex: 1 1 0%; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+
+        /* Spacing */
+        .space-y-3 > :not([hidden]) ~ :not([hidden]) {
+          margin-top: 0.75rem;
+        }
+
+        .p-2 { padding: var(--spacing-sm); }
+        .p-3 { padding: 0.75rem; }
+        .p-5 { padding: 1.25rem; }
+        .p-8 { padding: var(--spacing-xl); }
+        .pb-4 { padding-bottom: var(--spacing-md); }
+
+        .mb-3 { margin-bottom: 0.75rem; }
+        .mb-4 { margin-bottom: var(--spacing-md); }
+        .mb-6 { margin-bottom: var(--spacing-lg); }
+        .mb-8 { margin-bottom: var(--spacing-xl); }
+        .ml-3 { margin-left: 0.75rem; }
+        .mr-1 { margin-right: var(--spacing-xs); }
+        .mr-3 { margin-right: 0.75rem; }
+        .mt-2 { margin-top: var(--spacing-sm); }
+        .mt-3 { margin-top: 0.75rem; }
+        .mt-6 { margin-top: var(--spacing-lg); }
+        .mt-auto { margin-top: auto; }
+
+        /* Width & Height */
+        .w-3 { width: 0.75rem; }
+        .w-12 { width: 3rem; }
+        .w-16 { width: 4rem; }
+        .w-64 { width: 16rem; }
+        .h-3 { height: 0.75rem; }
+        .h-12 { height: 3rem; }
+        .h-16 { height: 4rem; }
+        .h-screen { height: 100vh; }
+        .min-h-screen { min-height: 100vh; }
+
+        /* Position */
+        .relative { position: relative; }
+        .fixed { position: fixed; }
+        .z-10 { z-index: 10; }
+
+        /* Text utilities */
+        .text-center { text-align: center; }
+        .text-xs { font-size: var(--font-size-xs); }
+        .text-sm { font-size: var(--font-size-sm); }
+        .text-base { font-size: var(--font-size-base); }
+        .text-2xl { font-size: var(--font-size-2xl); }
+        .text-3xl { font-size: var(--font-size-3xl); }
+        .font-semibold { font-weight: 600; }
+        .font-bold { font-weight: 700; }
+
+        /* Border Radius */
+        .rounded-lg { border-radius: var(--radius-lg); }
+        .rounded-full { border-radius: 9999px; }
+
+        /* Colors */
+        .text-primary { color: var(--text-primary); }
+        .text-secondary { color: var(--text-secondary); }
+        .text-muted { color: var(--text-muted); }
+        .bg-green-400 { background-color: #4ade80; }
+
+        .text-gray-500 { color: #6b7280; }
+        .font-medium { font-weight: 500; }
+        .w-10 { width: 2.5rem; }
+        .h-10 { height: 2.5rem; }
+        .border-2 { border-width: 2px; }
+        .border-white { border-color: white; }
+        .absolute { position: absolute; }
+        .bottom-0 { bottom: 0; }
+        .right-0 { right: 0; }
+        .pt-5 { padding-top: 1.25rem; }
+        .border-t { border-top-width: 1px; }
+
+        /* Avatar Styles */
+        .avatar-container {
+          position: relative;
+          display: inline-block;
+        }
+
+        .avatar-container-md {
+          width: 3rem;
+          height: 3rem;
+        }
+
+        .avatar-image {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        .status-indicator {
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          border: 2px solid white;
+          border-radius: 50%;
+          width: 1rem;
+          height: 1rem;
+        }
+
+        /* Sidebar Navigation Styles */
+        .sidebar-item {
+          transition: all 200ms ease-in-out;
+          text-decoration: none;
+          color: inherit;
+        }
+
+        .sidebar-item.active {
+          background: rgba(74, 144, 226, 0.15) !important;
+          border-left: 3px solid var(--primary-blue) !important;
+        }
+
+        .sidebar-item:hover:not(.active) {
+          background: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .max-w-md { max-width: 28rem; }
+        .space-x-2 > :not([hidden]) ~ :not([hidden]) { margin-left: var(--spacing-sm); }
+
+        /* Avatar Ring Style from ui-kit */
+        .avatar-ring {
+          position: relative;
+        }
+
+        .avatar-ring::after {
+          content: '';
+          position: absolute;
+          top: -3px;
+          left: -3px;
+          right: -3px;
+          bottom: -3px;
+          border: 2px solid var(--primary-blue);
+          border-radius: 50%;
+        }
+    </style>
+    <style>
+        /* Дополнительные стили для главной страницы */
+        
+        .logo-gradient {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        
+        .sidebar-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body>
+    <div class="flex min-h-screen">
+        <!-- Боковое меню -->
+        <div class="w-64 glass-card h-screen fixed p-5 flex flex-col z-10">
+            <!-- Логотип и название продукта -->
+            <div class="mb-8 mt-3">
+                <h1 class="sidebar-logo">O2O</h1>
+                <p class="text-xs text-secondary">Платформа для One-to-One встреч</p>
+            </div>
+            
+            <!-- Навигация -->
+            <nav class="flex-1">
+                <div class="space-y-3">
+                    <a href="#" class="flex items-center p-3 rounded-lg sidebar-item active">
+                        <i data-feather="home" class="mr-3"></i>
+                        <span>Главная</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <!-- Блок профиля пользователя -->
+            <div class="mt-auto pt-5 border-t border-white/10">
+                <div class="flex items-center">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%234A90E2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='24'%3EРМ%3C/text%3E%3C/svg%3E" alt="User" class="w-10 h-10 rounded-full avatar-ring">
+                    <div class="ml-3">
+                        <p class="text-sm font-medium">Руководитель</p>
+                        <p class="text-xs text-gray-500">Менеджер продукта</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Основная область контента -->
+        <div class="flex-1 ml-64">
+            <!-- Пустая область -->
+        </div>
+    </div>
+
+    <script>
+        // Инициализация иконок Feather
+        feather.replace();
+        
+        // Базовая интерактивность для демонстрации
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            if (!item.classList.contains('active')) {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    console.log('Переход на страницу:', item.textContent.trim());
+                });
+            }
+        });
+    </script>
+</body>
+</html>
