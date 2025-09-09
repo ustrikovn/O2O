@@ -15,17 +15,68 @@
         <div id="sidebar-container"></div>
         
         <!-- Main Content -->
-        <div class="flex-1 ml-64">
-            <!-- Пустая область -->
+        <div class="flex-1 ml-64 p-8">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold">Сотрудники</h1>
+                    <p class="text-gray-600">Управление командой и планирование one-to-one встреч</p>
+                </div>
+            </div>
+
+            <!-- Add Employee Button -->
+            <div class="mb-6">
+                <div id="add-employee-button-container"></div>
+            </div>
+
+            <!-- Employees List Container -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" id="employees-list">
+                <!-- Здесь будут отображаться карточки сотрудников -->
+                <div class="glass-card p-6 text-center">
+                    <div class="text-gray-500">
+                        <i data-feather="users" class="mx-auto mb-4"></i>
+                        <p>Пока нет добавленных сотрудников</p>
+                        <p class="text-sm mt-2">Нажмите кнопку выше, чтобы добавить первого сотрудника</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="shared/ui/sidebar.js"></script>
+    <script src="shared/ui/modal.js"></script>
+    <script src="shared/ui/add-employee-form.js"></script>
+    <script src="shared/ui/add-employee-button.js"></script>
     <script>
         // Инициализация компонентов
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = new O2OSidebar('employees');
             sidebar.mount('sidebar-container');
+            
+            // Инициализация кнопки добавления сотрудника
+            const addEmployeeButton = new AddEmployeeButton({
+                text: 'Добавить сотрудника',
+                icon: 'user-plus',
+                onClick: function() {
+                    console.log('Открыть форму добавления сотрудника');
+                    
+                    // Создаем и показываем форму
+                    const addEmployeeForm = new AddEmployeeForm({
+                        title: 'Добавление сотрудника',
+                        onSubmit: function(employeeData) {
+                            console.log('Новый сотрудник:', employeeData);
+                            // TODO: Здесь будет отправка данных на сервер
+                            alert(`Сотрудник ${employeeData.firstName} ${employeeData.lastName} добавлен успешно!`);
+                        },
+                        onCancel: function() {
+                            console.log('Добавление сотрудника отменено');
+                        }
+                    });
+                    
+                    addEmployeeForm.show();
+                }
+            });
+            addEmployeeButton.mount('add-employee-button-container');
             
             // Инициализация иконок
             feather.replace();
