@@ -219,6 +219,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="#grid" class="flex items-center p-3 rounded-lg sidebar-item">
+                            <i data-feather="grid" class="mr-3"></i>
+                            <span>Сетки</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="#forms" class="flex items-center p-3 rounded-lg sidebar-item">
                             <i data-feather="edit-3" class="mr-3"></i>
                             <span>Формы</span>
@@ -710,6 +716,251 @@
 &nbsp;&nbsp;transform: translateY(-2px);<br/>
 &nbsp;&nbsp;box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);<br/>
 }
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Grid Section -->
+            <section id="grid" class="glass-card p-8 mb-8">
+                <h2 class="text-2xl font-semibold mb-4">Сетки</h2>
+                <p class="text-gray-600 mb-6">Grid системы из эталонных дизайнов приложения</p>
+                
+                <!-- Stats Grid (4-column) -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Сетка статистик (4 колонки)</h3>
+                    <p class="text-gray-600 mb-4">Адаптивная сетка для dashboard статистик: 1 → 2 → 4 колонки</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+                        <div class="glass-card p-6">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-gray-600">Upcoming Meetings</p>
+                                    <h3 class="text-2xl font-bold mt-1">12</h3>
+                                </div>
+                                <div class="p-3 rounded-lg bg-blue-100">
+                                    <i data-feather="calendar" class="text-blue-500"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex items-center text-green-500 text-sm">
+                                    <i data-feather="trending-up" class="mr-1"></i>
+                                    <span>5% increase</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-card p-6">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-gray-600">Active Employees</p>
+                                    <h3 class="text-2xl font-bold mt-1">84</h3>
+                                </div>
+                                <div class="p-3 rounded-lg bg-green-100">
+                                    <i data-feather="users" class="text-green-500"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex items-center text-green-500 text-sm">
+                                    <i data-feather="trending-up" class="mr-1"></i>
+                                    <span>2 new hires</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-card p-6">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-gray-600">Avg. Engagement</p>
+                                    <h3 class="text-2xl font-bold mt-1">87%</h3>
+                                </div>
+                                <div class="p-3 rounded-lg bg-purple-100">
+                                    <i data-feather="heart" class="text-purple-500"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex items-center text-red-500 text-sm">
+                                    <i data-feather="trending-down" class="mr-1"></i>
+                                    <span>3% decrease</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-card p-6">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-gray-600">AI Insights</p>
+                                    <h3 class="text-2xl font-bold mt-1">24</h3>
+                                </div>
+                                <div class="p-3 rounded-lg bg-yellow-100">
+                                    <i data-feather="cpu" class="text-yellow-500"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex items-center text-green-500 text-sm">
+                                    <i data-feather="trending-up" class="mr-1"></i>
+                                    <span>8 new insights</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;!-- Сетка статистик --&gt;<br/>
+&lt;div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="glass-card p-6"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;!-- Контент карточки --&gt;<br/>
+&nbsp;&nbsp;&lt;/div&gt;<br/>
+&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <!-- Main Layout Grid (3-column) -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Основная сетка (2/3 + 1/3)</h3>
+                    <p class="text-gray-600 mb-4">Главная компоновка dashboard: широкий контент + боковая панель</p>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4">
+                        <div class="lg:col-span-2">
+                            <div class="glass-card p-6">
+                                <h3 class="text-xl font-bold mb-4">Основной контент (2/3)</h3>
+                                <p class="text-gray-600 mb-4">Занимает 2 колонки из 3 на больших экранах</p>
+                                <div class="space-y-4">
+                                    <div class="glass-card p-4">
+                                        <div class="flex items-center">
+                                            <div class="avatar-container avatar-container-lg">
+                                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%2350E3C2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3ESJ%3C/text%3E%3C/svg%3E" alt="Employee" class="avatar-image w-12 h-12">
+                                            </div>
+                                            <div class="ml-4">
+                                                <h3 class="font-semibold">Sarah Johnson</h3>
+                                                <p class="text-sm text-gray-600">Product Designer</p>
+                                            </div>
+                                            <div class="ml-auto text-right">
+                                                <p class="font-medium">Today, 2:30 PM</p>
+                                                <p class="text-sm text-gray-600">Conference Room B</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="glass-card p-6">
+                                <h3 class="text-xl font-bold mb-4">Боковая панель (1/3)</h3>
+                                <p class="text-gray-600 mb-4">Занимает 1 колонку из 3</p>
+                                <div class="space-y-4">
+                                    <div class="glass-card p-4">
+                                        <div class="flex items-center">
+                                            <div class="avatar-container avatar-container-md">
+                                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect width='50' height='50' fill='%2318B663'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='12'%3EDK%3C/text%3E%3C/svg%3E" alt="Employee" class="avatar-image w-12 h-12">
+                                            </div>
+                                            <div class="ml-4">
+                                                <h3 class="font-semibold">David Kim</h3>
+                                                <p class="text-sm text-gray-600">Data Scientist</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;!-- Основная сетка --&gt;<br/>
+&lt;div class="grid grid-cols-1 lg:grid-cols-3 gap-6"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="lg:col-span-2"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;!-- Основной контент (2/3) --&gt;<br/>
+&nbsp;&nbsp;&lt;/div&gt;<br/>
+&nbsp;&nbsp;&lt;div&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;!-- Боковая панель (1/3) --&gt;<br/>
+&nbsp;&nbsp;&lt;/div&gt;<br/>
+&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <!-- Profile Cards Grid (3-column) -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3">Сетка профилей (3 колонки)</h3>
+                    <p class="text-gray-600 mb-4">Адаптивная сетка для карточек сотрудников: 1 → 2 → 3 колонки</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
+                        <div class="glass-card p-6">
+                            <div class="flex items-center mb-5">
+                                <div class="avatar-container avatar-container-lg">
+                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%2350E3C2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3ESJ%3C/text%3E%3C/svg%3E" alt="Employee" class="avatar-image w-16 h-16">
+                                    <div class="status-indicator bg-green-400"></div>
+                                </div>
+                                <div class="ml-4">
+                                    <h2 class="font-bold text-lg">Sarah Johnson</h2>
+                                    <p class="text-gray-600 text-sm">Senior Product Designer</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-5">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Engagement Score</span>
+                                    <span>92%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill bg-green-500" style="width: 92%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-card p-6">
+                            <div class="flex items-center mb-5">
+                                <div class="avatar-container avatar-container-lg">
+                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%239013FE'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3EMC%3C/text%3E%3C/svg%3E" alt="Employee" class="avatar-image w-16 h-16">
+                                    <div class="status-indicator bg-yellow-400"></div>
+                                </div>
+                                <div class="ml-4">
+                                    <h2 class="font-bold text-lg">Michael Chen</h2>
+                                    <p class="text-gray-600 text-sm">Frontend Developer</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-5">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Engagement Score</span>
+                                    <span>78%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill bg-yellow-500" style="width: 78%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-card p-6">
+                            <div class="flex items-center mb-5">
+                                <div class="avatar-container avatar-container-lg">
+                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23FF6B6B'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='16'%3EER%3C/text%3E%3C/svg%3E" alt="Employee" class="avatar-image w-16 h-16">
+                                    <div class="status-indicator bg-green-400"></div>
+                                </div>
+                                <div class="ml-4">
+                                    <h2 class="font-bold text-lg">Emma Rodriguez</h2>
+                                    <p class="text-gray-600 text-sm">Marketing Specialist</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-5">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Engagement Score</span>
+                                    <span>85%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill bg-green-500" style="width: 85%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-4 text-sm font-mono">
+&lt;!-- Сетка профилей --&gt;<br/>
+&lt;div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"&gt;<br/>
+&nbsp;&nbsp;&lt;div class="glass-card p-6"&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;!-- Карточка профиля --&gt;<br/>
+&nbsp;&nbsp;&lt;/div&gt;<br/>
+&lt;/div&gt;
                     </div>
                 </div>
             </section>
