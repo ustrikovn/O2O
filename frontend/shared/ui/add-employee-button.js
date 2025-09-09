@@ -22,6 +22,7 @@ class AddEmployeeButton {
         const button = document.createElement('button');
         button.className = `
             glass-button
+            glass-button-primary
             w-full
             px-6 py-4
             text-base font-medium

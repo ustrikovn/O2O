@@ -42,7 +42,7 @@ class AddEmployeeForm {
                             id="firstName"
                             name="firstName"
                             class="glass-input w-full"
-                            placeholder="Введите имя"
+                            placeholder="Иван"
                             required
                         >
                     </div>
@@ -55,7 +55,7 @@ class AddEmployeeForm {
                             id="lastName"
                             name="lastName"
                             class="glass-input w-full"
-                            placeholder="Введите фамилию"
+                            placeholder="Иванов"
                             required
                         >
                     </div>
@@ -71,7 +71,7 @@ class AddEmployeeForm {
                         id="position"
                         name="position"
                         class="glass-input w-full"
-                        placeholder="Например: Frontend разработчик"
+                        placeholder="Системный аналитик"
                         required
                     >
                 </div>
@@ -86,7 +86,7 @@ class AddEmployeeForm {
                         id="team"
                         name="team"
                         class="glass-input w-full"
-                        placeholder="Например: Разработка"
+                        placeholder="Мобильное приложение"
                         required
                     >
                 </div>

@@ -125,6 +125,16 @@ body {
   background-color: #357abd !important;
 }
 
+/* Primary glass button with blue border */
+.glass-button-primary {
+  border: 2px solid var(--primary-blue) !important;
+}
+
+.glass-button-primary:hover {
+  border-color: #357abd !important;
+  box-shadow: 0 0 20px rgba(74, 144, 226, 0.3);
+}
+
 /* Layout */
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
