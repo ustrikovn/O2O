@@ -16,17 +16,55 @@
         <div id="sidebar-container"></div>
         
         <!-- Main Content -->
-        <div class="flex-1 ml-64">
-            <!-- Пустая область -->
+        <div class="flex-1 ml-64 p-8">
+            <!-- One-to-One Buttons Grid -->
+            <div class="mb-6 grid grid-cols-2 gap-6">
+                <div id="one-to-one-button-container"></div>
+                <div id="schedule-one-to-one-button-container"></div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="glass-card p-8 text-center">
+                <div class="text-gray-500">
+                    <i data-feather="zap" class="mx-auto mb-4" size="48"></i>
+                    <h2 class="text-2xl font-bold mb-2">Добро пожаловать в O2O</h2>
+                    <p>Платформа для проведения эффективных one-to-one встреч</p>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="shared/ui/sidebar.js"></script>
+    <script src="shared/ui/one-to-one-button.js"></script>
+    <script src="shared/ui/schedule-one-to-one-button.js"></script>
     <script>
         // Инициализация компонентов
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = new O2OSidebar('home');
             sidebar.mount('sidebar-container');
+            
+            // Инициализация кнопки проведения one-to-one встречи
+            const oneToOneButton = new OneToOneButton({
+                text: 'Провести one-to-one',
+                icon: 'zap',
+                variant: 'accent',
+                onClick: function() {
+                    console.log('Кнопка "Провести one-to-one" нажата');
+                    // Пока никакого поведения нет, как было запрошено
+                }
+            });
+            oneToOneButton.mount('one-to-one-button-container');
+            
+            // Инициализация кнопки планирования one-to-one встречи
+            const scheduleOneToOneButton = new ScheduleOneToOneButton({
+                text: 'Запланировать one-to-one',
+                icon: 'calendar',
+                onClick: function() {
+                    console.log('Кнопка "Запланировать one-to-one" нажата');
+                    // Пока никакого поведения нет, как было запрошено
+                }
+            });
+            scheduleOneToOneButton.mount('schedule-one-to-one-button-container');
             
             // Инициализация иконок
             feather.replace();

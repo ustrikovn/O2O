@@ -135,6 +135,20 @@ body {
   box-shadow: 0 0 20px rgba(74, 144, 226, 0.3);
 }
 
+/* Accent button with solid color fill */
+.glass-button-accent {
+  background: var(--accent-purple) !important;
+  border: 2px solid var(--accent-purple) !important;
+  color: white !important;
+}
+
+.glass-button-accent:hover {
+  background: #7c0df0 !important;
+  border-color: #7c0df0 !important;
+  box-shadow: 0 0 20px rgba(144, 19, 254, 0.4);
+  transform: translateY(-2px);
+}
+
 /* Layout */
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
