@@ -127,10 +127,20 @@ body {
 
 /* Primary glass button with blue border */
 .glass-button-primary {
-  border: 2px solid var(--primary-blue) !important;
+  border: 1px solid var(--primary-blue) !important;
 }
 
 .glass-button-primary:hover {
+  border-color: #357abd !important;
+  box-shadow: 0 0 20px rgba(74, 144, 226, 0.3);
+}
+
+/* Primary glass input with blue border */
+.glass-input-primary {
+  border: 1px solid var(--primary-blue) !important;
+}
+
+.glass-input-primary:focus {
   border-color: #357abd !important;
   box-shadow: 0 0 20px rgba(74, 144, 226, 0.3);
 }

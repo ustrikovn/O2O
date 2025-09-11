@@ -9,6 +9,145 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <link rel="stylesheet" href="shared/styles/base.css">
+    <style>
+        /* Дополнительные стили для страницы встречи */
+        .text-error { color: var(--error); }
+        .text-warning { color: var(--warning); }
+        .text-success { color: var(--success); }
+        .text-info { color: var(--info); }
+        .text-primary { color: var(--primary-blue); }
+        .text-secondary { color: var(--text-secondary); }
+        .text-muted { color: var(--text-muted); }
+        
+        /* Дополнительные стили для метрик */
+        .text-xs br { line-height: 1.1; }
+        
+        /* Donut Chart анимации */
+        svg path {
+            transition: stroke-dasharray 0.6s ease-in-out;
+        }
+        
+        /* Hover эффекты для метрик */
+        .metric-container:hover svg path:last-child {
+            stroke-width: 3;
+        }
+
+        /* Custom checkbox styling */
+        .custom-checkbox {
+            appearance: none;
+            width: 1rem;
+            height: 1rem;
+            border: 1px solid var(--primary-blue);
+            border-radius: 0.25rem;
+            background: var(--glass-bg);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .custom-checkbox:checked {
+            background: var(--primary-blue);
+            border-color: var(--primary-blue);
+        }
+
+        .custom-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .custom-checkbox:hover {
+            border-color: var(--primary-blue);
+        }
+        
+        .bg-error { background-color: var(--error); }
+        .bg-warning { background-color: var(--warning); }
+        .bg-success { background-color: var(--success); }
+        .bg-info { background-color: var(--info); }
+        .bg-primary { background-color: var(--primary-blue); }
+        
+        /* Стилизация range slider */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary-blue);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary-blue);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Адаптивность для мобильных устройств */
+        @media (max-width: 1024px) {
+            .lg\\:col-span-2 {
+                grid-column: span 1;
+            }
+            
+            .lg\\:grid-cols-3 {
+                grid-template-columns: repeat(1, minmax(0, 1fr));
+            }
+            
+            .lg\\:grid-cols-2 {
+                grid-template-columns: repeat(1, minmax(0, 1fr));
+            }
+            
+            .flex-1.ml-64 {
+                margin-left: 0;
+                padding: 1rem;
+            }
+            
+            #metrics-block .flex.items-start.space-x-8 {
+                flex-wrap: wrap;
+                gap: 1rem;
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .grid.grid-cols-1.lg\\:grid-cols-2 {
+                grid-template-columns: repeat(1, minmax(0, 1fr));
+            }
+            
+            #employee-info-block .flex.items-start.space-x-4 {
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            #metrics-block .flex.items-start.space-x-8 {
+                flex-direction: column;
+                gap: 1.5rem;
+                padding-top: 0;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="flex min-h-screen">
@@ -17,11 +156,399 @@
         
         <!-- Main Content -->
         <div class="flex-1 ml-64 p-8">
-            <!-- Основной контент страницы проведения встречи -->
+            <!-- Header -->
+            <!-- Профиль сотрудника -->
+            <div class="glass-card p-6 mb-6">
+                <div class="flex items-center justify-between">
+                    <!-- Левая часть: Аватар и информация -->
+                    <div class="flex items-center space-x-4">
+                        <!-- Аватар -->
+                        <div class="avatar-container-lg">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%2350E3C2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='18'%3EАС%3C/text%3E%3C/svg%3E" 
+                                 alt="Сотрудник" class="avatar-image w-16 h-16">
+                            <div class="status-indicator bg-success"></div>
+                        </div>
+                        
+                        <!-- Информация о сотруднике -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-primary mb-1">Анна Смирнова</h3>
+                            <p class="text-sm text-secondary mb-1">Старший Frontend разработчик</p>
+                            <p class="text-sm text-muted">Отдел разработки • 3 года в команде</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Правая часть: Метрики -->
+                    <div class="flex items-center space-x-12">
+                        <!-- Важность сотрудника -->
+                        <div class="flex items-center space-x-3">
+                            <div class="relative w-14 h-14 flex-shrink-0">
+                                <svg class="w-14 h-14 transform -rotate-90" viewBox="0 0 36 36">
+                                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                                          fill="none" stroke="#e5e7eb" stroke-width="2"/>
+                                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                                          fill="none" stroke="var(--accent-purple)" stroke-width="2" 
+                                          stroke-dasharray="78, 100" stroke-linecap="round"/>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="text-sm font-semibold text-primary">7.8</span>
+                                </div>
+                            </div>
+                            <div class="text-sm text-secondary">
+                                <div>Важность</div>
+                                <div>сотрудника</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Счастье сотрудника -->
+                        <div class="flex items-center space-x-3">
+                            <div class="relative w-14 h-14 flex-shrink-0">
+                                <svg class="w-14 h-14 transform -rotate-90" viewBox="0 0 36 36">
+                                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                                          fill="none" stroke="#e5e7eb" stroke-width="2"/>
+                                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                                          fill="none" stroke="var(--primary-blue)" stroke-width="2" 
+                                          stroke-dasharray="85, 100" stroke-linecap="round"/>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="text-sm font-semibold text-primary">8.5</span>
+                                </div>
+                            </div>
+                            <div class="text-sm text-secondary">
+                                <div>Счастье</div>
+                                <div>сотрудника</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Позитив в общении -->
+                        <div class="flex items-center space-x-3">
+                            <div class="relative w-14 h-14 flex-shrink-0">
+                                <svg class="w-14 h-14 transform -rotate-90" viewBox="0 0 36 36">
+                                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                                          fill="none" stroke="#e5e7eb" stroke-width="2"/>
+                                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                                          fill="none" stroke="var(--accent-green)" stroke-width="2" 
+                                          stroke-dasharray="92, 100" stroke-linecap="round"/>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="text-sm font-semibold text-primary">92%</span>
+                                </div>
+                            </div>
+                            <div class="text-sm text-secondary">
+                                <div>Позитив</div>
+                                <div>в общении</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Grid: AI Assistant (1/3) + Notes/Agreements (2/3) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <!-- AI Assistant Chat - Left 1/3 -->
+                <div class="glass-card p-6 flex flex-col h-[520px]" id="ai-chat-block">
+                    <h2 class="text-xl font-semibold mb-4">AI-ассистент</h2>
+                    
+                    <!-- Chat Messages -->
+                    <div class="flex-1 overflow-y-auto mb-4 space-y-3" id="chat-messages">
+                        <!-- AI Message -->
+                        <div class="text-sm max-w-xs">
+                            Привет! Я готов помочь вам провести эффективную встречу с Анной. Вот несколько рекомендаций:
+                        </div>
+                        
+                        <!-- Suggestion Buttons -->
+                        <div class="space-y-2">
+                            <button class="bg-primary text-white py-2 text-left text-xs inline-block hover:bg-primary/90 hover:shadow-lg transition-all duration-200" style="border-radius: 0px 25px 25px 25px; padding-left: 10px; padding-right: 15px;" onclick="sendSuggestion('Какие задачи вызывают у вас трудности?')">
+                                Какие задачи вызывают у вас трудности?
+                            </button>
+                            <button class="bg-primary text-white py-2 text-left text-xs inline-block hover:bg-primary/90 hover:shadow-lg transition-all duration-200" style="border-radius: 0px 25px 25px 25px; padding-left: 10px; padding-right: 15px;" onclick="sendSuggestion('Расскажите о ваших карьерных планах')">
+                                Расскажите о ваших карьерных планах
+                            </button>
+                            <button class="bg-primary text-white py-2 text-left text-xs inline-block hover:bg-primary/90 hover:shadow-lg transition-all duration-200" style="border-radius: 0px 25px 25px 25px; padding-left: 10px; padding-right: 15px;" onclick="sendSuggestion('Сгенерировать отчет о встрече')">
+                                Сгенерировать отчет о встрече
+                            </button>
+                        </div>
+                        
+                        <!-- AI Message 2 -->
+                        <div class="text-sm max-w-xs">
+                            Анализ показывает рост удовлетворенности сотрудника на 12% за последние 3 месяца. Рекомендую обсудить факторы успеха.
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Input -->
+                    <div class="flex space-x-2">
+                        <input 
+                            type="text" 
+                            id="chat-input"
+                            class="glass-input glass-input-primary flex-1 text-sm" 
+                            placeholder="Напишите сообщение..."
+                            onkeypress="handleChatKeypress(event)">
+                        <button 
+                            class="glass-button glass-button-primary px-3 py-2"
+                            onclick="sendMessage()">
+                            <svg class="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Notes and Agreements Block - Right 2/3 -->
+                <div class="lg:col-span-2 glass-card p-6 flex flex-col" id="notes-agreements-block">
+                    <!-- Notes Section -->
+                    <div class="mb-6">
+                        <h2 class="text-xl font-semibold mb-4">Заметки</h2>
+                        <textarea 
+                            class="glass-input w-full h-60 resize-none" 
+                            placeholder="Записывайте ключевые моменты встречи, обратную связь от сотрудника и ваши наблюдения..."></textarea>
+                    </div>
+                    
+                    <!-- Agreements Section -->
+                    <div class="flex-1 flex flex-col">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-semibold">Договоренности</h2>
+                            <button class="glass-button px-3 py-1 text-sm" onclick="addNewAgreement()">
+                                + Добавить пункт
+                            </button>
+                        </div>
+                        
+                        <!-- Agreements List -->
+                        <div id="agreements-list" class="mb-4">
+                            <!-- Existing agreement examples -->
+                            <div class="flex items-center space-x-3 p-2 bg-glass rounded">
+                                <input type="checkbox" class="custom-checkbox" checked>
+                                <span class="text-sm font-medium flex-1">Изучить документацию по React 18</span>
+                                <span class="text-xs text-muted">25.09.2025</span>
+                                <span class="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">Сотрудник</span>
+                            </div>
+                            
+                            <div class="flex items-center space-x-3 p-2 bg-glass rounded">
+                                <input type="checkbox" class="custom-checkbox">
+                                <span class="text-sm font-medium flex-1">Организовать код-ревью для команды</span>
+                                <span class="text-xs text-muted">20.09.2025</span>
+                                <span class="text-xs bg-accent-green/20 text-accent-green px-2 py-0.5 rounded">Руководитель</span>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="shared/ui/sidebar.js"></script>
+    
+    <script>
+        // Agreements functionality
+        function addNewAgreement() {
+            // Сохраняем все редактируемые пункты перед добавлением нового
+            saveAllEditingAgreements();
+            
+            const agreementsList = document.getElementById('agreements-list');
+            const newAgreement = document.createElement('div');
+            newAgreement.className = 'flex items-center space-x-3 p-2 bg-glass rounded editing';
+            
+            // Получаем завтрашнюю дату по умолчанию
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const defaultDate = tomorrow.toISOString().split('T')[0];
+            
+            newAgreement.innerHTML = `
+                <input type="checkbox" class="custom-checkbox">
+                <input type="text" class="text-sm font-medium flex-1 bg-transparent border-none outline-none" 
+                       placeholder="Введите задачу..." onblur="saveTaskText(this)" onkeypress="handleTaskKeypress(event, this)">
+                <input type="date" class="text-xs text-muted bg-transparent border-none outline-none" 
+                       value="${defaultDate}" onchange="saveDateChange(this)">
+                <select class="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded border-none outline-none" 
+                        onchange="saveResponsibleChange(this)">
+                    <option value="employee" class="bg-white text-black">Сотрудник</option>
+                    <option value="manager" class="bg-white text-black">Руководитель</option>
+                </select>
+                <button onclick="removeAgreement(this)" class="text-xs text-red-500 hover:text-red-700 ml-2">✕</button>
+            `;
+            
+            agreementsList.appendChild(newAgreement);
+            
+            // Фокус на поле задачи
+            const taskInput = newAgreement.querySelector('input[type="text"]');
+            taskInput.focus();
+        }
+        
+        function handleTaskKeypress(event, input) {
+            if (event.key === 'Enter') {
+                input.blur();
+            }
+        }
+        
+        function saveTaskText(input) {
+            if (input.value.trim() === '') {
+                // Если задача пустая, удаляем пункт
+                input.closest('.flex').remove();
+            } else {
+                // Сохраняем пункт - убираем режим редактирования
+                saveAgreementItem(input.closest('.flex'));
+            }
+        }
+        
+        function saveAgreementItem(agreementElement) {
+            const taskInput = agreementElement.querySelector('input[type="text"]');
+            const dateInput = agreementElement.querySelector('input[type="date"]');
+            const responsibleSelect = agreementElement.querySelector('select');
+            const removeButton = agreementElement.querySelector('button');
+            
+            if (taskInput.value.trim() === '') {
+                return; // Не сохраняем пустые задачи
+            }
+            
+            // Убираем класс редактирования
+            agreementElement.classList.remove('editing');
+            
+            // Конвертируем в обычный вид
+            const task = taskInput.value;
+            const date = new Date(dateInput.value).toLocaleDateString('ru-RU');
+            const responsible = responsibleSelect.value;
+            const responsibleText = responsible === 'employee' ? 'Сотрудник' : 'Руководитель';
+            const responsibleClass = responsible === 'employee' ? 'bg-primary/20 text-primary' : 'bg-accent-green/20 text-accent-green';
+            
+            agreementElement.innerHTML = `
+                <input type="checkbox" class="custom-checkbox">
+                <span class="text-sm font-medium flex-1">${task}</span>
+                <span class="text-xs text-muted">${date}</span>
+                <span class="text-xs ${responsibleClass} px-2 py-0.5 rounded">${responsibleText}</span>
+            `;
+        }
+        
+        function saveAllEditingAgreements() {
+            const editingAgreements = document.querySelectorAll('.editing');
+            editingAgreements.forEach(agreement => {
+                const taskInput = agreement.querySelector('input[type="text"]');
+                if (taskInput && taskInput.value.trim() !== '') {
+                    saveAgreementItem(agreement);
+                } else if (taskInput && taskInput.value.trim() === '') {
+                    agreement.remove();
+                }
+            });
+        }
+        
+        function saveDateChange(input) {
+            // Дата автоматически сохраняется при изменении
+        }
+        
+        function saveResponsibleChange(select) {
+            const isEmployee = select.value === 'employee';
+            select.className = `text-xs px-2 py-0.5 rounded border-none outline-none ${
+                isEmployee ? 'bg-primary/20 text-primary' : 'bg-accent-green/20 text-accent-green'
+            }`;
+        }
+        
+        function removeAgreement(button) {
+            button.closest('.flex').remove();
+        }
+        
+        // Автосохранение при клике вне области редактирования
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                document.addEventListener('click', function(event) {
+                    // Игнорируем клики по кнопкам и элементам управления
+                    if (event.target.closest('button') || 
+                        event.target.closest('input') || 
+                        event.target.closest('select') ||
+                        event.target.closest('.editing')) {
+                        return;
+                    }
+                    
+                    // Сохраняем все редактируемые пункты
+                    saveAllEditingAgreements();
+                });
+            }, 100);
+        });
+        
+        // Chat functionality
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            
+            if (message === '') return;
+            
+            // Добавляем сообщение пользователя
+            addUserMessage(message);
+            
+            // Очищаем поле ввода
+            input.value = '';
+            
+            // Симулируем ответ AI через короткую задержку
+            setTimeout(() => {
+                const aiResponse = generateAIResponse(message);
+                addAIMessage(aiResponse);
+            }, 1000);
+        }
+        
+        function sendSuggestion(suggestion) {
+            addUserMessage(suggestion);
+            
+            // Симулируем ответ AI
+            setTimeout(() => {
+                let response = '';
+                if (suggestion.includes('трудности')) {
+                    response = 'Отличный вопрос! Это поможет выявить препятствия в работе. Рекомендую также спросить: "Какая поддержка от команды или руководства поможет вам справиться с этими трудностями?"';
+                } else if (suggestion.includes('карьерные планы')) {
+                    response = 'Важная тема для развития! После этого можно обсудить: "Какие навыки вы хотели бы развить в ближайшие 6 месяцев?" и "Как я могу помочь вам в достижении ваших целей?"';
+                } else if (suggestion.includes('отчет')) {
+                    response = 'Готовлю отчет о встрече на основе введенных заметок и договоренностей. Отчет будет содержать основные темы, выводы и план действий.';
+                } else {
+                    response = 'Понял ваш запрос. Могу предложить дополнительные вопросы или рекомендации для эффективного проведения встречи.';
+                }
+                addAIMessage(response);
+            }, 1000);
+        }
+        
+        function handleChatKeypress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        function addUserMessage(message) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'flex justify-end';
+            
+            messageDiv.innerHTML = `
+                <div class="text-primary text-sm max-w-xs text-right">
+                    ${message}
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+        
+        function addAIMessage(message) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'text-sm max-w-xs';
+            messageDiv.textContent = message;
+            
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+        
+        function generateAIResponse(userMessage) {
+            const responses = [
+                'Интересная мысль! Это может быть полезно для развития команды.',
+                'Рекомендую зафиксировать это в договоренностях для дальнейшего отслеживания.',
+                'Хороший подход! Можно также рассмотреть альтернативные варианты.',
+                'Это поможет улучшить взаимодействие в команде. Стоит обсудить детали.',
+                'Отличная идея для повышения эффективности работы!'
+            ];
+            
+            return responses[Math.floor(Math.random() * responses.length)];
+        }
+        
+        function scrollToBottom() {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    </script>
     <script>
         // Инициализация компонентов
         document.addEventListener('DOMContentLoaded', function() {
@@ -30,6 +557,38 @@
             
             // Инициализация иконок
             feather.replace();
+            
+            // Интерактивность для слайдера оценки
+            const satisfactionSlider = document.querySelector('input[type="range"]');
+            const satisfactionValue = document.querySelector('.text-lg.font-bold.w-8.text-center');
+            
+            if (satisfactionSlider && satisfactionValue) {
+                satisfactionSlider.addEventListener('input', function() {
+                    satisfactionValue.textContent = this.value;
+                    
+                    // Изменение цвета в зависимости от значения
+                    if (this.value <= 3) {
+                        satisfactionValue.className = 'text-lg font-bold w-8 text-center text-error';
+                    } else if (this.value <= 6) {
+                        satisfactionValue.className = 'text-lg font-bold w-8 text-center text-warning';
+                    } else {
+                        satisfactionValue.className = 'text-lg font-bold w-8 text-center text-success';
+                    }
+                });
+            }
+            
+            // Автосохранение заметок
+            const textareas = document.querySelectorAll('#notes-block textarea, #agreements-block textarea');
+            textareas.forEach(textarea => {
+                let timeout;
+                textarea.addEventListener('input', function() {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => {
+                        // Здесь будет логика автосохранения
+                        console.log('Автосохранение:', this.value);
+                    }, 2000);
+                });
+            });
         });
     </script>
 </body>
