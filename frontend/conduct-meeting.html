@@ -273,13 +273,12 @@
                     <!-- Левая часть: Аватар и информация -->
                     <div class="flex items-center">
                         <!-- Аватар -->
-                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Ccircle cx='25' cy='25' r='25' fill='%2350E3C2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='12'%3EАС%3C/text%3E%3C/svg%3E" 
-                             alt="Сотрудник" class="w-12 h-12 rounded-full">
+                        <img id="employee-avatar" src="" alt="Загрузка..." class="w-12 h-12 rounded-full">
                         
                     <!-- Информация о сотруднике -->
                     <div class="ml-4">
-                        <h3 class="font-semibold">Анна Смирнова</h3>
-                        <p class="text-sm text-gray-600">Старший Frontend разработчик</p>
+                        <h3 id="employee-name" class="font-semibold">Загрузка...</h3>
+                        <p id="employee-position" class="text-sm text-gray-600">Загрузка...</p>
                     </div>
                 </div>
                 
@@ -433,6 +432,8 @@
     </div>
 
     <script src="shared/ui/sidebar.js"></script>
+    <script src="shared/ui/modal.js"></script>
+    <script src="shared/ui/employee-selector-modal.js"></script>
     
     <script>
         // Agreements functionality
@@ -700,10 +701,97 @@
             timerText.textContent = `${formatNumber(hours)}:${formatNumber(minutes % 60)}:${formatNumber(seconds % 60)}`;
         }
         
+        // Переменная для хранения данных текущего сотрудника
+        let currentEmployee = null;
+
+        // Глобальная переменная для модального окна выбора сотрудника
+        let employeeSelectorModal = null;
+
+        // Функция загрузки первого сотрудника при инициализации
+        async function loadDefaultEmployee() {
+            try {
+                const response = await fetch('http://localhost:3001/api/employees');
+                const result = await response.json();
+                
+                if (result.success && result.data.length > 0) {
+                    currentEmployee = result.data[0]; // Берем первого сотрудника
+                    updateCurrentEmployee(currentEmployee);
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки сотрудника по умолчанию:', error);
+            }
+        }
+
         // Функция смены сотрудника
         function changeEmployee() {
-            // Пока что просто показываем alert, потом можно заменить на модальное окно
-            alert('Функция смены сотрудника будет реализована позже');
+            // Создаем и открываем модальное окно для выбора сотрудника
+            employeeSelectorModal = new EmployeeSelectorModal({
+                title: 'Выберите сотрудника для встречи',
+                currentEmployeeId: currentEmployee ? currentEmployee.id : null,
+                onEmployeeSelect: (selectedEmployee) => {
+                    updateCurrentEmployee(selectedEmployee);
+                },
+                onClose: () => {
+                    employeeSelectorModal = null;
+                }
+            });
+            
+            employeeSelectorModal.open();
+        }
+
+        // Функция обновления отображения текущего сотрудника
+        function updateCurrentEmployee(employee) {
+            currentEmployee = employee;
+            
+            // Обновляем аватар
+            const avatarImg = document.getElementById('employee-avatar');
+            if (avatarImg) {
+                if (employee.photoUrl) {
+                    avatarImg.src = employee.photoUrl;
+                } else {
+                    // Создаем аватар с инициалами
+                    const initials = `${employee.first_name.charAt(0)}${employee.last_name.charAt(0)}`;
+                    const color = generateAvatarColor(employee.first_name + employee.last_name);
+                    avatarImg.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Ccircle cx='25' cy='25' r='25' fill='%23${color}'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='12'%3E${initials}%3C/text%3E%3C/svg%3E`;
+                }
+                avatarImg.alt = `${employee.first_name} ${employee.last_name}`;
+            }
+            
+            // Обновляем имя и должность
+            const nameElement = document.getElementById('employee-name');
+            if (nameElement) {
+                nameElement.textContent = `${employee.first_name} ${employee.last_name}`;
+            }
+            
+            const positionElement = document.getElementById('employee-position');
+            if (positionElement) {
+                positionElement.textContent = employee.position;
+            }
+            
+            // TODO: Обновить метрики и теги сотрудника
+            // TODO: Очистить текущие заметки и договоренности
+            // TODO: Загрузить данные встреч для нового сотрудника
+            
+            console.log('Сотрудник изменен на:', employee);
+        }
+
+        // Функция генерации цвета аватара на основе имени
+        function generateAvatarColor(name) {
+            const colors = [
+                '4A90E2', '50E3C2', '9013FE', 'F5A623',
+                'D0021B', '7ED321', 'BD10E0', 'B8E986',
+                '9B9B9B', 'F8E71C', '8B572A', '417505'
+            ];
+            
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {
+                hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            
+            const selectedColor = colors[Math.abs(hash) % colors.length];
+            console.log(`Цвет для "${name}": ${selectedColor} (хеш: ${hash})`);
+            
+            return selectedColor;
         }
     </script>
     <script>
@@ -714,6 +802,9 @@
             
             // Инициализация иконок
             feather.replace();
+            
+            // Загружаем сотрудника по умолчанию
+            loadDefaultEmployee();
             
             // Интерактивность для слайдера оценки
             const satisfactionSlider = document.querySelector('input[type="range"]');
