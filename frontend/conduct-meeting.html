@@ -71,6 +71,83 @@
         .bg-info { background-color: var(--info); }
         .bg-primary { background-color: var(--primary-blue); }
         
+        /* Стили для тегов сотрудника */
+        .employee-tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        
+        .employee-tag:hover {
+            transform: translateY(-1px);
+        }
+        
+        /* Простая цветовая схема - только синий и серый */
+        .team-tag {
+            background: rgba(74, 144, 226, 0.15);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            color: var(--primary-blue);
+        }
+        
+        .team-tag:hover {
+            background: rgba(74, 144, 226, 0.25);
+        }
+        
+        .experience-tag {
+            background: rgba(107, 114, 128, 0.15);
+            border: 1px solid rgba(107, 114, 128, 0.3);
+            color: #6b7280;
+        }
+        
+        .experience-tag:hover {
+            background: rgba(107, 114, 128, 0.25);
+        }
+        
+        .skill-tag {
+            background: rgba(74, 144, 226, 0.15);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            color: var(--primary-blue);
+        }
+        
+        .skill-tag:hover {
+            background: rgba(74, 144, 226, 0.25);
+        }
+        
+        .motivator-tag {
+            background: rgba(107, 114, 128, 0.15);
+            border: 1px solid rgba(107, 114, 128, 0.3);
+            color: #6b7280;
+        }
+        
+        .motivator-tag:hover {
+            background: rgba(107, 114, 128, 0.25);
+        }
+        
+        .activity-tag {
+            background: rgba(74, 144, 226, 0.15);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            color: var(--primary-blue);
+        }
+        
+        .activity-tag:hover {
+            background: rgba(74, 144, 226, 0.25);
+        }
+        
+        /* Фиксированная ширина для кнопки встречи */
+        #start-meeting-btn {
+            width: 170px;
+            white-space: nowrap;
+            height: 38px;
+        }
+        
+        /* Фиксированная высота для кнопки смены сотрудника */
+        button[onclick="changeEmployee()"] {
+            height: 38px;
+        }
+        
         /* Стилизация range slider */
         input[type="range"] {
             -webkit-appearance: none;
@@ -141,6 +218,22 @@
                 text-align: center;
             }
             
+            /* Адаптивность для блока тегов */
+            .glass-card .flex.items-center.justify-between {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+            
+            .glass-card .flex.items-center.justify-between > div:first-child {
+                align-self: center;
+            }
+            
+            .glass-card .flex.items-center.justify-between > div:last-child {
+                align-self: center;
+                justify-content: center;
+            }
+            
             #metrics-block .flex.items-start.space-x-8 {
                 flex-direction: column;
                 gap: 1.5rem;
@@ -156,9 +249,26 @@
         
         <!-- Main Content -->
         <div class="flex-1 ml-64 p-8">
-            <!-- Header -->
+            <!-- Кнопка начала встречи и секундомер -->
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-3">
+                    <button class="glass-button glass-button-primary px-3 py-2 text-sm flex items-center justify-center" onclick="changeEmployee()" title="Сменить сотрудника">
+                        <i data-feather="refresh-cw" class="w-3.5 h-3.5"></i>
+                    </button>
+                    
+                    <button id="start-meeting-btn" class="glass-button glass-button-primary px-4 py-2 text-sm flex items-center justify-center" onclick="startMeeting()">
+                        Начать встречу
+                    </button>
+                    
+                    <!-- Секундомер -->
+                    <div id="timer-display" class="text-sm text-gray-500 font-mono">
+                        <span id="timer-text">00:00:00</span>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Профиль сотрудника -->
-            <div class="glass-card p-6 mb-6">
+            <div class="glass-card p-4 mb-6">
                 <div class="flex items-center justify-between">
                     <!-- Левая часть: Аватар и информация -->
                     <div class="flex items-center">
@@ -166,53 +276,66 @@
                         <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Ccircle cx='25' cy='25' r='25' fill='%2350E3C2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='12'%3EАС%3C/text%3E%3C/svg%3E" 
                              alt="Сотрудник" class="w-12 h-12 rounded-full">
                         
-                        <!-- Информация о сотруднике -->
-                        <div class="ml-4">
-                            <h3 class="font-semibold">Анна Смирнова</h3>
-                            <p class="text-sm text-gray-600">Старший Frontend разработчик</p>
+                    <!-- Информация о сотруднике -->
+                    <div class="ml-4">
+                        <h3 class="font-semibold">Анна Смирнова</h3>
+                        <p class="text-sm text-gray-600">Старший Frontend разработчик</p>
+                    </div>
+                </div>
+                
+                <!-- Метрики сотрудника -->
+                <div class="flex items-center space-x-12">
+                    <!-- Важность сотрудника -->
+                    <div class="flex items-center space-x-3">
+                        <div class="relative w-9 h-9 flex-shrink-0">
+                            <svg class="w-9 h-9 transform -rotate-90" viewBox="0 0 36 36">
+                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                                      fill="none" stroke="#e5e7eb" stroke-width="2"/>
+                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                                      fill="none" stroke="var(--accent-purple)" stroke-width="2" 
+                                      stroke-dasharray="78, 100" stroke-linecap="round"/>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="text-sm font-semibold text-primary">7.8</span>
+                            </div>
+                        </div>
+                        <div class="text-sm text-secondary">
+                            <div>Важность</div>
                         </div>
                     </div>
                     
-                    <!-- Правая часть: Метрики -->
-                    <div class="flex items-center space-x-12">
-                        <!-- Важность сотрудника -->
-                        <div class="flex items-center space-x-3">
-                            <div class="relative w-9 h-9 flex-shrink-0">
-                                <svg class="w-9 h-9 transform -rotate-90" viewBox="0 0 36 36">
-                                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                                          fill="none" stroke="#e5e7eb" stroke-width="2"/>
-                                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                                          fill="none" stroke="var(--accent-purple)" stroke-width="2" 
-                                          stroke-dasharray="78, 100" stroke-linecap="round"/>
-                                </svg>
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <span class="text-sm font-semibold text-primary">7.8</span>
-                                </div>
-                            </div>
-                            <div class="text-sm text-secondary">
-                                <div>Важность</div>
+                    <!-- Счастье сотрудника -->
+                    <div class="flex items-center space-x-3">
+                        <div class="relative w-9 h-9 flex-shrink-0">
+                            <svg class="w-9 h-9 transform -rotate-90" viewBox="0 0 36 36">
+                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                                      fill="none" stroke="#e5e7eb" stroke-width="2"/>
+                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                                      fill="none" stroke="var(--primary-blue)" stroke-width="2" 
+                                      stroke-dasharray="85, 100" stroke-linecap="round"/>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="text-sm font-semibold text-primary">8.5</span>
                             </div>
                         </div>
-                        
-                        <!-- Счастье сотрудника -->
-                        <div class="flex items-center space-x-3">
-                            <div class="relative w-9 h-9 flex-shrink-0">
-                                <svg class="w-9 h-9 transform -rotate-90" viewBox="0 0 36 36">
-                                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                                          fill="none" stroke="#e5e7eb" stroke-width="2"/>
-                                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                                          fill="none" stroke="var(--primary-blue)" stroke-width="2" 
-                                          stroke-dasharray="85, 100" stroke-linecap="round"/>
-                                </svg>
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <span class="text-sm font-semibold text-primary">8.5</span>
-                                </div>
-                            </div>
-                            <div class="text-sm text-secondary">
-                                <div>Счастье</div>
-                            </div>
+                        <div class="text-sm text-secondary">
+                            <div>Счастье</div>
                         </div>
                     </div>
+                </div>
+                
+                <!-- Теги сотрудника -->
+                <div class="px-2 flex flex-col justify-center">
+                    <div class="flex flex-wrap gap-2 mb-2">
+                        <span class="employee-tag team-tag">Команда контента</span>
+                        <span class="employee-tag experience-tag">3 года в команде</span>
+                        <span class="employee-tag skill-tag">Бизнес-анализ</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="employee-tag motivator-tag">Деньги</span>
+                        <span class="employee-tag activity-tag">Исполнительность</span>
+                    </div>
+                </div>
                 </div>
             </div>
 
@@ -521,6 +644,66 @@
         function scrollToBottom() {
             const chatMessages = document.getElementById('chat-messages');
             chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Функциональность секундомера
+        let timerInterval = null;
+        let startTime = null;
+        let isRunning = false;
+        
+        function startMeeting() {
+            const btn = document.getElementById('start-meeting-btn');
+            const timerText = document.getElementById('timer-text');
+            
+            if (!isRunning) {
+                // Запускаем секундомер
+                startTime = Date.now();
+                isRunning = true;
+                
+                // Меняем текст кнопки
+                btn.textContent = 'Завершить встречу';
+                
+                // Перерисовываем иконки Feather
+                feather.replace();
+                
+                // Запускаем интервал обновления
+                timerInterval = setInterval(updateTimer, 1000);
+                updateTimer(); // Сразу обновляем
+                
+            } else {
+                // Останавливаем секундомер
+                isRunning = false;
+                clearInterval(timerInterval);
+                
+                // Возвращаем исходный текст кнопки
+                btn.textContent = 'Начать встречу';
+                
+                // Перерисовываем иконки Feather
+                feather.replace();
+                
+                // Сбрасываем таймер
+                timerText.textContent = '00:00:00';
+            }
+        }
+        
+        function updateTimer() {
+            if (!isRunning || !startTime) return;
+            
+            const elapsed = Date.now() - startTime;
+            const seconds = Math.floor(elapsed / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            
+            const formatNumber = (num) => num.toString().padStart(2, '0');
+            
+            const timerText = document.getElementById('timer-text');
+            timerText.textContent = `${formatNumber(hours)}:${formatNumber(minutes % 60)}:${formatNumber(seconds % 60)}`;
+        }
+        
+        // Функция смены сотрудника
+        function changeEmployee() {
+            // Пока что просто показываем alert, потом можно заменить на модальное окно
+            alert('Функция смены сотрудника будет реализована позже');
         }
     </script>
     <script>
