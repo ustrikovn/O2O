@@ -437,9 +437,9 @@
     
     <script>
         // Agreements functionality
-        function addNewAgreement() {
+        async function addNewAgreement() {
             // Сохраняем все редактируемые пункты перед добавлением нового
-            saveAllEditingAgreements();
+            await saveAllEditingAgreements();
             
             const agreementsList = document.getElementById('agreements-list');
             const newAgreement = document.createElement('div');
@@ -477,17 +477,17 @@
             }
         }
         
-        function saveTaskText(input) {
+        async function saveTaskText(input) {
             if (input.value.trim() === '') {
                 // Если задача пустая, удаляем пункт
                 input.closest('.flex').remove();
             } else {
                 // Сохраняем пункт - убираем режим редактирования
-                saveAgreementItem(input.closest('.flex'));
+                await saveAgreementItem(input.closest('.flex'));
             }
         }
         
-        function saveAgreementItem(agreementElement) {
+        async function saveAgreementItem(agreementElement) {
             const taskInput = agreementElement.querySelector('input[type="text"]');
             const dateInput = agreementElement.querySelector('input[type="date"]');
             const responsibleSelect = agreementElement.querySelector('select');
@@ -497,13 +497,25 @@
                 return; // Не сохраняем пустые задачи
             }
             
+            const task = taskInput.value;
+            const responsible = responsibleSelect.value;
+            const agreementType = responsible === 'employee' ? 'employee_task' : 'manager_task';
+            const dueDate = dateInput.value;
+            
+            // Сохраняем на сервер, если есть активная встреча
+            if (currentMeetingId) {
+                const saved = await addAgreementToServer(task, agreementType, dueDate);
+                if (!saved) {
+                    alert('Ошибка сохранения договоренности на сервер');
+                    return;
+                }
+            }
+            
             // Убираем класс редактирования
             agreementElement.classList.remove('editing');
             
             // Конвертируем в обычный вид
-            const task = taskInput.value;
             const date = new Date(dateInput.value).toLocaleDateString('ru-RU');
-            const responsible = responsibleSelect.value;
             const responsibleText = responsible === 'employee' ? 'Сотрудник' : 'Руководитель';
             const responsibleClass = responsible === 'employee' ? 'bg-primary/20 text-primary' : 'bg-accent-green/20 text-accent-green';
             
@@ -515,16 +527,16 @@
             `;
         }
         
-        function saveAllEditingAgreements() {
+        async function saveAllEditingAgreements() {
             const editingAgreements = document.querySelectorAll('.editing');
-            editingAgreements.forEach(agreement => {
+            for (const agreement of editingAgreements) {
                 const taskInput = agreement.querySelector('input[type="text"]');
                 if (taskInput && taskInput.value.trim() !== '') {
-                    saveAgreementItem(agreement);
+                    await saveAgreementItem(agreement);
                 } else if (taskInput && taskInput.value.trim() === '') {
                     agreement.remove();
                 }
-            });
+            }
         }
         
         function saveDateChange(input) {
@@ -545,7 +557,7 @@
         // Автосохранение при клике вне области редактирования
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
-                document.addEventListener('click', function(event) {
+                document.addEventListener('click', async function(event) {
                     // Игнорируем клики по кнопкам и элементам управления
                     if (event.target.closest('button') || 
                         event.target.closest('input') || 
@@ -555,7 +567,7 @@
                     }
                     
                     // Сохраняем все редактируемые пункты
-                    saveAllEditingAgreements();
+                    await saveAllEditingAgreements();
                 });
             }, 100);
         });
@@ -652,38 +664,145 @@
         let startTime = null;
         let isRunning = false;
         
-        function startMeeting() {
+        async function startMeeting() {
             const btn = document.getElementById('start-meeting-btn');
             const timerText = document.getElementById('timer-text');
             
             if (!isRunning) {
-                // Запускаем секундомер
-                startTime = Date.now();
-                isRunning = true;
+                // Проверяем, что выбран сотрудник
+                if (!currentEmployee) {
+                    alert('Пожалуйста, выберите сотрудника для встречи');
+                    return;
+                }
                 
-                // Меняем текст кнопки
-                btn.textContent = 'Завершить встречу';
-                
-                // Перерисовываем иконки Feather
-                feather.replace();
-                
-                // Запускаем интервал обновления
-                timerInterval = setInterval(updateTimer, 1000);
-                updateTimer(); // Сразу обновляем
+                try {
+                    // Блокируем кнопку во время запроса
+                    btn.disabled = true;
+                    btn.textContent = 'Создание встречи...';
+                    
+                    // Создаем встречу через API
+                    const response = await fetch('http://localhost:3001/api/meetings', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            employeeId: currentEmployee.id
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(result.message || 'Ошибка создания встречи');
+                    }
+                    
+                    if (result.success) {
+                        // Сохраняем ID созданной встречи
+                        currentMeetingId = result.data.id;
+                        console.log('Встреча создана с ID:', currentMeetingId);
+                        
+                        // Начинаем встречу через API
+                        const startResponse = await fetch(`http://localhost:3001/api/meetings/${currentMeetingId}/start`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        const startResult = await startResponse.json();
+                        
+                        if (!startResponse.ok) {
+                            throw new Error(startResult.message || 'Ошибка начала встречи');
+                        }
+                        
+                        if (startResult.success) {
+                            // Запускаем секундомер
+                            startTime = Date.now();
+                            isRunning = true;
+                            
+                            // Меняем текст кнопки
+                            btn.textContent = 'Завершить встречу';
+                            btn.disabled = false;
+                            
+                            // Перерисовываем иконки Feather
+                            feather.replace();
+                            
+                            // Запускаем интервал обновления
+                            timerInterval = setInterval(updateTimer, 1000);
+                            updateTimer(); // Сразу обновляем
+                            
+                            console.log('Встреча успешно начата');
+                        }
+                    }
+                    
+                } catch (error) {
+                    console.error('Ошибка при создании/начале встречи:', error);
+                    alert(`Ошибка: ${error.message}`);
+                    
+                    // Возвращаем кнопку в исходное состояние
+                    btn.textContent = 'Начать встречу';
+                    btn.disabled = false;
+                }
                 
             } else {
-                // Останавливаем секундомер
-                isRunning = false;
-                clearInterval(timerInterval);
-                
-                // Возвращаем исходный текст кнопки
-                btn.textContent = 'Начать встречу';
-                
-                // Перерисовываем иконки Feather
-                feather.replace();
-                
-                // Сбрасываем таймер
-                timerText.textContent = '00:00:00';
+                // Завершаем встречу
+                try {
+                    // Блокируем кнопку во время запроса
+                    btn.disabled = true;
+                    btn.textContent = 'Завершение встречи...';
+                    
+                    if (currentMeetingId) {
+                        // Завершаем встречу через API
+                        const response = await fetch(`http://localhost:3001/api/meetings/${currentMeetingId}/end`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                notes: document.querySelector('#notes-agreements-block textarea')?.value || ''
+                            })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (!response.ok) {
+                            throw new Error(result.message || 'Ошибка завершения встречи');
+                        }
+                        
+                        if (result.success) {
+                            console.log('Встреча успешно завершена');
+                        }
+                    }
+                    
+                    // Останавливаем секундомер
+                    isRunning = false;
+                    clearInterval(timerInterval);
+                    
+                    // Возвращаем исходный текст кнопки
+                    btn.textContent = 'Начать встречу';
+                    btn.disabled = false;
+                    
+                    // Перерисовываем иконки Feather
+                    feather.replace();
+                    
+                    // Сбрасываем таймер
+                    timerText.textContent = '00:00:00';
+                    
+                    // Сбрасываем ID встречи
+                    currentMeetingId = null;
+                    
+                } catch (error) {
+                    console.error('Ошибка при завершении встречи:', error);
+                    alert(`Ошибка завершения встречи: ${error.message}`);
+                    
+                    // В случае ошибки всё равно останавливаем локальный таймер
+                    isRunning = false;
+                    clearInterval(timerInterval);
+                    btn.textContent = 'Начать встречу';
+                    btn.disabled = false;
+                    timerText.textContent = '00:00:00';
+                }
             }
         }
         
@@ -852,6 +971,74 @@
             // На странице встречи ничего не делаем - остаемся где были
             console.log('Уже на странице встречи');
         }
+
+        /**
+         * Функция для сохранения заметок на сервер
+         */
+        async function saveNotesToServer(notes) {
+            if (!currentMeetingId || !notes.trim()) {
+                return; // Не сохраняем пустые заметки или если нет активной встречи
+            }
+            
+            try {
+                const response = await fetch(`http://localhost:3001/api/meetings/${currentMeetingId}/notes`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        notes: notes
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    console.log('Заметки автоматически сохранены');
+                } else {
+                    console.error('Ошибка сохранения заметок:', result.message);
+                }
+            } catch (error) {
+                console.error('Ошибка при сохранении заметок:', error);
+            }
+        }
+
+        /**
+         * Функция для добавления договоренности на сервер
+         */
+        async function addAgreementToServer(title, type, dueDate) {
+            if (!currentMeetingId || !title.trim()) {
+                return false;
+            }
+            
+            try {
+                const response = await fetch(`http://localhost:3001/api/meetings/${currentMeetingId}/agreements`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        type: type, // 'employee_task' или 'manager_task'
+                        description: '',
+                        dueDate: dueDate
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    console.log('Договоренность добавлена на сервер');
+                    return true;
+                } else {
+                    console.error('Ошибка добавления договоренности:', result.message);
+                    return false;
+                }
+            } catch (error) {
+                console.error('Ошибка при добавлении договоренности:', error);
+                return false;
+            }
+        }
     </script>
     <script>
         // Инициализация компонентов
@@ -885,17 +1072,16 @@
             }
             
             // Автосохранение заметок
-            const textareas = document.querySelectorAll('#notes-block textarea, #agreements-block textarea');
-            textareas.forEach(textarea => {
+            const notesTextarea = document.querySelector('#notes-agreements-block textarea');
+            if (notesTextarea) {
                 let timeout;
-                textarea.addEventListener('input', function() {
+                notesTextarea.addEventListener('input', function() {
                     clearTimeout(timeout);
                     timeout = setTimeout(() => {
-                        // Здесь будет логика автосохранения
-                        console.log('Автосохранение:', this.value);
+                        saveNotesToServer(this.value);
                     }, 2000);
                 });
-            });
+            }
         });
     </script>
 </body>
