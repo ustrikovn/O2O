@@ -252,7 +252,7 @@
             <!-- Кнопка начала встречи и секундомер -->
             <div class="flex items-center justify-between mb-6">
                 <div class="flex items-center space-x-3">
-                    <button class="glass-button glass-button-primary px-3 py-2 text-sm flex items-center justify-center" onclick="changeEmployee()" title="Сменить сотрудника">
+                    <button id="change-employee-btn" class="glass-button glass-button-primary px-3 py-2 text-sm flex items-center justify-center" onclick="changeEmployee()" title="Сменить сотрудника">
                         <i data-feather="refresh-cw" class="w-3.5 h-3.5"></i>
                     </button>
                     
@@ -712,6 +712,9 @@
                             btn.textContent = 'Завершить встречу';
                             btn.disabled = false;
                             
+                            // Обновляем состояние кнопки "Сменить сотрудника"
+                            updateChangeEmployeeButton();
+                            
                             // Перерисовываем иконки Feather
                             feather.replace();
                             
@@ -770,6 +773,9 @@
                     btn.textContent = 'Начать встречу';
                     btn.disabled = false;
                     
+                    // Обновляем состояние кнопки "Сменить сотрудника"
+                    updateChangeEmployeeButton();
+                    
                     // Перерисовываем иконки Feather
                     feather.replace();
                     
@@ -789,6 +795,9 @@
                     btn.textContent = 'Начать встречу';
                     btn.disabled = false;
                     timerText.textContent = '00:00:00';
+                    
+                    // Обновляем состояние кнопки "Сменить сотрудника"
+                    updateChangeEmployeeButton();
                 }
             }
         }
@@ -829,10 +838,14 @@
                 if (meetingId) {
                     currentMeetingId = meetingId;
                     console.log('ID встречи из URL:', meetingId);
+                    // Проверяем активную встречу и инициализируем таймер
+                    await checkAndInitializeActiveMeeting();
                 }
             } else {
                 // Загружаем первого сотрудника по умолчанию
                 await loadDefaultEmployee();
+                // Проверяем, есть ли активная встреча в системе
+                await checkForActiveMeeting();
             }
         }
 
@@ -879,6 +892,12 @@
 
         // Функция смены сотрудника
         function changeEmployee() {
+            // Проверяем, не идет ли сейчас встреча
+            if (isRunning) {
+                alert('Нельзя менять сотрудника во время активной встречи. Сначала завершите текущую встречу.');
+                return;
+            }
+            
             // Создаем и открываем модальное окно для выбора сотрудника
             employeeSelectorModal = new EmployeeSelectorModal({
                 title: 'Выберите сотрудника для встречи',
@@ -896,6 +915,26 @@
             window.currentEmployeeSelectorModal = employeeSelectorModal;
             
             employeeSelectorModal.open();
+        }
+
+        /**
+         * Функция обновления состояния кнопки "Сменить сотрудника"
+         */
+        function updateChangeEmployeeButton() {
+            const changeBtn = document.getElementById('change-employee-btn');
+            if (changeBtn) {
+                if (isRunning) {
+                    // Во время встречи - дизейблим кнопку
+                    changeBtn.disabled = true;
+                    changeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    changeBtn.title = 'Нельзя менять сотрудника во время активной встречи';
+                } else {
+                    // Когда встреча не идет - возвращаем активное состояние
+                    changeBtn.disabled = false;
+                    changeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    changeBtn.title = 'Сменить сотрудника';
+                }
+            }
         }
 
         // Функция обновления отображения текущего сотрудника
@@ -1140,6 +1179,88 @@
                 agreementsList.appendChild(agreementElement);
             });
         }
+
+        /**
+         * Проверка активной встречи при переходе по URL с meetingId
+         */
+        async function checkAndInitializeActiveMeeting() {
+            if (!currentMeetingId) return;
+            
+            try {
+                const response = await fetch(`http://localhost:3001/api/meetings/${currentMeetingId}`);
+                const result = await response.json();
+                
+                if (response.ok && result.success && result.data) {
+                    const meeting = result.data;
+                    
+                    // Проверяем, активна ли встреча
+                    if (meeting.status === 'active' && meeting.started_at) {
+                        console.log('Обнаружена активная встреча, инициализируем таймер');
+                        
+                        // Устанавливаем время начала встречи
+                        startTime = new Date(meeting.started_at).getTime();
+                        isRunning = true;
+                        
+                        // Обновляем кнопку
+                        const btn = document.getElementById('start-meeting-btn');
+                        btn.textContent = 'Завершить встречу';
+                        
+                        // Запускаем таймер
+                        timerInterval = setInterval(updateTimer, 1000);
+                        updateTimer(); // Сразу обновляем
+                        
+                        // Обновляем состояние кнопки "Сменить сотрудника"
+                        updateChangeEmployeeButton();
+                        
+                        console.log('Активная встреча инициализирована:', meeting);
+                    }
+                } else {
+                    console.log('Встреча не найдена или не активна');
+                }
+            } catch (error) {
+                console.error('Ошибка проверки активной встречи:', error);
+            }
+        }
+
+        /**
+         * Проверка наличия активной встречи в системе
+         */
+        async function checkForActiveMeeting() {
+            try {
+                const response = await fetch('http://localhost:3001/api/meetings/active');
+                const result = await response.json();
+                
+                if (response.ok && result.success && result.data) {
+                    const activeMeeting = result.data;
+                    console.log('Обнаружена активная встреча в системе:', activeMeeting);
+                    
+                    // Если активная встреча с другим сотрудником, не инициализируем таймер
+                    // Но если с тем же сотрудником - инициализируем
+                    if (currentEmployee && activeMeeting.employeeId === currentEmployee.id) {
+                        currentMeetingId = activeMeeting.id;
+                        
+                        // Устанавливаем время начала встречи
+                        startTime = new Date(activeMeeting.started_at).getTime();
+                        isRunning = true;
+                        
+                        // Обновляем кнопку
+                        const btn = document.getElementById('start-meeting-btn');
+                        btn.textContent = 'Завершить встречу';
+                        
+                        // Запускаем таймер
+                        timerInterval = setInterval(updateTimer, 1000);
+                        updateTimer(); // Сразу обновляем
+                        
+                        // Обновляем состояние кнопки "Сменить сотрудника"
+                        updateChangeEmployeeButton();
+                        
+                        console.log('Активная встреча с текущим сотрудником инициализирована');
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка проверки активной встречи в системе:', error);
+            }
+        }
     </script>
     <script>
         // Инициализация компонентов
@@ -1153,6 +1274,9 @@
             
             // Загружаем сотрудника (по URL параметрам или по умолчанию)
             loadEmployee();
+            
+            // Инициализируем состояние кнопки "Сменить сотрудника"
+            updateChangeEmployeeButton();
             
             // Интерактивность для слайдера оценки
             const satisfactionSlider = document.querySelector('input[type="range"]');

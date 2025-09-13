@@ -31,7 +31,7 @@ export function getServerConfig(): ServerConfig {
           'http://localhost:3000'
         ]
       : ['https://your-frontend-domain.com'],
-    apiRateLimit: Number(process.env.API_RATE_LIMIT) || 100,
+    apiRateLimit: Number(process.env.API_RATE_LIMIT) || 500,
     uploadMaxSize: Number(process.env.UPLOAD_MAX_SIZE) || 5242880, // 5MB
     uploadDir: process.env.UPLOAD_DIR || 'uploads/photos',
     jwtSecret: process.env.JWT_SECRET || 'o2o_jwt_secret_key_2024_development',

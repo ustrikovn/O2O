@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 3001;
 // Настройка rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 минут
-  max: process.env.API_RATE_LIMIT || 100, // максимум запросов
+  max: process.env.API_RATE_LIMIT || 500, // максимум запросов
   message: { error: 'Слишком много запросов, попробуйте позже' }
 });
 
