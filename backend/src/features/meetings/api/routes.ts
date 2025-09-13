@@ -456,4 +456,36 @@ router.get('/employees/:employeeId/stats', validateUUID('employeeId'), async (re
   }
 });
 
+/**
+ * GET /api/meetings/employees/:employeeId/last-agreements
+ * Получение договоренностей с последней завершенной встречи сотрудника
+ */
+router.get('/employees/:employeeId/last-agreements', validateUUID('employeeId'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const employeeId = req.params.employeeId!;
+    
+    const lastMeeting = await MeetingEntity.findLastCompletedWithAgreements(employeeId);
+    
+    const response: ApiResponse = {
+      success: true,
+      data: {
+        meeting: lastMeeting ? {
+          id: lastMeeting.id,
+          endedAt: lastMeeting.ended_at,
+          status: lastMeeting.status
+        } : null,
+        agreements: lastMeeting?.content?.agreements || []
+      }
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('Ошибка получения договоренностей с последней встречи:', error);
+    res.status(500).json({
+      error: 'Ошибка сервера',
+      message: 'Не удалось получить договоренности с последней встречи'
+    });
+  }
+});
+
 export default router;

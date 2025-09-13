@@ -496,4 +496,31 @@ export class MeetingEntity {
       totalAgreements: parseInt(stats.total_agreements)
     };
   }
+
+  /**
+   * Получение последней завершенной встречи с договоренностями для сотрудника
+   */
+  static async findLastCompletedWithAgreements(employeeId: UUID): Promise<Meeting | null> {
+    const sql = `
+      SELECT * FROM meetings 
+      WHERE employee_id = $1 
+        AND status = 'completed' 
+        AND content->'agreements' IS NOT NULL 
+        AND jsonb_array_length(content->'agreements') > 0
+      ORDER BY ended_at DESC
+      LIMIT 1;
+    `;
+    
+    const result = await query(sql, [employeeId]);
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    const meeting = result.rows[0];
+    return {
+      ...meeting,
+      content: meeting.content || {}
+    } as Meeting;
+  }
 }

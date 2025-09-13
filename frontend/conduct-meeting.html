@@ -409,20 +409,7 @@
                         
                         <!-- Agreements List -->
                         <div id="agreements-list" class="mb-4">
-                            <!-- Existing agreement examples -->
-                            <div class="flex items-center space-x-3 p-2 bg-glass rounded">
-                                <input type="checkbox" class="custom-checkbox" checked>
-                                <span class="text-sm font-medium flex-1">Изучить документацию по React 18</span>
-                                <span class="text-xs text-muted">25.09.2025</span>
-                                <span class="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">Сотрудник</span>
-                            </div>
-                            
-                            <div class="flex items-center space-x-3 p-2 bg-glass rounded">
-                                <input type="checkbox" class="custom-checkbox">
-                                <span class="text-sm font-medium flex-1">Организовать код-ревью для команды</span>
-                                <span class="text-xs text-muted">20.09.2025</span>
-                                <span class="text-xs bg-accent-green/20 text-accent-green px-2 py-0.5 rounded">Руководитель</span>
-                            </div>
+                            <!-- Договоренности будут загружены автоматически -->
                         </div>
                         
                     </div>
@@ -880,9 +867,13 @@
                 if (result.success && result.data.length > 0) {
                     currentEmployee = result.data[0]; // Берем первого сотрудника
                     updateCurrentEmployee(currentEmployee);
+                } else {
+                    // Если нет сотрудников, показываем заглушку для договоренностей
+                    showAgreementsPlaceholder();
                 }
             } catch (error) {
                 console.error('Ошибка загрузки сотрудника по умолчанию:', error);
+                showAgreementsPlaceholder();
             }
         }
 
@@ -936,9 +927,11 @@
                 positionElement.textContent = employee.position;
             }
             
-            // TODO: Обновить метрики и теги сотрудника
-            // TODO: Очистить текущие заметки и договоренности
-            // TODO: Загрузить данные встреч для нового сотрудника
+            // Очищаем текущие заметки и договоренности
+            clearNotesAndAgreements();
+            
+            // Загружаем договоренности с последней встречи
+            loadLastMeetingAgreements(employee.id);
             
             console.log('Сотрудник изменен на:', employee);
         }
@@ -1038,6 +1031,114 @@
                 console.error('Ошибка при добавлении договоренности:', error);
                 return false;
             }
+        }
+
+        /**
+         * Функция очистки заметок и договоренностей
+         */
+        function clearNotesAndAgreements() {
+            // Очищаем поле заметок
+            const notesTextarea = document.querySelector('#notes-agreements-block textarea');
+            if (notesTextarea) {
+                notesTextarea.value = '';
+            }
+            
+            // Очищаем список договоренностей (удаляем все существующие)
+            const agreementsList = document.getElementById('agreements-list');
+            if (agreementsList) {
+                agreementsList.innerHTML = '';
+            }
+        }
+
+        /**
+         * Функция загрузки договоренностей с последней встречи
+         */
+        async function loadLastMeetingAgreements(employeeId) {
+            if (!employeeId) {
+                console.log('Не указан ID сотрудника для загрузки договоренностей');
+                showAgreementsPlaceholder();
+                return;
+            }
+            
+            try {
+                const response = await fetch(`http://localhost:3001/api/meetings/employees/${employeeId}/last-agreements`);
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    const { agreements } = result.data;
+                    
+                    if (agreements && agreements.length > 0) {
+                        console.log('Загружены договоренности с последней встречи:', agreements);
+                        renderAgreements(agreements);
+                    } else {
+                        console.log('Нет договоренностей с последней встречи');
+                        showAgreementsPlaceholder();
+                    }
+                } else {
+                    console.error('Ошибка загрузки договоренностей:', result.message);
+                    showAgreementsPlaceholder();
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке договоренностей:', error);
+                showAgreementsPlaceholder();
+            }
+        }
+
+        /**
+         * Функция отображения заглушки для договоренностей
+         */
+        function showAgreementsPlaceholder() {
+            const agreementsList = document.getElementById('agreements-list');
+            if (agreementsList) {
+                agreementsList.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="mb-2">
+                            <svg class="w-12 h-12 mx-auto opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-sm">Нет открытых договоренностей с последней встречи</p>
+                        <p class="text-xs text-gray-400 mt-1">Добавьте новые договоренности в ходе встречи</p>
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * Функция отображения договоренностей из последней встречи
+         */
+        function renderAgreements(agreements) {
+            const agreementsList = document.getElementById('agreements-list');
+            if (!agreementsList) return;
+            
+            // Очищаем список
+            agreementsList.innerHTML = '';
+            
+            agreements.forEach(agreement => {
+                const agreementElement = document.createElement('div');
+                agreementElement.className = 'flex items-center space-x-3 p-2 bg-glass rounded';
+                
+                // Определяем тип ответственного
+                const isEmployee = agreement.type === 'employee_task';
+                const responsibleText = isEmployee ? 'Сотрудник' : 'Руководитель';
+                const responsibleClass = isEmployee ? 'bg-primary/20 text-primary' : 'bg-accent-green/20 text-accent-green';
+                
+                // Форматируем дату (если есть)
+                let dateText = '';
+                if (agreement.created_at) {
+                    const date = new Date(agreement.created_at);
+                    dateText = date.toLocaleDateString('ru-RU');
+                }
+                
+                agreementElement.innerHTML = `
+                    <input type="checkbox" class="custom-checkbox">
+                    <span class="text-sm font-medium flex-1">${agreement.title}</span>
+                    ${dateText ? `<span class="text-xs text-muted">${dateText}</span>` : ''}
+                    <span class="text-xs ${responsibleClass} px-2 py-0.5 rounded">${responsibleText}</span>
+                `;
+                
+                agreementsList.appendChild(agreementElement);
+            });
         }
     </script>
     <script>
