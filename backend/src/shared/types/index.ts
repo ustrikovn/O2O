@@ -4,3 +4,4 @@
 
 export * from './common.js';
 export * from './employee.js';
+export * from './meeting.js';

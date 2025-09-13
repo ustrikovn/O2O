@@ -13,7 +13,6 @@
     "db:migrate:js": "node src/database/migrate.js",
     "db:migrate:meetings": "tsx src/shared/database/migrate-meetings.ts",
     "db:migrate:meetings-simple": "tsx src/shared/database/migrate-meetings-simplified.ts",
-    "db:migrate:meetings-json": "tsx src/shared/database/migrate-meetings-full-json.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
