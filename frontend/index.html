@@ -35,6 +35,9 @@
     </div>
 
     <script src="shared/ui/sidebar.js"></script>
+    <script src="shared/ui/modal.js"></script>
+    <script src="shared/ui/employee-selector-modal.js"></script>
+    <script src="shared/ui/meeting-initiator.js"></script>
     <script src="shared/ui/one-to-one-button.js"></script>
     <script src="shared/ui/schedule-one-to-one-button.js"></script>
     <script>
@@ -49,8 +52,8 @@
                 icon: 'zap',
                 variant: 'accent',
                 onClick: function() {
-                    // Переход на страницу проведения встречи
-                    window.location.href = 'conduct-meeting.html';
+                    // Используем глобальный сервис для инициализации встречи
+                    window.meetingInitiator.initiateMeeting();
                 }
             });
             oneToOneButton.mount('one-to-one-button-container');
@@ -69,6 +72,22 @@
             // Инициализация иконок
             feather.replace();
         });
+
+        /**
+         * Глобальная функция для обработки клика на "Встреча" в сайдбаре
+         */
+        function startMeetingFromSidebar(event) {
+            event.preventDefault();
+            
+            // Если уже на странице встречи, ничего не делаем
+            if (window.location.pathname.includes('conduct-meeting.html')) {
+                return;
+            }
+            
+            // Используем глобальный сервис для инициализации встречи
+            window.meetingInitiator.initiateMeeting();
+        }
+
     </script>
 </body>
 </html>

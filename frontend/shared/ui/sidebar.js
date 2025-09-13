@@ -25,7 +25,7 @@ class O2OSidebar {
               <i data-feather="users" class="mr-3"></i>
               <span>Сотрудники</span>
             </a>
-            <a href="conduct-meeting.html" class="flex items-center p-3 rounded-lg sidebar-item ${this.currentPage === 'meeting' ? 'active' : ''}">
+            <a href="#" onclick="startMeetingFromSidebar(event)" class="flex items-center p-3 rounded-lg sidebar-item ${this.currentPage === 'meeting' ? 'active' : ''}">
               <i data-feather="zap" class="mr-3"></i>
               <span>Встреча</span>
             </a>

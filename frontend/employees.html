@@ -62,6 +62,8 @@
 
     <script src="shared/ui/sidebar.js"></script>
     <script src="shared/ui/modal.js"></script>
+    <script src="shared/ui/employee-selector-modal.js"></script>
+    <script src="shared/ui/meeting-initiator.js"></script>
     <script src="shared/ui/add-employee-form.js"></script>
     <script src="shared/ui/add-employee-button.js"></script>
     <script>
@@ -211,8 +213,8 @@
                             <button class="glass-button px-4 py-2 text-sm flex items-center">
                                 <i data-feather="eye" class="mr-1"></i> View Profile
                             </button>
-                            <button class="glass-button px-4 py-2 text-sm flex items-center">
-                                <i data-feather="calendar" class="mr-1"></i> Schedule
+                            <button class="glass-button px-4 py-2 text-sm flex items-center" onclick="startMeetingWithEmployee('${employee.id}')">
+                                <i data-feather="zap" class="mr-1"></i> Встреча
                             </button>
                         </div>
                     </div>
@@ -220,6 +222,40 @@
             }
             
             feather.replace();
+        }
+
+        /**
+         * Функция для начала встречи с конкретным сотрудником
+         */
+        async function startMeetingWithEmployee(employeeId) {
+            console.log('Начинаем встречу с сотрудником:', employeeId);
+            
+            try {
+                // Используем глобальный сервис для создания встречи без выбора сотрудника
+                const meetingId = await window.meetingInitiator.createMeeting(employeeId);
+                if (meetingId) {
+                    // Перенаправляем на страницу встречи
+                    window.location.href = `conduct-meeting.html?employeeId=${employeeId}&meetingId=${meetingId}`;
+                }
+            } catch (error) {
+                console.error('Ошибка при создании встречи:', error);
+                alert('Произошла ошибка при создании встречи. Попробуйте еще раз.');
+            }
+        }
+
+        /**
+         * Глобальная функция для обработки клика на "Встреча" в сайдбаре
+         */
+        function startMeetingFromSidebar(event) {
+            event.preventDefault();
+            
+            // Если уже на странице встречи, ничего не делаем
+            if (window.location.pathname.includes('conduct-meeting.html')) {
+                return;
+            }
+            
+            // Используем глобальный сервис для инициализации встречи
+            window.meetingInitiator.initiateMeeting();
         }
     </script>
 </body>

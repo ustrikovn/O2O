@@ -84,7 +84,7 @@ class EmployeeSelectorModal {
                             id="employee-search"
                             class="glass-input w-full pl-10 pr-4 py-2" 
                             placeholder="Поиск по имени, должности или команде..."
-                            oninput="employeeSelectorModal.filterEmployees(this.value)">
+                            oninput="window.currentEmployeeSelectorModal.filterEmployees(this.value)">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i data-feather="search" class="w-4 h-4 text-gray-400"></i>
                         </div>
@@ -92,7 +92,7 @@ class EmployeeSelectorModal {
                 </div>
 
                 <!-- Список сотрудников -->
-                <div class="h-80 overflow-y-auto" id="employees-list">
+                <div class="h-80 overflow-y-auto" id="modal-employees-list">
                     <div class="text-center py-8 text-gray-500">
                         <i data-feather="loader" class="w-6 h-6 mx-auto mb-2 animate-spin"></i>
                         <p>Загрузка сотрудников...</p>
@@ -104,7 +104,7 @@ class EmployeeSelectorModal {
                     <button 
                         id="select-employee-btn"
                         class="bg-primary hover:bg-primary/90 text-white px-8 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        onclick="employeeSelectorModal.selectEmployee()"
+                        onclick="window.currentEmployeeSelectorModal.selectEmployee()"
                         disabled>
                         Выбрать
                     </button>
@@ -133,7 +133,7 @@ class EmployeeSelectorModal {
                     : 'border-gray-200'
             }" 
                  data-employee-id="${employee.id}"
-                 onclick="employeeSelectorModal.selectEmployeeItem('${employee.id}')">
+                 onclick="window.currentEmployeeSelectorModal.selectEmployeeItem('${employee.id}')">
                 <div class="flex items-center space-x-3">
                     ${avatarHtml}
                     <div class="flex-1 min-w-0">
@@ -156,7 +156,7 @@ class EmployeeSelectorModal {
      * Обновление списка сотрудников в модальном окне
      */
     updateEmployeesList() {
-        const employeesList = document.getElementById('employees-list');
+        const employeesList = document.getElementById('modal-employees-list');
         if (!employeesList) return;
 
         if (this.filteredEmployees.length === 0) {
@@ -244,13 +244,13 @@ class EmployeeSelectorModal {
             this.updateEmployeesList();
         } else {
             // Показываем ошибку загрузки
-            const employeesList = document.getElementById('employees-list');
+            const employeesList = document.getElementById('modal-employees-list');
             if (employeesList) {
                 employeesList.innerHTML = `
                     <div class="text-center py-8 text-red-500">
                         <i data-feather="alert-circle" class="w-6 h-6 mx-auto mb-2"></i>
                         <p>Ошибка загрузки сотрудников</p>
-                        <button class="text-sm text-blue-600 hover:text-blue-800 mt-2" onclick="employeeSelectorModal.loadEmployees().then(() => employeeSelectorModal.updateEmployeesList())">
+                        <button class="text-sm text-blue-600 hover:text-blue-800 mt-2" onclick="window.currentEmployeeSelectorModal.loadEmployees().then(() => window.currentEmployeeSelectorModal.updateEmployeesList())">
                             Попробовать снова
                         </button>
                     </div>

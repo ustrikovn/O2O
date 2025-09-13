@@ -703,9 +703,54 @@
         
         // Переменная для хранения данных текущего сотрудника
         let currentEmployee = null;
+        
+        // Переменная для хранения ID текущей встречи
+        let currentMeetingId = null;
 
         // Глобальная переменная для модального окна выбора сотрудника
         let employeeSelectorModal = null;
+
+        // Функция загрузки сотрудника при инициализации
+        async function loadEmployee() {
+            // Проверяем URL параметры
+            const urlParams = new URLSearchParams(window.location.search);
+            const employeeId = urlParams.get('employeeId');
+            const meetingId = urlParams.get('meetingId');
+            
+            if (employeeId) {
+                console.log('Загружаем сотрудника по ID из URL:', employeeId);
+                await loadEmployeeById(employeeId);
+                if (meetingId) {
+                    currentMeetingId = meetingId;
+                    console.log('ID встречи из URL:', meetingId);
+                }
+            } else {
+                // Загружаем первого сотрудника по умолчанию
+                await loadDefaultEmployee();
+            }
+        }
+
+        // Функция загрузки конкретного сотрудника по ID
+        async function loadEmployeeById(employeeId) {
+            try {
+                const response = await fetch(`http://localhost:3001/api/employees/${employeeId}`);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    currentEmployee = result.data;
+                    updateCurrentEmployee(currentEmployee);
+                    console.log('Сотрудник загружен по ID:', currentEmployee);
+                } else {
+                    console.error('Сотрудник не найден:', employeeId);
+                    // Загружаем первого сотрудника по умолчанию
+                    await loadDefaultEmployee();
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки сотрудника по ID:', error);
+                // Загружаем первого сотрудника по умолчанию
+                await loadDefaultEmployee();
+            }
+        }
 
         // Функция загрузки первого сотрудника при инициализации
         async function loadDefaultEmployee() {
@@ -733,8 +778,12 @@
                 },
                 onClose: () => {
                     employeeSelectorModal = null;
+                    window.currentEmployeeSelectorModal = null;
                 }
             });
+            
+            // Устанавливаем глобальную ссылку для доступа из HTML
+            window.currentEmployeeSelectorModal = employeeSelectorModal;
             
             employeeSelectorModal.open();
         }
@@ -793,6 +842,16 @@
             
             return selectedColor;
         }
+
+        /**
+         * Глобальная функция для обработки клика на "Встреча" в сайдбаре
+         * На странице встречи ничего не делаем
+         */
+        function startMeetingFromSidebar(event) {
+            event.preventDefault();
+            // На странице встречи ничего не делаем - остаемся где были
+            console.log('Уже на странице встречи');
+        }
     </script>
     <script>
         // Инициализация компонентов
@@ -803,8 +862,8 @@
             // Инициализация иконок
             feather.replace();
             
-            // Загружаем сотрудника по умолчанию
-            loadDefaultEmployee();
+            // Загружаем сотрудника (по URL параметрам или по умолчанию)
+            loadEmployee();
             
             // Интерактивность для слайдера оценки
             const satisfactionSlider = document.querySelector('input[type="range"]');
