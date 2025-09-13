@@ -427,6 +427,12 @@
     <script>
         // Agreements functionality
         async function addNewAgreement() {
+            // Проверяем, что встреча активна
+            if (!isRunning) {
+                alert('Договоренности можно добавлять только во время активной встречи. Нажмите "Начать встречу" чтобы начать.');
+                return;
+            }
+            
             // Сохраняем все редактируемые пункты перед добавлением нового
             await saveAllEditingAgreements();
             
@@ -761,6 +767,9 @@
                             // Обновляем состояние поля заметок
                             updateNotesFieldState();
                             
+                            // Обновляем состояние области договоренностей
+                            updateAgreementsFieldState();
+                            
                             // Перерисовываем иконки Feather
                             feather.replace();
                             
@@ -825,6 +834,9 @@
                     // Обновляем состояние поля заметок
                     updateNotesFieldState();
                     
+                    // Обновляем состояние области договоренностей
+                    updateAgreementsFieldState();
+                    
                     // Перерисовываем иконки Feather
                     feather.replace();
                     
@@ -850,6 +862,9 @@
                     
                     // Обновляем состояние поля заметок
                     updateNotesFieldState();
+                    
+                    // Обновляем состояние области договоренностей
+                    updateAgreementsFieldState();
                 }
             }
         }
@@ -987,6 +1002,53 @@
                     notesTextarea.classList.add('opacity-50');
                 }
             }
+        }
+
+        /**
+         * Функция управления состоянием области договоренностей
+         */
+        function updateAgreementsFieldState() {
+            // Управляем кнопкой "Добавить пункт"
+            const addAgreementButton = document.querySelector('#notes-agreements-block button[onclick="addNewAgreement()"]');
+            if (addAgreementButton) {
+                if (isRunning) {
+                    // Во время встречи - включаем кнопку добавления
+                    addAgreementButton.disabled = false;
+                    addAgreementButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    addAgreementButton.title = 'Добавить пункт';
+                } else {
+                    // Когда встреча не идет - отключаем кнопку добавления
+                    addAgreementButton.disabled = true;
+                    addAgreementButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    addAgreementButton.title = 'Договоренности доступны только во время активной встречи';
+                }
+            }
+
+            // Управляем всеми чекбоксами в договоренностях
+            const agreementCheckboxes = document.querySelectorAll('#agreements-list .custom-checkbox');
+            agreementCheckboxes.forEach(checkbox => {
+                if (isRunning) {
+                    // Во время встречи - включаем чекбоксы
+                    checkbox.disabled = false;
+                    checkbox.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    // Когда встреча не идет - отключаем чекбоксы
+                    checkbox.disabled = true;
+                    checkbox.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            });
+
+            // Управляем кнопками удаления в редактируемых пунктах
+            const removeButtons = document.querySelectorAll('#agreements-list .editing button[onclick*="removeAgreement"]');
+            removeButtons.forEach(button => {
+                if (isRunning) {
+                    button.disabled = false;
+                    button.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    button.disabled = true;
+                    button.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            });
         }
 
         /**
@@ -1241,8 +1303,12 @@
                     dateText = date.toLocaleDateString('ru-RU');
                 }
                 
+                // Определяем состояние чекбокса в зависимости от активности встречи
+                const checkboxDisabled = !isRunning;
+                const checkboxClasses = checkboxDisabled ? 'custom-checkbox opacity-50 cursor-not-allowed' : 'custom-checkbox';
+                
                 agreementElement.innerHTML = `
-                    <input type="checkbox" class="custom-checkbox">
+                    <input type="checkbox" class="${checkboxClasses}" ${checkboxDisabled ? 'disabled' : ''}>
                     <span class="text-sm font-medium flex-1">${agreement.title}</span>
                     ${dateText ? `<span class="text-xs text-muted">${dateText}</span>` : ''}
                     <span class="text-xs ${responsibleClass} px-2 py-0.5 rounded">${responsibleText}</span>
@@ -1286,6 +1352,9 @@
                         
                         // Обновляем состояние поля заметок
                         updateNotesFieldState();
+                        
+                        // Обновляем состояние области договоренностей
+                        updateAgreementsFieldState();
                         
                         console.log('Активная встреча инициализирована:', meeting);
                     }
@@ -1332,6 +1401,9 @@
                         // Обновляем состояние поля заметок
                         updateNotesFieldState();
                         
+                        // Обновляем состояние области договоренностей
+                        updateAgreementsFieldState();
+                        
                         console.log('Активная встреча с текущим сотрудником инициализирована');
                     }
                 }
@@ -1358,6 +1430,9 @@
             
             // Инициализируем состояние поля заметок
             updateNotesFieldState();
+            
+            // Инициализируем состояние области договоренностей
+            updateAgreementsFieldState();
             
             // Интерактивность для слайдера оценки
             const satisfactionSlider = document.querySelector('input[type="range"]');
