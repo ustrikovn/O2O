@@ -394,8 +394,10 @@
                     <div class="mb-6">
                         <h2 class="text-xl font-semibold mb-4">Заметки</h2>
                         <textarea 
+                            id="meeting-notes" 
                             class="glass-input w-full h-60 resize-none" 
-                            placeholder="Записывайте ключевые моменты встречи, обратную связь от сотрудника и ваши наблюдения..."></textarea>
+                            placeholder="Записывайте ключевые моменты встречи, обратную связь от сотрудника и ваши наблюдения..."
+                            disabled></textarea>
                     </div>
                     
                     <!-- Agreements Section -->
@@ -429,6 +431,13 @@
             await saveAllEditingAgreements();
             
             const agreementsList = document.getElementById('agreements-list');
+            
+            // Проверяем, есть ли заглушка, и удаляем её
+            const placeholder = agreementsList.querySelector('.text-center.py-8.text-gray-500');
+            if (placeholder) {
+                placeholder.remove();
+            }
+            
             const newAgreement = document.createElement('div');
             newAgreement.className = 'flex items-center space-x-3 p-2 bg-glass rounded editing';
             
@@ -440,11 +449,10 @@
             newAgreement.innerHTML = `
                 <input type="checkbox" class="custom-checkbox">
                 <input type="text" class="text-sm font-medium flex-1 bg-transparent border-none outline-none" 
-                       placeholder="Введите задачу..." onblur="saveTaskText(this)" onkeypress="handleTaskKeypress(event, this)">
+                       placeholder="Введите задачу..." onkeypress="handleTaskKeypress(event, this)">
                 <input type="date" class="text-xs text-muted bg-transparent border-none outline-none" 
-                       value="${defaultDate}" onchange="saveDateChange(this)">
-                <select class="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded border-none outline-none" 
-                        onchange="saveResponsibleChange(this)">
+                       value="${defaultDate}">
+                <select class="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded border-none outline-none">
                     <option value="employee" class="bg-white text-black">Сотрудник</option>
                     <option value="manager" class="bg-white text-black">Руководитель</option>
                 </select>
@@ -456,21 +464,37 @@
             // Фокус на поле задачи
             const taskInput = newAgreement.querySelector('input[type="text"]');
             taskInput.focus();
+            
+            // Инициализируем стиль select'а
+            const selectElement = newAgreement.querySelector('select');
+            updateResponsibleSelectStyle(selectElement);
         }
         
         function handleTaskKeypress(event, input) {
             if (event.key === 'Enter') {
+                // При нажатии Enter просто убираем фокус, но не сохраняем сразу
                 input.blur();
+                // Сохранение произойдет при клике вне области
             }
         }
         
         async function saveTaskText(input) {
+            const agreementElement = input.closest('.flex');
+            
             if (input.value.trim() === '') {
                 // Если задача пустая, удаляем пункт
-                input.closest('.flex').remove();
+                agreementElement.remove();
+                
+                // Проверяем, остались ли пункты. Если нет - показываем заглушку
+                const agreementsList = document.getElementById('agreements-list');
+                const remainingAgreements = agreementsList.querySelectorAll('.flex.items-center.space-x-3:not(.text-center)');
+                if (remainingAgreements.length === 0) {
+                    showAgreementsPlaceholder();
+                }
             } else {
-                // Сохраняем пункт - убираем режим редактирования
-                await saveAgreementItem(input.closest('.flex'));
+                // Просто убираем режим редактирования, не сохраняя пока
+                // Сохранение произойдет при клике вне или явном сохранении
+                console.log('Текст введен, ожидаем завершения редактирования');
             }
         }
         
@@ -519,18 +543,23 @@
             for (const agreement of editingAgreements) {
                 const taskInput = agreement.querySelector('input[type="text"]');
                 if (taskInput && taskInput.value.trim() !== '') {
+                    // Сохраняем только пункты с заполненным текстом
                     await saveAgreementItem(agreement);
                 } else if (taskInput && taskInput.value.trim() === '') {
+                    // Удаляем пустые пункты
                     agreement.remove();
                 }
             }
+            
+            // Проверяем, остались ли пункты. Если нет - показываем заглушку
+            const agreementsList = document.getElementById('agreements-list');
+            const remainingAgreements = agreementsList.querySelectorAll('.flex.items-center.space-x-3:not(.text-center)');
+            if (remainingAgreements.length === 0) {
+                showAgreementsPlaceholder();
+            }
         }
         
-        function saveDateChange(input) {
-            // Дата автоматически сохраняется при изменении
-        }
-        
-        function saveResponsibleChange(select) {
+        function updateResponsibleSelectStyle(select) {
             const isEmployee = select.value === 'employee';
             select.className = `text-xs px-2 py-0.5 rounded border-none outline-none ${
                 isEmployee ? 'bg-primary/20 text-primary' : 'bg-accent-green/20 text-accent-green'
@@ -539,6 +568,13 @@
         
         function removeAgreement(button) {
             button.closest('.flex').remove();
+            
+            // Проверяем, остались ли пункты. Если нет - показываем заглушку
+            const agreementsList = document.getElementById('agreements-list');
+            const remainingAgreements = agreementsList.querySelectorAll('.flex.items-center.space-x-3:not(.text-center)');
+            if (remainingAgreements.length === 0) {
+                showAgreementsPlaceholder();
+            }
         }
         
         // Автосохранение при клике вне области редактирования
@@ -553,10 +589,17 @@
                         return;
                     }
                     
-                    // Сохраняем все редактируемые пункты
+                    // Сохраняем все редактируемые пункты с заполненным текстом
                     await saveAllEditingAgreements();
                 });
             }, 100);
+            
+            // Добавляем обработчики для изменения select'ов
+            document.addEventListener('change', function(event) {
+                if (event.target.tagName === 'SELECT' && event.target.closest('.editing')) {
+                    updateResponsibleSelectStyle(event.target);
+                }
+            });
         });
         
         // Chat functionality
@@ -715,6 +758,9 @@
                             // Обновляем состояние кнопки "Сменить сотрудника"
                             updateChangeEmployeeButton();
                             
+                            // Обновляем состояние поля заметок
+                            updateNotesFieldState();
+                            
                             // Перерисовываем иконки Feather
                             feather.replace();
                             
@@ -750,7 +796,7 @@
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                notes: document.querySelector('#notes-agreements-block textarea')?.value || ''
+                                notes: document.getElementById('meeting-notes')?.value || ''
                             })
                         });
                         
@@ -776,6 +822,9 @@
                     // Обновляем состояние кнопки "Сменить сотрудника"
                     updateChangeEmployeeButton();
                     
+                    // Обновляем состояние поля заметок
+                    updateNotesFieldState();
+                    
                     // Перерисовываем иконки Feather
                     feather.replace();
                     
@@ -798,6 +847,9 @@
                     
                     // Обновляем состояние кнопки "Сменить сотрудника"
                     updateChangeEmployeeButton();
+                    
+                    // Обновляем состояние поля заметок
+                    updateNotesFieldState();
                 }
             }
         }
@@ -915,6 +967,26 @@
             window.currentEmployeeSelectorModal = employeeSelectorModal;
             
             employeeSelectorModal.open();
+        }
+
+        /**
+         * Функция управления состоянием поля заметок
+         */
+        function updateNotesFieldState() {
+            const notesTextarea = document.getElementById('meeting-notes');
+            if (notesTextarea) {
+                if (isRunning) {
+                    // Во время встречи - включаем поле заметок
+                    notesTextarea.disabled = false;
+                    notesTextarea.placeholder = 'Записывайте ключевые моменты встречи, обратную связь от сотрудника и ваши наблюдения...';
+                    notesTextarea.classList.remove('opacity-50');
+                } else {
+                    // Когда встреча не идет - отключаем поле заметок
+                    notesTextarea.disabled = true;
+                    notesTextarea.placeholder = 'Заметки доступны только во время активной встречи. Нажмите "Начать встречу" чтобы начать записывать.';
+                    notesTextarea.classList.add('opacity-50');
+                }
+            }
         }
 
         /**
@@ -1077,7 +1149,7 @@
          */
         function clearNotesAndAgreements() {
             // Очищаем поле заметок
-            const notesTextarea = document.querySelector('#notes-agreements-block textarea');
+            const notesTextarea = document.getElementById('meeting-notes');
             if (notesTextarea) {
                 notesTextarea.value = '';
             }
@@ -1212,6 +1284,9 @@
                         // Обновляем состояние кнопки "Сменить сотрудника"
                         updateChangeEmployeeButton();
                         
+                        // Обновляем состояние поля заметок
+                        updateNotesFieldState();
+                        
                         console.log('Активная встреча инициализирована:', meeting);
                     }
                 } else {
@@ -1254,6 +1329,9 @@
                         // Обновляем состояние кнопки "Сменить сотрудника"
                         updateChangeEmployeeButton();
                         
+                        // Обновляем состояние поля заметок
+                        updateNotesFieldState();
+                        
                         console.log('Активная встреча с текущим сотрудником инициализирована');
                     }
                 }
@@ -1278,6 +1356,9 @@
             // Инициализируем состояние кнопки "Сменить сотрудника"
             updateChangeEmployeeButton();
             
+            // Инициализируем состояние поля заметок
+            updateNotesFieldState();
+            
             // Интерактивность для слайдера оценки
             const satisfactionSlider = document.querySelector('input[type="range"]');
             const satisfactionValue = document.querySelector('.text-lg.font-bold.w-8.text-center');
@@ -1298,7 +1379,7 @@
             }
             
             // Автосохранение заметок
-            const notesTextarea = document.querySelector('#notes-agreements-block textarea');
+            const notesTextarea = document.getElementById('meeting-notes');
             if (notesTextarea) {
                 let timeout;
                 notesTextarea.addEventListener('input', function() {
