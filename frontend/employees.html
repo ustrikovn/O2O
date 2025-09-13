@@ -66,11 +66,13 @@
     <script src="shared/ui/meeting-initiator.js"></script>
     <script src="shared/ui/add-employee-form.js"></script>
     <script src="shared/ui/add-employee-button.js"></script>
+    <script src="shared/ui/active-meeting-modal.js"></script>
     <script>
         // Инициализация компонентов
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = new O2OSidebar('employees');
             sidebar.mount('sidebar-container');
+            sidebar.startActiveMeetingCheck();
             
             // Инициализация кнопки добавления сотрудника
             const addEmployeeButton = new AddEmployeeButton({
@@ -231,7 +233,43 @@
             console.log('Начинаем встречу с сотрудником:', employeeId);
             
             try {
-                // Используем глобальный сервис для создания встречи без выбора сотрудника
+                // Проверяем, есть ли активная встреча
+                const activeResponse = await fetch('http://localhost:3001/api/meetings/active');
+                const activeResult = await activeResponse.json();
+                
+                if (activeResponse.ok && activeResult.success && activeResult.data) {
+                    const activeMeeting = activeResult.data;
+                    
+                    // Проверяем, совпадает ли активная встреча с выбранным сотрудником
+                    if (activeMeeting.employeeId === employeeId) {
+                        // Это тот же сотрудник - переходим к активной встрече
+                        window.location.href = `conduct-meeting.html?employeeId=${employeeId}&meetingId=${activeMeeting.id}`;
+                        return;
+                    } else {
+                        // Активная встреча с другим сотрудником - показываем дисклеймер
+                        const activeEmployee = {
+                            id: activeMeeting.employeeId,
+                            firstName: activeMeeting.first_name,
+                            lastName: activeMeeting.last_name
+                        };
+                        
+                        const modal = new ActiveMeetingModal({
+                            employee: activeEmployee,
+                            meetingId: activeMeeting.id,
+                            onGoToMeeting: () => {
+                                console.log('Переход к активной встрече');
+                            },
+                            onClose: () => {
+                                console.log('Модальное окно закрыто');
+                            }
+                        });
+                        
+                        modal.open();
+                        return;
+                    }
+                }
+                
+                // Нет активной встречи - создаем новую
                 const meetingId = await window.meetingInitiator.createMeeting(employeeId);
                 if (meetingId) {
                     // Перенаправляем на страницу встречи
@@ -246,7 +284,7 @@
         /**
          * Глобальная функция для обработки клика на "Встреча" в сайдбаре
          */
-        function startMeetingFromSidebar(event) {
+        async function startMeetingFromSidebar(event) {
             event.preventDefault();
             
             // Если уже на странице встречи, ничего не делаем
@@ -254,8 +292,24 @@
                 return;
             }
             
-            // Используем глобальный сервис для инициализации встречи
-            window.meetingInitiator.initiateMeeting();
+            try {
+                // Проверяем, есть ли активная встреча
+                const response = await fetch('http://localhost:3001/api/meetings/active');
+                const result = await response.json();
+                
+                if (response.ok && result.success && result.data) {
+                    // Есть активная встреча - перенаправляем на неё
+                    const activeMeeting = result.data;
+                    window.location.href = `conduct-meeting.html?employeeId=${activeMeeting.employeeId}&meetingId=${activeMeeting.id}`;
+                } else {
+                    // Нет активной встречи - используем обычную логику
+                    window.meetingInitiator.initiateMeeting();
+                }
+            } catch (error) {
+                console.error('Ошибка при проверке активной встречи:', error);
+                // В случае ошибки используем обычную логику
+                window.meetingInitiator.initiateMeeting();
+            }
         }
     </script>
 </body>

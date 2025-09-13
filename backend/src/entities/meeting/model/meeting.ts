@@ -523,4 +523,44 @@ export class MeetingEntity {
       content: meeting.content || {}
     } as Meeting;
   }
+
+  /**
+   * Получение любой активной встречи в системе с данными сотрудника
+   */
+  static async findAnyActive(): Promise<any | null> {
+    const sql = `
+      SELECT 
+        m.*,
+        e.first_name,
+        e.last_name,
+        e.email,
+        e.photo_url
+      FROM meetings m
+      JOIN employees e ON m.employee_id = e.id
+      WHERE m.status = 'active'
+      ORDER BY m.started_at DESC
+      LIMIT 1;
+    `;
+    
+    const result = await query(sql);
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    const meeting = result.rows[0];
+    
+    return {
+      ...meeting,
+      employeeId: meeting.employee_id,
+      content: meeting.content || {},
+      employee: {
+        id: meeting.employee_id,
+        firstName: meeting.first_name,
+        lastName: meeting.last_name,
+        email: meeting.email,
+        photoUrl: meeting.photo_url
+      }
+    };
+  }
 }

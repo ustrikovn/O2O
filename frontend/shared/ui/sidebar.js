@@ -3,6 +3,7 @@
 class O2OSidebar {
   constructor(currentPage = 'home') {
     this.currentPage = currentPage;
+    this.hasActiveMeeting = false;
   }
 
   render() {
@@ -54,6 +55,47 @@ class O2OSidebar {
       if (typeof feather !== 'undefined') {
         feather.replace();
       }
+      // Проверяем активную встречу после монтирования
+      this.checkActiveMeeting();
+    }
+  }
+
+  /**
+   * Проверка наличия активной встречи
+   */
+  async checkActiveMeeting() {
+    try {
+      const response = await fetch('http://localhost:3001/api/meetings/active');
+      const result = await response.json();
+      
+      const hasActive = response.ok && result.success && result.data;
+      
+      if (hasActive !== this.hasActiveMeeting) {
+        this.hasActiveMeeting = hasActive;
+        // НЕ вызываем updateMeetingIndicator() - просто сохраняем состояние
+      }
+    } catch (error) {
+      console.error('Ошибка проверки активной встречи:', error);
+    }
+  }
+
+  /**
+   * Запуск периодической проверки активной встречи
+   */
+  startActiveMeetingCheck() {
+    // Проверяем каждые 30 секунд
+    this.activeMeetingInterval = setInterval(() => {
+      this.checkActiveMeeting();
+    }, 30000);
+  }
+
+  /**
+   * Остановка периодической проверки
+   */
+  stopActiveMeetingCheck() {
+    if (this.activeMeetingInterval) {
+      clearInterval(this.activeMeetingInterval);
+      this.activeMeetingInterval = null;
     }
   }
 }

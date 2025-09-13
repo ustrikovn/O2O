@@ -146,6 +146,29 @@ router.get('/stats', async (req: Request, res: Response): Promise<void> => {
 });
 
 /**
+ * GET /api/meetings/active
+ * Получение активной встречи (любая активная встреча в системе)
+ */
+router.get('/active', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const activeMeeting = await MeetingEntity.findAnyActive();
+    
+    const response: ApiResponse = {
+      success: true,
+      data: activeMeeting
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('Ошибка получения активной встречи:', error);
+    res.status(500).json({
+      error: 'Ошибка сервера',
+      message: 'Не удалось получить активную встречу'
+    });
+  }
+});
+
+/**
  * GET /api/meetings/:id
  * Получение детальной информации о встрече
  */

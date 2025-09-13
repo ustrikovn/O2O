@@ -40,20 +40,42 @@
     <script src="shared/ui/meeting-initiator.js"></script>
     <script src="shared/ui/one-to-one-button.js"></script>
     <script src="shared/ui/schedule-one-to-one-button.js"></script>
+    <script src="shared/ui/active-meeting-modal.js"></script>
     <script>
         // Инициализация компонентов
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = new O2OSidebar('home');
             sidebar.mount('sidebar-container');
+            sidebar.startActiveMeetingCheck();
             
             // Инициализация кнопки проведения one-to-one встречи
             const oneToOneButton = new OneToOneButton({
                 text: 'Провести one-to-one',
                 icon: 'zap',
                 variant: 'accent',
-                onClick: function() {
-                    // Используем глобальный сервис для инициализации встречи
-                    window.meetingInitiator.initiateMeeting();
+                onClick: async function() {
+                    try {
+                        // Проверяем, есть ли активная встреча
+                        const response = await fetch('http://localhost:3001/api/meetings/active');
+                        const result = await response.json();
+                        
+                        if (response.ok && result.success && result.data) {
+                            // Есть активная встреча - показываем дисклеймер
+                            const activeMeeting = result.data;
+                            const activeMeetingModal = new ActiveMeetingModal({
+                                employee: activeMeeting.employee,
+                                meetingId: activeMeeting.id
+                            });
+                            activeMeetingModal.open();
+                        } else {
+                            // Нет активной встречи - используем обычную логику
+                            window.meetingInitiator.initiateMeeting();
+                        }
+                    } catch (error) {
+                        console.error('Ошибка при проверке активной встречи:', error);
+                        // В случае ошибки используем обычную логику
+                        window.meetingInitiator.initiateMeeting();
+                    }
                 }
             });
             oneToOneButton.mount('one-to-one-button-container');
@@ -76,7 +98,7 @@
         /**
          * Глобальная функция для обработки клика на "Встреча" в сайдбаре
          */
-        function startMeetingFromSidebar(event) {
+        async function startMeetingFromSidebar(event) {
             event.preventDefault();
             
             // Если уже на странице встречи, ничего не делаем
@@ -84,8 +106,24 @@
                 return;
             }
             
-            // Используем глобальный сервис для инициализации встречи
-            window.meetingInitiator.initiateMeeting();
+            try {
+                // Проверяем, есть ли активная встреча
+                const response = await fetch('http://localhost:3001/api/meetings/active');
+                const result = await response.json();
+                
+                if (response.ok && result.success && result.data) {
+                    // Есть активная встреча - перенаправляем на неё
+                    const activeMeeting = result.data;
+                    window.location.href = `conduct-meeting.html?employeeId=${activeMeeting.employeeId}&meetingId=${activeMeeting.id}`;
+                } else {
+                    // Нет активной встречи - используем обычную логику
+                    window.meetingInitiator.initiateMeeting();
+                }
+            } catch (error) {
+                console.error('Ошибка при проверке активной встречи:', error);
+                // В случае ошибки используем обычную логику
+                window.meetingInitiator.initiateMeeting();
+            }
         }
 
     </script>

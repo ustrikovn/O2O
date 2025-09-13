@@ -1146,6 +1146,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = new O2OSidebar('meeting');
             sidebar.mount('sidebar-container');
+            sidebar.startActiveMeetingCheck();
             
             // Инициализация иконок
             feather.replace();
