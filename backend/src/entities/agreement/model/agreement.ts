@@ -66,7 +66,7 @@ export class AgreementEntity {
       SELECT * FROM agreements 
       WHERE employee_id = $1 
         AND status IN ('pending', 'marked_for_completion')
-      ORDER BY created_at DESC;
+      ORDER BY created_at ASC;
     `;
     
     try {

@@ -534,7 +534,6 @@
             agreementElement.classList.remove('editing');
             
             // Конвертируем в обычный вид
-            const createdDate = new Date().toLocaleDateString('ru-RU');
             const dueDateFormatted = dateInput.value ? new Date(dateInput.value).toLocaleDateString('ru-RU') : '';
             const responsibleText = responsible === 'employee' ? 'Сотрудник' : 'Руководитель';
             const responsibleClass = responsible === 'employee' ? 'bg-primary/20 text-primary' : 'bg-accent-green/20 text-accent-green';
@@ -545,7 +544,6 @@
                 <input type="checkbox" class="custom-checkbox" data-agreement-id="${agreementId}">
                 <span class="text-sm font-medium flex-1">${task}</span>
                 <div class="text-xs flex flex-col space-y-1">
-                    <span class="text-muted">Создано: ${createdDate}</span>
                     ${dueDateFormatted ? `<span class="text-blue-600 font-medium">До: ${dueDateFormatted}</span>` : ''}
                 </div>
                 <span class="text-xs ${responsibleClass} px-2 py-0.5 rounded">${responsibleText}</span>
@@ -816,6 +814,8 @@
                     // Блокируем кнопку во время запроса
                     btn.disabled = true;
                     btn.textContent = 'Завершение встречи...';
+                    
+                    console.log('Попытка завершить встречу. currentMeetingId:', currentMeetingId);
                     
                     if (currentMeetingId) {
                         // Завершаем встречу через API
@@ -1521,9 +1521,9 @@
                     titleSpan.style.textDecoration = 'line-through';
                     titleSpan.style.opacity = '0.7';
                 } else if (newStatus === 'marked_for_completion') {
-                    titleSpan.style.textDecoration = 'none';
+                    titleSpan.style.textDecoration = 'line-through';
                     titleSpan.style.opacity = '0.8';
-                    titleSpan.style.fontStyle = 'italic';
+                    titleSpan.style.fontStyle = 'normal';
                 } else {
                     titleSpan.style.textDecoration = 'none';
                     titleSpan.style.opacity = '1';
@@ -1591,16 +1591,12 @@
                 agreementElement.className = 'flex items-center space-x-3 p-2 bg-glass rounded';
                 
                 // Определяем тип ответственного
-                const isEmployee = agreement.type === 'employee_task';
+                const isEmployee = agreement.responsible_type === 'employee_task';
                 const responsibleText = isEmployee ? 'Сотрудник' : 'Руководитель';
                 const responsibleClass = isEmployee ? 'bg-primary/20 text-primary' : 'bg-accent-green/20 text-accent-green';
                 
-                // Форматируем дату создания (если есть)
+                // Дату создания не отображаем
                 let createdDateText = '';
-                if (agreement.created_at) {
-                    const date = new Date(agreement.created_at);
-                    createdDateText = `Создано: ${date.toLocaleDateString('ru-RU')}`;
-                }
                 
                 // Форматируем планируемую дату выполнения (если есть)
                 let dueDateText = '';
@@ -1625,14 +1621,13 @@
                 if (isCompleted) {
                     taskStyle = 'text-decoration: line-through; opacity: 0.7;';
                 } else if (isMarked) {
-                    taskStyle = 'opacity: 0.8; font-style: italic;';
+                    taskStyle = 'text-decoration: line-through; opacity: 0.8;';
                 }
                 
                 agreementElement.innerHTML = `
                     <input type="checkbox" class="custom-checkbox" ${isChecked ? 'checked' : ''}>
                     <span class="text-sm font-medium flex-1" style="${taskStyle}">${agreement.title}</span>
                     <div class="text-xs flex flex-col space-y-1">
-                        ${createdDateText ? `<span class="text-muted">${createdDateText}</span>` : ''}
                         ${dueDateText ? `<span class="text-blue-600 font-medium">${dueDateText}</span>` : ''}
                         ${completedText ? `<span class="text-green-600">${completedText}</span>` : ''}
                     </div>
@@ -1718,10 +1713,24 @@
                             currentMeetingId = meeting.id;
                         } else {
                             console.log('Встреча найдена, но не активна. Статус:', meeting.status);
+                            // Очищаем URL от завершенной встречи
+                            const url = new URL(window.location);
+                            url.searchParams.delete('meetingId');
+                            window.history.replaceState({}, '', url);
+                            
+                            // Если встреча неактивна, ищем любую другую активную встреча в системе
+                            await checkAndInitializeActiveMeeting({ type: 'anyActive', changeEmployee: true });
                             return;
                         }
                     } else {
                         console.log('Встреча не найдена или не активна. Response:', response.status);
+                        // Очищаем URL от несуществующей встречи
+                        const url = new URL(window.location);
+                        url.searchParams.delete('meetingId');
+                        window.history.replaceState({}, '', url);
+                        
+                        // Если встреча не найдена, ищем любую активную встречу в системе
+                        await checkAndInitializeActiveMeeting({ type: 'anyActive', changeEmployee: true });
                         return;
                     }
                 }
@@ -1764,8 +1773,9 @@
                         console.log('Найдена активная встреча в системе:', meeting);
                         
                         // Если нужно сменить сотрудника на того, с кем идет встреча
-                        if (changeEmployee && meeting.employee_id) {
-                            await loadEmployeeById(meeting.employee_id);
+                        const meetingEmployeeId = meeting.employeeId || meeting.employee_id;
+                        if (changeEmployee && meetingEmployeeId) {
+                            await loadEmployeeById(meetingEmployeeId);
                         }
                         
                         currentMeetingId = meeting.id;
@@ -1787,10 +1797,11 @@
                         console.log('Обнаружена активная встреча в системе:', activeMeeting);
                         
                         // Инициализируем только если встреча с тем же сотрудником
-                        if (currentEmployee && activeMeeting.employeeId === currentEmployee.id) {
+                        const meetingEmployeeId = activeMeeting.employeeId || activeMeeting.employee_id;
+                        if (currentEmployee && meetingEmployeeId === currentEmployee.id) {
                             meeting = activeMeeting;
                             currentMeetingId = activeMeeting.id;
-                            console.log('Активная встреча с текущим сотрудником найдена');
+                            console.log('Активная встреча с текущим сотрудником найдена. ID встречи:', currentMeetingId);
                         } else {
                             console.log('Активная встреча найдена, но с другим сотрудником. Не инициализируем.');
                             return;
