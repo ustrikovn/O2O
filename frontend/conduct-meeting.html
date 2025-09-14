@@ -970,7 +970,7 @@
                 // Загружаем первого сотрудника по умолчанию
                 await loadDefaultEmployee();
                 // Проверяем, есть ли активная встреча в системе
-                await checkForActiveMeeting();
+                await checkAndInitializeActiveMeeting({ type: 'currentEmployeeOnly' });
             }
         }
 
@@ -986,7 +986,7 @@
                     console.log('Сотрудник загружен по ID:', currentEmployee);
                     
                     // Проверяем активную встречу для этого сотрудника
-                    await checkEmployeeActiveMeeting(employeeId);
+                    await checkAndInitializeActiveMeeting({ type: 'byEmployeeId', employeeId: employeeId });
                 } else {
                     console.error('Сотрудник не найден:', employeeId);
                     // Загружаем первого сотрудника по умолчанию
@@ -1003,7 +1003,7 @@
         async function loadDefaultEmployee() {
             try {
                 // Сначала проверяем, есть ли активная встреча в системе
-                await checkForActiveMeetingInSystem();
+                await checkAndInitializeActiveMeeting({ type: 'anyActive', changeEmployee: true });
                 
                 // Если активной встречи нет, загружаем первого сотрудника
                 if (!currentEmployee) {
@@ -1015,7 +1015,7 @@
                         updateCurrentEmployee(currentEmployee);
                         
                         // Проверяем активную встречу для этого сотрудника
-                        await checkEmployeeActiveMeeting(currentEmployee.id);
+                        await checkAndInitializeActiveMeeting({ type: 'byEmployeeId', employeeId: currentEmployee.id });
                     } else {
                         // Если нет сотрудников, показываем заглушку для договоренностей
                         showAgreementsPlaceholder();
@@ -1739,229 +1739,189 @@
         }
 
         /**
-         * Проверка активной встречи при переходе по URL с meetingId
+         * УНИВЕРСАЛЬНАЯ функция проверки и инициализации активной встречи
+         * Заменяет 4 дублирующие функции, сохраняя ВСЮ логику
+         * 
+         * @param {Object} options - Параметры поиска встречи
+         * @param {string} options.type - Тип поиска: 'byMeetingId' | 'byEmployeeId' | 'anyActive' | 'currentEmployeeOnly'
+         * @param {string} options.meetingId - ID конкретной встречи (для type: 'byMeetingId')
+         * @param {string} options.employeeId - ID сотрудника (для type: 'byEmployeeId')
+         * @param {boolean} options.changeEmployee - Менять ли сотрудника если найдена встреча с другим (по умолчанию false)
          */
-        async function checkAndInitializeActiveMeeting() {
-            console.log('checkAndInitializeActiveMeeting вызвана. currentMeetingId:', currentMeetingId);
-            if (!currentMeetingId) {
-                console.log('currentMeetingId не установлен, выходим');
-                return;
-            }
+        async function checkAndInitializeActiveMeeting(options = {}) {
+            const { type = 'byMeetingId', meetingId, employeeId, changeEmployee = false } = options;
+            
+            console.log(`checkAndInitializeActiveMeeting вызвана. Тип: ${type}`, options);
             
             try {
-                console.log('Запрашиваем данные встречи:', `http://localhost:3001/api/meetings/${currentMeetingId}`);
-                const response = await fetch(`http://localhost:3001/api/meetings/${currentMeetingId}`);
-                const result = await response.json();
+                let meeting = null;
+                let apiUrl = '';
                 
-                if (response.ok && result.success && result.data) {
-                    const meeting = result.data;
+                // ЛОГИКА 1: Поиск встречи по конкретному ID (было в checkAndInitializeActiveMeeting)
+                if (type === 'byMeetingId') {
+                    const targetMeetingId = meetingId || currentMeetingId;
+                    if (!targetMeetingId) {
+                        console.log('ID встречи не установлен, выходим');
+                        return;
+                    }
                     
-                    // Проверяем, активна ли встреча
-                    if (meeting.status === 'active' && meeting.started_at) {
-                        console.log('Обнаружена активная встреча, инициализируем таймер');
+                    apiUrl = `http://localhost:3001/api/meetings/${targetMeetingId}`;
+                    console.log('Запрашиваем данные встречи:', apiUrl);
+                    
+                    const response = await fetch(apiUrl);
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success && result.data) {
+                        meeting = result.data;
                         
-                        // Устанавливаем время начала встречи
-                        startTime = new Date(meeting.started_at).getTime();
-                        isRunning = true;
-                        
-                        // Запускаем автосохранение
-                        startAutoSave();
-                        
-                        // Обновляем кнопку
-                        const startBtn = document.getElementById('start-meeting-btn');
-                        if (startBtn) {
-                            startBtn.textContent = 'Завершить встречу';
-                            console.log('Первое обновление кнопки на "Завершить встречу"');
+                        // Проверяем, активна ли встреча
+                        if (meeting.status === 'active' && meeting.started_at) {
+                            console.log('Обнаружена активная встреча, инициализируем таймер');
+                            currentMeetingId = meeting.id;
                         } else {
-                            console.log('Кнопка start-meeting-btn не найдена при первом обновлении');
+                            console.log('Встреча найдена, но не активна. Статус:', meeting.status);
+                            return;
                         }
-                        
-                        // Запускаем таймер
-                        timerInterval = setInterval(updateTimer, 1000);
-                        updateTimer(); // Сразу обновляем
-                        
-                        // Обновляем состояние кнопки "Сменить сотрудника"
-                        updateChangeEmployeeButton();
-                        
-                        // Обновляем состояние поля заметок
-                        updateNotesFieldState();
-                        
-                        // Обновляем состояние области договоренностей
-                        updateAgreementsFieldState();
-                        
-                        // Принудительно обновляем кнопку встречи
-                        const meetingBtn = document.getElementById('start-meeting-btn');
-                        if (meetingBtn) {
-                            meetingBtn.textContent = 'Завершить встречу';
-                            console.log('Кнопка обновлена на "Завершить встречу"');
-                        }
-                        
-                        // Восстанавливаем контекст встречи (заметки и договоренности)
-                        await restoreMeetingContext(meeting);
-                        
-                        console.log('Активная встреча инициализирована:', meeting);
-                        console.log('isRunning:', isRunning);
-                        console.log('currentMeetingId:', currentMeetingId);
                     } else {
-                        console.log('Встреча найдена, но не активна. Статус:', meeting.status);
-                    }
-                } else {
-                    console.log('Встреча не найдена или не активна. Response:', response.status);
-                }
-            } catch (error) {
-                console.error('Ошибка проверки активной встречи:', error);
-            }
-        }
-
-        /**
-         * Проверка активной встречи для конкретного сотрудника
-         */
-        async function checkEmployeeActiveMeeting(employeeId) {
-            try {
-                console.log('Проверяем активную встречу для сотрудника:', employeeId);
-                const response = await fetch(`http://localhost:3001/api/meetings/active-for-employee/${employeeId}`);
-                const result = await response.json();
-                
-                if (response.ok && result.success && result.data) {
-                    const meeting = result.data;
-                    console.log('Найдена активная встреча для сотрудника:', meeting);
-                    
-                    // Устанавливаем ID встречи
-                    currentMeetingId = meeting.id;
-                    
-                    // Инициализируем активную встречу
-                    await initializeActiveMeeting(meeting);
-                } else {
-                    console.log('Активной встречи для сотрудника не найдено');
-                    // Проверяем, может есть активная встреча в системе с другим сотрудником
-                    await checkForActiveMeetingInSystem();
-                }
-            } catch (error) {
-                console.error('Ошибка проверки активной встречи для сотрудника:', error);
-            }
-        }
-
-        /**
-         * Проверка любой активной встречи в системе
-         */
-        async function checkForActiveMeetingInSystem() {
-            try {
-                console.log('Проверяем любую активную встречу в системе');
-                const response = await fetch('http://localhost:3001/api/meetings/active');
-                const result = await response.json();
-                
-                if (response.ok && result.success && result.data) {
-                    const meeting = result.data;
-                    console.log('Найдена активная встреча в системе:', meeting);
-                    
-                    // Обновляем текущего сотрудника на того, с кем идет встреча
-                    if (meeting.employee_id) {
-                        await loadEmployeeById(meeting.employee_id);
-                    }
-                    
-                    // Устанавливаем ID встречи
-                    currentMeetingId = meeting.id;
-                    
-                    // Инициализируем активную встречу
-                    await initializeActiveMeeting(meeting);
-                } else {
-                    console.log('Активных встреч в системе не найдено');
-                }
-            } catch (error) {
-                console.error('Ошибка проверки активной встречи в системе:', error);
-            }
-        }
-
-        /**
-         * Инициализация активной встречи
-         */
-        async function initializeActiveMeeting(meeting) {
-            console.log('Инициализируем активную встречу:', meeting);
-            
-            // Устанавливаем время начала встречи
-            startTime = new Date(meeting.started_at).getTime();
-            isRunning = true;
-            
-            // Запускаем автосохранение
-            startAutoSave();
-            
-            // Обновляем кнопку встречи
-            const startBtn = document.getElementById('start-meeting-btn');
-            if (startBtn) {
-                startBtn.textContent = 'Завершить встречу';
-                console.log('Кнопка обновлена на "Завершить встречу"');
-            }
-            
-            // Запускаем таймер
-            timerInterval = setInterval(updateTimer, 1000);
-            updateTimer(); // Сразу обновляем
-            
-            // Обновляем состояние кнопки "Сменить сотрудника"
-            updateChangeEmployeeButton();
-            
-            // Обновляем состояние полей
-            updateNotesFieldState();
-            updateAgreementsFieldState();
-            
-            // Восстанавливаем контекст встречи (заметки и договоренности)
-            await restoreMeetingContext(meeting);
-            
-            // Если в текущей встрече нет договоренностей, загружаем с предыдущей встречи
-            if (!meeting.content?.agreements || meeting.content.agreements.length === 0) {
-                await loadLastMeetingAgreements(currentEmployee.id);
-            }
-            
-            console.log('Активная встреча инициализирована. isRunning:', isRunning, 'currentMeetingId:', currentMeetingId);
-        }
-
-        /**
-         * Проверка наличия активной встречи в системе
-         */
-        async function checkForActiveMeeting() {
-            try {
-                const response = await fetch('http://localhost:3001/api/meetings/active');
-                const result = await response.json();
-                
-                if (response.ok && result.success && result.data) {
-                    const activeMeeting = result.data;
-                    console.log('Обнаружена активная встреча в системе:', activeMeeting);
-                    
-                    // Если активная встреча с другим сотрудником, не инициализируем таймер
-                    // Но если с тем же сотрудником - инициализируем
-                    if (currentEmployee && activeMeeting.employeeId === currentEmployee.id) {
-                        currentMeetingId = activeMeeting.id;
-                        
-                        // Устанавливаем время начала встречи
-                        startTime = new Date(activeMeeting.started_at).getTime();
-                        isRunning = true;
-                        
-                        // Запускаем автосохранение
-                        startAutoSave();
-                        
-                        // Обновляем кнопку
-                        const actionBtn = document.getElementById('start-meeting-btn');
-                        actionBtn.textContent = 'Завершить встречу';
-                        
-                        // Запускаем таймер
-                        timerInterval = setInterval(updateTimer, 1000);
-                        updateTimer(); // Сразу обновляем
-                        
-                        // Обновляем состояние кнопки "Сменить сотрудника"
-                        updateChangeEmployeeButton();
-                        
-                        // Обновляем состояние поля заметок
-                        updateNotesFieldState();
-                        
-                        // Обновляем состояние области договоренностей
-                        updateAgreementsFieldState();
-                        
-                        console.log('Активная встреча с текущим сотрудником инициализирована');
+                        console.log('Встреча не найдена или не активна. Response:', response.status);
+                        return;
                     }
                 }
+                
+                // ЛОГИКА 2: Поиск активной встречи для конкретного сотрудника (было в checkEmployeeActiveMeeting)
+                else if (type === 'byEmployeeId') {
+                    if (!employeeId) {
+                        console.log('ID сотрудника не указан');
+                        return;
+                    }
+                    
+                    console.log('Проверяем активную встречу для сотрудника:', employeeId);
+                    apiUrl = `http://localhost:3001/api/meetings/active-for-employee/${employeeId}`;
+                    
+                    const response = await fetch(apiUrl);
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success && result.data) {
+                        meeting = result.data;
+                        console.log('Найдена активная встреча для сотрудника:', meeting);
+                        currentMeetingId = meeting.id;
+                    } else {
+                        console.log('Активной встречи для сотрудника не найдено');
+                        // Рекурсивно ищем любую активную встреча в системе
+                        await checkAndInitializeActiveMeeting({ type: 'anyActive', changeEmployee: true });
+                        return;
+                    }
+                }
+                
+                // ЛОГИКА 3: Поиск любой активной встречи в системе (было в checkForActiveMeetingInSystem)
+                else if (type === 'anyActive') {
+                    console.log('Проверяем любую активную встречу в системе');
+                    apiUrl = 'http://localhost:3001/api/meetings/active';
+                    
+                    const response = await fetch(apiUrl);
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success && result.data) {
+                        meeting = result.data;
+                        console.log('Найдена активная встреча в системе:', meeting);
+                        
+                        // Если нужно сменить сотрудника на того, с кем идет встреча
+                        if (changeEmployee && meeting.employee_id) {
+                            await loadEmployeeById(meeting.employee_id);
+                        }
+                        
+                        currentMeetingId = meeting.id;
+                    } else {
+                        console.log('Активных встреч в системе не найдено');
+                        return;
+                    }
+                }
+                
+                // ЛОГИКА 4: Поиск активной встречи только с текущим сотрудником (было в checkForActiveMeeting)
+                else if (type === 'currentEmployeeOnly') {
+                    apiUrl = 'http://localhost:3001/api/meetings/active';
+                    
+                    const response = await fetch(apiUrl);
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success && result.data) {
+                        const activeMeeting = result.data;
+                        console.log('Обнаружена активная встреча в системе:', activeMeeting);
+                        
+                        // Инициализируем только если встреча с тем же сотрудником
+                        if (currentEmployee && activeMeeting.employeeId === currentEmployee.id) {
+                            meeting = activeMeeting;
+                            currentMeetingId = activeMeeting.id;
+                            console.log('Активная встреча с текущим сотрудником найдена');
+                        } else {
+                            console.log('Активная встреча найдена, но с другим сотрудником. Не инициализируем.');
+                            return;
+                        }
+                    } else {
+                        console.log('Активная встреча не найдена');
+                        return;
+                    }
+                }
+                
+                // ОБЩАЯ ЛОГИКА ИНИЦИАЛИЗАЦИИ (объединенная из initializeActiveMeeting и дублированного кода)
+                if (meeting && meeting.status === 'active' && meeting.started_at) {
+                    console.log('Инициализируем активную встречу:', meeting);
+                    
+                    // Устанавливаем время начала встречи
+                    startTime = new Date(meeting.started_at).getTime();
+                    isRunning = true;
+                    
+                    // Запускаем автосохранение
+                    startAutoSave();
+                    
+                    // Обновляем кнопку встречи (с дополнительными проверками из оригинала)
+                    const startBtn = document.getElementById('start-meeting-btn');
+                    if (startBtn) {
+                        startBtn.textContent = 'Завершить встречу';
+                        console.log('Первое обновление кнопки на "Завершить встречу"');
+                    } else {
+                        console.log('Кнопка start-meeting-btn не найдена при первом обновлении');
+                    }
+                    
+                    // Запускаем таймер
+                    timerInterval = setInterval(updateTimer, 1000);
+                    updateTimer(); // Сразу обновляем
+                    
+                    // Обновляем состояние кнопки "Сменить сотрудника"
+                    updateChangeEmployeeButton();
+                    
+                    // Обновляем состояние поля заметок
+                    updateNotesFieldState();
+                    
+                    // Обновляем состояние области договоренностей
+                    updateAgreementsFieldState();
+                    
+                    // Принудительно обновляем кнопку встречи (дополнительно из оригинального кода)
+                    const meetingBtn = document.getElementById('start-meeting-btn');
+                    if (meetingBtn) {
+                        meetingBtn.textContent = 'Завершить встречу';
+                        console.log('Кнопка принудительно обновлена на "Завершить встречу"');
+                    }
+                    
+                    // Восстанавливаем контекст встречи (заметки и договоренности)
+                    await restoreMeetingContext(meeting);
+                    
+                    // Если в текущей встрече нет договоренностей, загружаем с предыдущей встречи
+                    if (!meeting.content?.agreements || meeting.content.agreements.length === 0) {
+                        await loadLastMeetingAgreements(currentEmployee.id);
+                    }
+                    
+                    console.log('Активная встреча инициализирована. isRunning:', isRunning, 'currentMeetingId:', currentMeetingId);
+                }
+                
             } catch (error) {
-                console.error('Ошибка проверки активной встречи в системе:', error);
+                console.error(`Ошибка проверки активной встречи (${type}):`, error);
             }
         }
+
+
+
+
 
         // Инициализация компонентов
         document.addEventListener('DOMContentLoaded', async function() {
