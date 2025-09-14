@@ -8,7 +8,8 @@ import {
   validateCreateMeeting,
   validateUpdateNotes,
   validateAddAgreement,
-  validateUpdateAgreement
+  validateUpdateAgreement,
+  validateUpdateAgreementStatus
 } from '../lib/validation.js';
 import { 
   validateUUID, 
@@ -393,6 +394,41 @@ router.delete('/:id/agreements/:agreementId', validateUUID('id'), async (req: Re
     res.status(500).json({
       error: 'Ошибка сервера',
       message: 'Не удалось удалить договоренность'
+    });
+  }
+});
+
+/**
+ * PATCH /api/meetings/:id/agreements/status
+ * Обновление статуса договоренности
+ */
+router.patch('/:id/agreements/status', validateUUID('id'), validateUpdateAgreementStatus, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const meetingId = req.params.id!;
+    const updateData = req.body;
+    
+    const updatedMeeting = await MeetingEntity.updateAgreementStatus(meetingId, updateData);
+    
+    if (!updatedMeeting) {
+      res.status(404).json({
+        error: 'Встреча или договоренность не найдены',
+        message: 'Встреча с указанным ID не существует или договоренность не найдена'
+      });
+      return;
+    }
+    
+    const response: ApiResponse<MeetingResponse> = {
+      success: true,
+      message: 'Статус договоренности успешно обновлен',
+      data: transformMeetingResponse(updatedMeeting)
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('Ошибка обновления статуса договоренности:', error);
+    res.status(500).json({
+      error: 'Ошибка сервера',
+      message: 'Не удалось обновить статус договоренности'
     });
   }
 });

@@ -7,6 +7,7 @@ import { BaseEntity, UUID } from './common.js';
 // Перечисления
 export type MeetingStatus = 'scheduled' | 'active' | 'completed' | 'cancelled';
 export type AgreementType = 'employee_task' | 'manager_task' | 'mutual_agreement';
+export type AgreementStatus = 'pending' | 'completed';
 
 // Структура договоренности в JSON
 export interface Agreement {
@@ -14,7 +15,10 @@ export interface Agreement {
   title: string;
   description?: string | undefined;
   type: AgreementType;
+  status: AgreementStatus; // Статус выполнения
+  due_date?: string | undefined; // Планируемая дата выполнения (YYYY-MM-DD)
   created_at: string; // ISO string
+  completed_at?: string | undefined; // ISO string - время выполнения
 }
 
 // Структура контента встречи в JSON
@@ -54,6 +58,7 @@ export interface AddAgreementDto {
   title: string;
   description?: string;
   type: AgreementType;
+  dueDate?: string; // Планируемая дата выполнения (YYYY-MM-DD)
 }
 
 export interface UpdateAgreementDto {
@@ -61,6 +66,11 @@ export interface UpdateAgreementDto {
   title?: string;
   description?: string;
   type?: AgreementType;
+}
+
+export interface UpdateAgreementStatusDto {
+  agreementId: string;
+  status: AgreementStatus;
 }
 
 // Типы для ответов API

@@ -15,6 +15,7 @@ import {
   UpdateMeetingNotesDto,
   AddAgreementDto,
   UpdateAgreementDto,
+  UpdateAgreementStatusDto,
   MeetingFilterParams,
   MeetingStats,
   EmployeeMeetingStats
@@ -317,7 +318,7 @@ export class MeetingEntity {
    * Добавление договоренности к встрече
    */
   static async addAgreement(meetingId: UUID, agreementData: AddAgreementDto): Promise<Meeting | null> {
-    const { title, description, type } = agreementData;
+    const { title, description, type, dueDate } = agreementData;
     
     // Создаем новую договоренность
     const newAgreement: Agreement = {
@@ -325,6 +326,8 @@ export class MeetingEntity {
       title,
       description,
       type,
+      status: 'pending', // Статус по умолчанию
+      due_date: dueDate, // Планируемая дата выполнения
       created_at: new Date().toISOString()
     };
     
@@ -424,6 +427,61 @@ export class MeetingEntity {
     `;
     
     const result = await query(sql, [meetingId, JSON.stringify(filteredAgreements)]);
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    const updatedMeeting = result.rows[0];
+    return {
+      ...updatedMeeting,
+      content: updatedMeeting.content || {}
+    } as Meeting;
+  }
+
+  /**
+   * Обновление статуса договоренности
+   */
+  static async updateAgreementStatus(meetingId: UUID, updateData: UpdateAgreementStatusDto): Promise<Meeting | null> {
+    const { agreementId, status } = updateData;
+    
+    // Получаем текущую встречу
+    const meeting = await this.findById(meetingId);
+    if (!meeting || !meeting.content.agreements) {
+      return null;
+    }
+    
+    // Обновляем статус договоренности в массиве
+    const updatedAgreements = meeting.content.agreements.map(agreement => {
+      if (agreement.id === agreementId) {
+        const updatedAgreement: Agreement = {
+          ...agreement,
+          status
+        };
+        
+        // Если статус "completed", добавляем время выполнения
+        if (status === 'completed') {
+          updatedAgreement.completed_at = new Date().toISOString();
+        } else {
+          // Если статус "pending", убираем время выполнения
+          delete updatedAgreement.completed_at;
+        }
+        
+        return updatedAgreement;
+      }
+      return agreement;
+    });
+    
+    const sql = `
+      UPDATE meetings 
+      SET 
+        content = jsonb_set(content, '{agreements}', $2::jsonb),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+      RETURNING *;
+    `;
+    
+    const result = await query(sql, [meetingId, JSON.stringify(updatedAgreements)]);
     
     if (result.rows.length === 0) {
       return null;

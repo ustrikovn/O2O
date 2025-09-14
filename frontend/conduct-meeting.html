@@ -519,10 +519,12 @@
             const agreementType = responsible === 'employee' ? 'employee_task' : 'manager_task';
             const dueDate = dateInput.value;
             
+            let savedAgreement = null;
+            
             // Сохраняем на сервер, если есть активная встреча
             if (currentMeetingId) {
-                const saved = await addAgreementToServer(task, agreementType, dueDate);
-                if (!saved) {
+                savedAgreement = await addAgreementToServer(task, agreementType, dueDate);
+                if (!savedAgreement) {
                     alert('Ошибка сохранения договоренности на сервер');
                     return;
                 }
@@ -532,16 +534,32 @@
             agreementElement.classList.remove('editing');
             
             // Конвертируем в обычный вид
-            const date = new Date(dateInput.value).toLocaleDateString('ru-RU');
+            const createdDate = new Date().toLocaleDateString('ru-RU');
+            const dueDateFormatted = dateInput.value ? new Date(dateInput.value).toLocaleDateString('ru-RU') : '';
             const responsibleText = responsible === 'employee' ? 'Сотрудник' : 'Руководитель';
             const responsibleClass = responsible === 'employee' ? 'bg-primary/20 text-primary' : 'bg-accent-green/20 text-accent-green';
             
+            const agreementId = savedAgreement ? savedAgreement.id : `temp-${Date.now()}`;
+            
             agreementElement.innerHTML = `
-                <input type="checkbox" class="custom-checkbox">
+                <input type="checkbox" class="custom-checkbox" data-agreement-id="${agreementId}">
                 <span class="text-sm font-medium flex-1">${task}</span>
-                <span class="text-xs text-muted">${date}</span>
+                <div class="text-xs flex flex-col space-y-1">
+                    <span class="text-muted">Создано: ${createdDate}</span>
+                    ${dueDateFormatted ? `<span class="text-blue-600 font-medium">До: ${dueDateFormatted}</span>` : ''}
+                </div>
                 <span class="text-xs ${responsibleClass} px-2 py-0.5 rounded">${responsibleText}</span>
             `;
+            
+            // Добавляем обработчик событий для чекбокса (только если есть активная встреча)
+            if (savedAgreement && isRunning) {
+                const checkbox = agreementElement.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.addEventListener('change', function() {
+                        handleAgreementStatusChange(savedAgreement.id, this.checked);
+                    });
+                }
+            }
         }
         
         async function saveAllEditingAgreements() {
@@ -701,8 +719,10 @@
         let isRunning = false;
         
         async function startMeeting() {
+            console.log('startMeeting вызвана. isRunning:', isRunning, 'currentEmployee:', currentEmployee);
             const btn = document.getElementById('start-meeting-btn');
             const timerText = document.getElementById('timer-text');
+            console.log('Элементы кнопки найдены:', { btn: !!btn, timerText: !!timerText });
             
             if (!isRunning) {
                 // Проверяем, что выбран сотрудник
@@ -899,6 +919,8 @@
             const employeeId = urlParams.get('employeeId');
             const meetingId = urlParams.get('meetingId');
             
+            console.log('Инициализация страницы. URL params:', { employeeId, meetingId });
+            
             if (employeeId) {
                 console.log('Загружаем сотрудника по ID из URL:', employeeId);
                 await loadEmployeeById(employeeId);
@@ -1073,10 +1095,12 @@
 
         // Функция обновления отображения текущего сотрудника
         function updateCurrentEmployee(employee) {
+            console.log('updateCurrentEmployee вызвана с:', employee);
             currentEmployee = employee;
             
             // Обновляем аватар
             const avatarImg = document.getElementById('employee-avatar');
+            console.log('Элемент employee-avatar найден:', !!avatarImg);
             if (avatarImg) {
                 if (employee.photoUrl) {
                     avatarImg.src = employee.photoUrl;
@@ -1091,13 +1115,18 @@
             
             // Обновляем имя и должность
             const nameElement = document.getElementById('employee-name');
+            console.log('Элемент employee-name найден:', !!nameElement);
             if (nameElement) {
-                nameElement.textContent = `${employee.first_name} ${employee.last_name}`;
+                const fullName = `${employee.first_name} ${employee.last_name}`;
+                nameElement.textContent = fullName;
+                console.log('Имя обновлено:', fullName);
             }
             
             const positionElement = document.getElementById('employee-position');
+            console.log('Элемент employee-position найден:', !!positionElement);
             if (positionElement) {
                 positionElement.textContent = employee.position;
+                console.log('Должность обновлена:', employee.position);
             }
             
             // Очищаем текущие заметки и договоренности
@@ -1195,14 +1224,114 @@
                 
                 if (response.ok && result.success) {
                     console.log('Договоренность добавлена на сервер');
-                    return true;
+                    // Возвращаем созданную договоренность
+                    const agreements = result.data.content.agreements;
+                    return agreements[agreements.length - 1]; // Последняя добавленная договоренность
                 } else {
                     console.error('Ошибка добавления договоренности:', result.message);
-                    return false;
+                    return null;
                 }
             } catch (error) {
                 console.error('Ошибка при добавлении договоренности:', error);
                 return false;
+            }
+        }
+
+        /**
+         * Функция для обновления статуса договоренности
+         */
+        async function handleAgreementStatusChange(agreementId, isChecked) {
+            if (!currentMeetingId || !agreementId) {
+                console.error('Не указан ID встречи или договоренности');
+                return;
+            }
+            
+            const newStatus = isChecked ? 'completed' : 'pending';
+            
+            try {
+                const response = await fetch(`http://localhost:3001/api/meetings/${currentMeetingId}/agreements/status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        agreementId: agreementId,
+                        status: newStatus
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    console.log('Статус договоренности успешно обновлен');
+                    
+                    // Обновляем отображение договоренности на странице
+                    updateAgreementDisplay(agreementId, newStatus, result.data.content.agreements);
+                } else {
+                    console.error('Ошибка обновления статуса договоренности:', result.message);
+                    // Возвращаем чекбокс в исходное состояние
+                    const checkbox = document.querySelector(`input[data-agreement-id="${agreementId}"]`);
+                    if (checkbox) {
+                        checkbox.checked = !isChecked;
+                    }
+                    alert('Ошибка обновления статуса договоренности');
+                }
+            } catch (error) {
+                console.error('Ошибка при обновлении статуса договоренности:', error);
+                // Возвращаем чекбокс в исходное состояние
+                const checkbox = document.querySelector(`input[data-agreement-id="${agreementId}"]`);
+                if (checkbox) {
+                    checkbox.checked = !isChecked;
+                }
+                alert('Ошибка связи с сервером');
+            }
+        }
+
+        /**
+         * Функция для обновления отображения договоренности
+         */
+        function updateAgreementDisplay(agreementId, newStatus, agreements) {
+            const checkbox = document.querySelector(`input[data-agreement-id="${agreementId}"]`);
+            if (!checkbox) return;
+            
+            const agreementElement = checkbox.closest('.flex');
+            if (!agreementElement) return;
+            
+            // Найдем обновленную договоренность в массиве
+            const updatedAgreement = agreements.find(a => a.id === agreementId);
+            if (!updatedAgreement) return;
+            
+            // Обновляем стиль текста
+            const titleSpan = agreementElement.querySelector('.text-sm.font-medium.flex-1');
+            if (titleSpan) {
+                if (newStatus === 'completed') {
+                    titleSpan.style.textDecoration = 'line-through';
+                    titleSpan.style.opacity = '0.7';
+                } else {
+                    titleSpan.style.textDecoration = 'none';
+                    titleSpan.style.opacity = '1';
+                }
+            }
+            
+            // Обновляем или добавляем информацию о времени выполнения
+            const existingCompletedSpan = agreementElement.querySelector('.text-green-600');
+            if (existingCompletedSpan) {
+                existingCompletedSpan.remove();
+            }
+            
+            if (newStatus === 'completed' && updatedAgreement.completed_at) {
+                const completedDate = new Date(updatedAgreement.completed_at);
+                const completedText = `Выполнено: ${completedDate.toLocaleDateString('ru-RU')} ${completedDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}`;
+                
+                const completedSpan = document.createElement('span');
+                completedSpan.className = 'text-xs text-green-600';
+                completedSpan.textContent = completedText;
+                
+                // Вставляем перед последним элементом (label ответственного)
+                const responsibleSpan = agreementElement.querySelector('.text-xs:last-child');
+                if (responsibleSpan) {
+                    agreementElement.insertBefore(completedSpan, responsibleSpan);
+                }
             }
         }
 
@@ -1296,23 +1425,53 @@
                 const responsibleText = isEmployee ? 'Сотрудник' : 'Руководитель';
                 const responsibleClass = isEmployee ? 'bg-primary/20 text-primary' : 'bg-accent-green/20 text-accent-green';
                 
-                // Форматируем дату (если есть)
-                let dateText = '';
+                // Форматируем дату создания (если есть)
+                let createdDateText = '';
                 if (agreement.created_at) {
                     const date = new Date(agreement.created_at);
-                    dateText = date.toLocaleDateString('ru-RU');
+                    createdDateText = `Создано: ${date.toLocaleDateString('ru-RU')}`;
                 }
                 
-                // Определяем состояние чекбокса в зависимости от активности встречи
+                // Форматируем планируемую дату выполнения (если есть)
+                let dueDateText = '';
+                if (agreement.due_date) {
+                    const dueDate = new Date(agreement.due_date);
+                    dueDateText = `До: ${dueDate.toLocaleDateString('ru-RU')}`;
+                }
+                
+                // Форматируем дату выполнения (если есть)
+                let completedText = '';
+                if (agreement.completed_at) {
+                    const completedDate = new Date(agreement.completed_at);
+                    completedText = `Выполнено: ${completedDate.toLocaleDateString('ru-RU')} ${completedDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}`;
+                }
+                
+                // Определяем состояние чекбокса в зависимости от активности встречи и статуса
                 const checkboxDisabled = !isRunning;
+                const isCompleted = agreement.status === 'completed';
                 const checkboxClasses = checkboxDisabled ? 'custom-checkbox opacity-50 cursor-not-allowed' : 'custom-checkbox';
                 
+                // Стиль для выполненных задач
+                const taskStyle = isCompleted ? 'text-decoration: line-through; opacity: 0.7;' : '';
+                
                 agreementElement.innerHTML = `
-                    <input type="checkbox" class="${checkboxClasses}" ${checkboxDisabled ? 'disabled' : ''}>
-                    <span class="text-sm font-medium flex-1">${agreement.title}</span>
-                    ${dateText ? `<span class="text-xs text-muted">${dateText}</span>` : ''}
+                    <input type="checkbox" class="${checkboxClasses}" ${checkboxDisabled ? 'disabled' : ''} ${isCompleted ? 'checked' : ''} data-agreement-id="${agreement.id}">
+                    <span class="text-sm font-medium flex-1" style="${taskStyle}">${agreement.title}</span>
+                    <div class="text-xs flex flex-col space-y-1">
+                        ${createdDateText ? `<span class="text-muted">${createdDateText}</span>` : ''}
+                        ${dueDateText ? `<span class="text-blue-600 font-medium">${dueDateText}</span>` : ''}
+                        ${completedText ? `<span class="text-green-600">${completedText}</span>` : ''}
+                    </div>
                     <span class="text-xs ${responsibleClass} px-2 py-0.5 rounded">${responsibleText}</span>
                 `;
+                
+                // Добавляем обработчик событий для чекбокса
+                const checkbox = agreementElement.querySelector('input[type="checkbox"]');
+                if (checkbox && !checkboxDisabled) {
+                    checkbox.addEventListener('change', function() {
+                        handleAgreementStatusChange(agreement.id, this.checked);
+                    });
+                }
                 
                 agreementsList.appendChild(agreementElement);
             });
@@ -1322,9 +1481,14 @@
          * Проверка активной встречи при переходе по URL с meetingId
          */
         async function checkAndInitializeActiveMeeting() {
-            if (!currentMeetingId) return;
+            console.log('checkAndInitializeActiveMeeting вызвана. currentMeetingId:', currentMeetingId);
+            if (!currentMeetingId) {
+                console.log('currentMeetingId не установлен, выходим');
+                return;
+            }
             
             try {
+                console.log('Запрашиваем данные встречи:', `http://localhost:3001/api/meetings/${currentMeetingId}`);
                 const response = await fetch(`http://localhost:3001/api/meetings/${currentMeetingId}`);
                 const result = await response.json();
                 
@@ -1340,8 +1504,13 @@
                         isRunning = true;
                         
                         // Обновляем кнопку
-                        const btn = document.getElementById('start-meeting-btn');
-                        btn.textContent = 'Завершить встречу';
+                        const startBtn = document.getElementById('start-meeting-btn');
+                        if (startBtn) {
+                            startBtn.textContent = 'Завершить встречу';
+                            console.log('Первое обновление кнопки на "Завершить встречу"');
+                        } else {
+                            console.log('Кнопка start-meeting-btn не найдена при первом обновлении');
+                        }
                         
                         // Запускаем таймер
                         timerInterval = setInterval(updateTimer, 1000);
@@ -1356,10 +1525,21 @@
                         // Обновляем состояние области договоренностей
                         updateAgreementsFieldState();
                         
+                        // Принудительно обновляем кнопку встречи
+                        const meetingBtn = document.getElementById('start-meeting-btn');
+                        if (meetingBtn) {
+                            meetingBtn.textContent = 'Завершить встречу';
+                            console.log('Кнопка обновлена на "Завершить встречу"');
+                        }
+                        
                         console.log('Активная встреча инициализирована:', meeting);
+                        console.log('isRunning:', isRunning);
+                        console.log('currentMeetingId:', currentMeetingId);
+                    } else {
+                        console.log('Встреча найдена, но не активна. Статус:', meeting.status);
                     }
                 } else {
-                    console.log('Встреча не найдена или не активна');
+                    console.log('Встреча не найдена или не активна. Response:', response.status);
                 }
             } catch (error) {
                 console.error('Ошибка проверки активной встречи:', error);
@@ -1388,8 +1568,8 @@
                         isRunning = true;
                         
                         // Обновляем кнопку
-                        const btn = document.getElementById('start-meeting-btn');
-                        btn.textContent = 'Завершить встречу';
+                        const actionBtn = document.getElementById('start-meeting-btn');
+                        actionBtn.textContent = 'Завершить встречу';
                         
                         // Запускаем таймер
                         timerInterval = setInterval(updateTimer, 1000);
@@ -1411,10 +1591,24 @@
                 console.error('Ошибка проверки активной встречи в системе:', error);
             }
         }
-    </script>
-    <script>
+
         // Инициализация компонентов
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('Страница conduct-meeting.html полностью загружена');
+            
+            // Проверяем наличие ключевых элементов DOM
+            const avatarImg = document.getElementById('employee-avatar');
+            const nameElement = document.getElementById('employee-name');
+            const positionElement = document.getElementById('employee-position');
+            const startBtn = document.getElementById('start-meeting-btn');
+            
+            console.log('DOM элементы найдены:', {
+                avatar: !!avatarImg,
+                name: !!nameElement, 
+                position: !!positionElement,
+                startBtn: !!startBtn
+            });
+            
             const sidebar = new O2OSidebar('meeting');
             sidebar.mount('sidebar-container');
             sidebar.startActiveMeetingCheck();
@@ -1423,7 +1617,12 @@
             feather.replace();
             
             // Загружаем сотрудника (по URL параметрам или по умолчанию)
-            loadEmployee();
+            try {
+                await loadEmployee();
+                console.log('Сотрудник загружен успешно');
+            } catch (error) {
+                console.error('Ошибка загрузки сотрудника:', error);
+            }
             
             // Инициализируем состояние кнопки "Сменить сотрудника"
             updateChangeEmployeeButton();

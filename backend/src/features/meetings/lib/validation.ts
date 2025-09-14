@@ -63,7 +63,7 @@ export function validateUpdateNotes(req: Request, res: Response, next: NextFunct
  * Валидация данных для добавления договоренности
  */
 export function validateAddAgreement(req: Request, res: Response, next: NextFunction): void {
-  const { title, description, type } = req.body;
+  const { title, description, type, dueDate } = req.body;
   const errors: string[] = [];
 
   // Проверка title
@@ -81,6 +81,15 @@ export function validateAddAgreement(req: Request, res: Response, next: NextFunc
   // Проверка description (опционально)
   if (description !== undefined && typeof description !== 'string') {
     errors.push('Description must be a string');
+  }
+
+  // Проверка dueDate (опционально)
+  if (dueDate !== undefined) {
+    if (typeof dueDate !== 'string') {
+      errors.push('Due date must be a string');
+    } else if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+      errors.push('Due date must be in YYYY-MM-DD format');
+    }
   }
 
   if (errors.length > 0) {
@@ -129,6 +138,40 @@ export function validateUpdateAgreement(req: Request, res: Response, next: NextF
     const response: ApiError = {
       error: 'Validation error',
       message: 'Invalid agreement update data',
+      details: errors.map(error => ({ field: 'general', message: error }))
+    };
+    res.status(400).json(response);
+    return;
+  }
+
+  next();
+}
+
+/**
+ * Валидация данных для обновления статуса договоренности
+ */
+export function validateUpdateAgreementStatus(req: Request, res: Response, next: NextFunction): void {
+  const { agreementId, status } = req.body;
+  const errors: string[] = [];
+
+  // Проверка agreementId
+  if (!agreementId) {
+    errors.push('Agreement ID is required');
+  } else if (typeof agreementId !== 'string' || agreementId.trim().length === 0) {
+    errors.push('Agreement ID must be a non-empty string');
+  }
+
+  // Проверка status
+  if (!status) {
+    errors.push('Status is required');
+  } else if (!['pending', 'completed'].includes(status)) {
+    errors.push('Status must be one of: pending, completed');
+  }
+
+  if (errors.length > 0) {
+    const response: ApiError = {
+      error: 'Validation error',
+      message: 'Invalid agreement status update data',
       details: errors.map(error => ({ field: 'general', message: error }))
     };
     res.status(400).json(response);
