@@ -147,6 +147,53 @@ router.get('/stats', async (req: Request, res: Response): Promise<void> => {
 });
 
 /**
+ * GET /api/meetings/active
+ * Получение активной встречи (любая активная встреча в системе)
+ */
+router.get('/active', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const activeMeeting = await MeetingEntity.findAnyActive();
+    
+    const response: ApiResponse = {
+      success: true,
+      data: activeMeeting
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('Ошибка получения активной встречи:', error);
+    res.status(500).json({
+      error: 'Ошибка сервера',
+      message: 'Не удалось получить активную встречу'
+    });
+  }
+});
+
+/**
+ * GET /api/meetings/active-for-employee/:employeeId
+ * Получение активной встречи для конкретного сотрудника
+ */
+router.get('/active-for-employee/:employeeId', validateUUID('employeeId'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const employeeId = req.params.employeeId!;
+    const activeMeeting = await MeetingEntity.findActiveByEmployeeId(employeeId);
+    
+    const response: ApiResponse = {
+      success: true,
+      data: activeMeeting
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('Ошибка получения активной встречи для сотрудника:', error);
+    res.status(500).json({
+      error: 'Ошибка сервера',
+      message: 'Не удалось получить активную встречу для сотрудника'
+    });
+  }
+});
+
+/**
  * GET /api/meetings/:id
  * Получение детальной информации о встрече
  */
@@ -488,6 +535,43 @@ router.get('/employees/:employeeId/stats', validateUUID('employeeId'), async (re
     res.status(500).json({
       error: 'Ошибка сервера',
       message: 'Не удалось получить статистику сотрудника'
+    });
+  }
+});
+
+/**
+ * GET /api/meetings/employees/:employeeId/last-agreements
+ * Получение договоренностей с последней завершенной встречи сотрудника
+ */
+router.get('/employees/:employeeId/last-agreements', validateUUID('employeeId'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const employeeId = req.params.employeeId!;
+    
+    const lastMeeting = await MeetingEntity.findLastCompletedWithAgreements(employeeId);
+    
+    // Фильтруем только невыполненные договоренности (pending)
+    const pendingAgreements = lastMeeting?.content?.agreements?.filter(
+      agreement => agreement.status === 'pending'
+    ) || [];
+
+    const response: ApiResponse = {
+      success: true,
+      data: {
+        meeting: lastMeeting ? {
+          id: lastMeeting.id,
+          endedAt: lastMeeting.ended_at,
+          status: lastMeeting.status
+        } : null,
+        agreements: pendingAgreements
+      }
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('Ошибка получения договоренностей с последней встречи:', error);
+    res.status(500).json({
+      error: 'Ошибка сервера',
+      message: 'Не удалось получить договоренности с последней встречи'
     });
   }
 });

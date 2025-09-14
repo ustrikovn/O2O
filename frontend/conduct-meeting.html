@@ -552,12 +552,35 @@
             `;
             
             // Добавляем обработчик событий для чекбокса (только если есть активная встреча)
-            if (savedAgreement && isRunning) {
+            if (isRunning) {
                 const checkbox = agreementElement.querySelector('input[type="checkbox"]');
                 if (checkbox) {
-                    checkbox.addEventListener('change', function() {
-                        handleAgreementStatusChange(savedAgreement.id, this.checked);
-                    });
+                    // Если договоренность только что создана и еще не сохранена на сервере
+                    if (!savedAgreement) {
+                        // Сначала отключаем чекбокс, показываем что идет сохранение
+                        checkbox.disabled = true;
+                        checkbox.classList.add('opacity-50', 'cursor-not-allowed');
+                        console.log('Договоренность еще не сохранена, чекбокс отключен');
+                        
+                        // После сохранения на сервер нужно будет включить чекбокс и добавить обработчик
+                        // Это будет сделано в функции добавления договоренности
+                    } else {
+                        // Если договоренность уже сохранена, добавляем обработчик сразу
+                        addCheckboxEventListener(checkbox, savedAgreement.id);
+                    }
+                }
+            }
+            
+            // Если договоренность была успешно сохранена на сервер, активируем чекбокс
+            if (savedAgreement && isRunning) {
+                const checkbox = agreementElement.querySelector('input[type="checkbox"]');
+                if (checkbox && checkbox.disabled) {
+                    checkbox.disabled = false;
+                    checkbox.classList.remove('opacity-50', 'cursor-not-allowed');
+                    console.log('Чекбокс активирован после сохранения, ID:', savedAgreement.id);
+                    
+                    // Добавляем обработчик события для нового чекбокса
+                    addCheckboxEventListener(checkbox, savedAgreement.id);
                 }
             }
         }
@@ -777,6 +800,9 @@
                             startTime = Date.now();
                             isRunning = true;
                             
+                            // Запускаем автосохранение
+                            startAutoSave();
+                            
                             // Меняем текст кнопки
                             btn.textContent = 'Завершить встречу';
                             btn.disabled = false;
@@ -789,6 +815,9 @@
                             
                             // Обновляем состояние области договоренностей
                             updateAgreementsFieldState();
+                            
+                            // Загружаем невыполненные договоренности с последней встречи
+                            await loadLastMeetingAgreements(currentEmployee.id);
                             
                             // Перерисовываем иконки Feather
                             feather.replace();
@@ -840,9 +869,10 @@
                         }
                     }
                     
-                    // Останавливаем секундомер
+                    // Останавливаем секундомер и автосохранение
                     isRunning = false;
                     clearInterval(timerInterval);
+                    stopAutoSave();
                     
                     // Возвращаем исходный текст кнопки
                     btn.textContent = 'Начать встречу';
@@ -870,9 +900,10 @@
                     console.error('Ошибка при завершении встречи:', error);
                     alert(`Ошибка завершения встречи: ${error.message}`);
                     
-                    // В случае ошибки всё равно останавливаем локальный таймер
+                    // В случае ошибки всё равно останавливаем локальный таймер и автосохранение
                     isRunning = false;
                     clearInterval(timerInterval);
+                    stopAutoSave();
                     btn.textContent = 'Начать встречу';
                     btn.disabled = false;
                     timerText.textContent = '00:00:00';
@@ -912,6 +943,11 @@
         // Глобальная переменная для модального окна выбора сотрудника
         let employeeSelectorModal = null;
 
+        // Переменные для автосохранения
+        let autoSaveInterval = null;
+        let lastSavedNotes = '';
+        let hasUnsavedChanges = false;
+
         // Функция загрузки сотрудника при инициализации
         async function loadEmployee() {
             // Проверяем URL параметры
@@ -948,6 +984,9 @@
                     currentEmployee = result.data;
                     updateCurrentEmployee(currentEmployee);
                     console.log('Сотрудник загружен по ID:', currentEmployee);
+                    
+                    // Проверяем активную встречу для этого сотрудника
+                    await checkEmployeeActiveMeeting(employeeId);
                 } else {
                     console.error('Сотрудник не найден:', employeeId);
                     // Загружаем первого сотрудника по умолчанию
@@ -963,15 +1002,24 @@
         // Функция загрузки первого сотрудника при инициализации
         async function loadDefaultEmployee() {
             try {
-                const response = await fetch('http://localhost:3001/api/employees');
-                const result = await response.json();
+                // Сначала проверяем, есть ли активная встреча в системе
+                await checkForActiveMeetingInSystem();
                 
-                if (result.success && result.data.length > 0) {
-                    currentEmployee = result.data[0]; // Берем первого сотрудника
-                    updateCurrentEmployee(currentEmployee);
-                } else {
-                    // Если нет сотрудников, показываем заглушку для договоренностей
-                    showAgreementsPlaceholder();
+                // Если активной встречи нет, загружаем первого сотрудника
+                if (!currentEmployee) {
+                    const response = await fetch('http://localhost:3001/api/employees');
+                    const result = await response.json();
+                    
+                    if (result.success && result.data.length > 0) {
+                        currentEmployee = result.data[0]; // Берем первого сотрудника
+                        updateCurrentEmployee(currentEmployee);
+                        
+                        // Проверяем активную встречу для этого сотрудника
+                        await checkEmployeeActiveMeeting(currentEmployee.id);
+                    } else {
+                        // Если нет сотрудников, показываем заглушку для договоренностей
+                        showAgreementsPlaceholder();
+                    }
                 }
             } catch (error) {
                 console.error('Ошибка загрузки сотрудника по умолчанию:', error);
@@ -1129,11 +1177,12 @@
                 console.log('Должность обновлена:', employee.position);
             }
             
-            // Очищаем текущие заметки и договоренности
-            clearNotesAndAgreements();
-            
-            // Загружаем договоренности с последней встречи
-            loadLastMeetingAgreements(employee.id);
+            // Очищаем текущие заметки и договоренности только если встреча не активна
+            if (!isRunning) {
+                clearNotesAndAgreements();
+                // Загружаем договоренности с последней встречи
+                loadLastMeetingAgreements(employee.id);
+            }
             
             console.log('Сотрудник изменен на:', employee);
         }
@@ -1189,13 +1238,85 @@
                 const result = await response.json();
                 
                 if (response.ok && result.success) {
-                    console.log('Заметки автоматически сохранены');
+                    lastSavedNotes = notes;
+                    hasUnsavedChanges = false;
+                    console.log('✅ Заметки автоматически сохранены');
                 } else {
-                    console.error('Ошибка сохранения заметок:', result.message);
+                    console.error('❌ Ошибка сохранения заметок:', result.message);
                 }
             } catch (error) {
                 console.error('Ошибка при сохранении заметок:', error);
             }
+        }
+
+        /**
+         * Запуск автосохранения каждые 5 секунд
+         */
+        function startAutoSave() {
+            if (autoSaveInterval) {
+                clearInterval(autoSaveInterval);
+            }
+            
+            autoSaveInterval = setInterval(async () => {
+                if (!isRunning || !currentMeetingId) {
+                    return;
+                }
+                
+                const notesTextarea = document.getElementById('meeting-notes');
+                if (notesTextarea) {
+                    const currentNotes = notesTextarea.value;
+                    
+                    // Сохраняем только если есть изменения
+                    if (currentNotes !== lastSavedNotes && currentNotes.trim()) {
+                        console.log('🔄 Автосохранение заметок...');
+                        await saveNotesToServer(currentNotes);
+                        hasUnsavedChanges = false;
+                    }
+                }
+            }, 5000); // Каждые 5 секунд
+            
+            console.log('🚀 Автосохранение запущено (каждые 5 секунд)');
+        }
+
+        /**
+         * Остановка автосохранения
+         */
+        function stopAutoSave() {
+            if (autoSaveInterval) {
+                clearInterval(autoSaveInterval);
+                autoSaveInterval = null;
+                console.log('⏹️ Автосохранение остановлено');
+            }
+        }
+
+        /**
+         * Сохранение при потере фокуса страницы
+         */
+        function setupVisibilityChangeHandler() {
+            document.addEventListener('visibilitychange', async () => {
+                if (document.hidden && isRunning && currentMeetingId) {
+                    // Страница теряет фокус - сохраняем немедленно
+                    const notesTextarea = document.getElementById('meeting-notes');
+                    if (notesTextarea && notesTextarea.value !== lastSavedNotes) {
+                        console.log('🌙 Страница теряет фокус - сохраняем заметки');
+                        await saveNotesToServer(notesTextarea.value);
+                    }
+                }
+            });
+            
+            // Также сохраняем при закрытии страницы
+            window.addEventListener('beforeunload', async (e) => {
+                if (isRunning && currentMeetingId && hasUnsavedChanges) {
+                    const notesTextarea = document.getElementById('meeting-notes');
+                    if (notesTextarea && notesTextarea.value !== lastSavedNotes) {
+                        // Синхронный запрос для гарантии сохранения
+                        navigator.sendBeacon(
+                            `http://localhost:3001/api/meetings/${currentMeetingId}/notes`,
+                            JSON.stringify({ notes: notesTextarea.value })
+                        );
+                    }
+                }
+            });
         }
 
         /**
@@ -1238,17 +1359,53 @@
         }
 
         /**
+         * Централизованная функция для добавления обработчика событий к чекбоксу
+         */
+        function addCheckboxEventListener(checkbox, agreementId) {
+            if (!checkbox || !agreementId) {
+                console.error('Неверные параметры для addCheckboxEventListener:', { checkbox: !!checkbox, agreementId });
+                return;
+            }
+            
+            // Удаляем старые обработчики событий, если они есть
+            const newCheckbox = checkbox.cloneNode(true);
+            checkbox.parentNode.replaceChild(newCheckbox, checkbox);
+            
+            // Добавляем новый обработчик
+            newCheckbox.addEventListener('change', function() {
+                console.log('Чекбокс кликнут:', { agreementId, checked: this.checked });
+                handleAgreementStatusChange(agreementId, this.checked);
+            });
+            
+            console.log('Обработчик событий добавлен для договоренности:', agreementId);
+        }
+
+        /**
          * Функция для обновления статуса договоренности
          */
         async function handleAgreementStatusChange(agreementId, isChecked) {
+            console.log('handleAgreementStatusChange вызвана:', { agreementId, isChecked, currentMeetingId });
+            
             if (!currentMeetingId || !agreementId) {
                 console.error('Не указан ID встречи или договоренности');
+                alert('Ошибка: не указан ID встречи или договоренности');
                 return;
             }
             
             const newStatus = isChecked ? 'completed' : 'pending';
             
+            // Временно блокируем чекбокс во время запроса
+            const checkbox = document.querySelector(`input[data-agreement-id="${agreementId}"]`);
+            if (checkbox) {
+                checkbox.disabled = true;
+            }
+            
             try {
+                console.log('Отправляем запрос на сервер:', {
+                    url: `http://localhost:3001/api/meetings/${currentMeetingId}/agreements/status`,
+                    body: { agreementId, status: newStatus }
+                });
+                
                 const response = await fetch(`http://localhost:3001/api/meetings/${currentMeetingId}/agreements/status`, {
                     method: 'PATCH',
                     headers: {
@@ -1261,6 +1418,7 @@
                 });
                 
                 const result = await response.json();
+                console.log('Ответ сервера:', result);
                 
                 if (response.ok && result.success) {
                     console.log('Статус договоренности успешно обновлен');
@@ -1268,22 +1426,25 @@
                     // Обновляем отображение договоренности на странице
                     updateAgreementDisplay(agreementId, newStatus, result.data.content.agreements);
                 } else {
-                    console.error('Ошибка обновления статуса договоренности:', result.message);
+                    console.error('Ошибка обновления статуса договоренности:', result);
                     // Возвращаем чекбокс в исходное состояние
-                    const checkbox = document.querySelector(`input[data-agreement-id="${agreementId}"]`);
                     if (checkbox) {
                         checkbox.checked = !isChecked;
                     }
-                    alert('Ошибка обновления статуса договоренности');
+                    alert(`Ошибка обновления статуса договоренности: ${result.message || result.error || 'Неизвестная ошибка'}`);
                 }
             } catch (error) {
                 console.error('Ошибка при обновлении статуса договоренности:', error);
                 // Возвращаем чекбокс в исходное состояние
-                const checkbox = document.querySelector(`input[data-agreement-id="${agreementId}"]`);
                 if (checkbox) {
                     checkbox.checked = !isChecked;
                 }
                 alert('Ошибка связи с сервером');
+            } finally {
+                // Разблокируем чекбокс
+                if (checkbox) {
+                    checkbox.disabled = false;
+                }
             }
         }
 
@@ -1371,7 +1532,14 @@
                     
                     if (agreements && agreements.length > 0) {
                         console.log('Загружены договоренности с последней встречи:', agreements);
-                        renderAgreements(agreements);
+                        
+                        // Если есть активная встреча - копируем договоренности в текущую встречу
+                        if (isRunning && currentMeetingId) {
+                            await copyAgreementsToCurrentMeeting(agreements);
+                        } else {
+                            // Если встреча не активна - просто отображаем
+                            renderAgreements(agreements);
+                        }
                     } else {
                         console.log('Нет договоренностей с последней встречи');
                         showAgreementsPlaceholder();
@@ -1382,6 +1550,71 @@
                 }
             } catch (error) {
                 console.error('Ошибка при загрузке договоренностей:', error);
+                showAgreementsPlaceholder();
+            }
+        }
+
+        /**
+         * Функция копирования договоренностей в текущую встречу
+         */
+        async function copyAgreementsToCurrentMeeting(agreements) {
+            console.log('Копируем договоренности в текущую встречу:', agreements);
+            
+            // ВРЕМЕННО: просто отображаем договоренности без копирования
+            // чтобы они не исчезали при начале встречи
+            renderAgreements(agreements);
+            
+            // Фоново копируем в базу для возможности изменения статуса
+            try {
+                for (const agreement of agreements) {
+                    const agreementType = agreement.type === 'employee_task' ? 'employee' : 'manager';
+                    
+                    fetch(`http://localhost:3001/api/meetings/${currentMeetingId}/agreements`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            title: agreement.title,
+                            description: agreement.description || '',
+                            type: agreementType,
+                            dueDate: agreement.due_date || null
+                        })
+                    }).then(response => response.json()).then(result => {
+                        if (result.success) {
+                            console.log('Договоренность скопирована в фоне:', result.data);
+                        }
+                    }).catch(error => {
+                        console.log('Ошибка фонового копирования:', error);
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка при фоновом копировании:', error);
+            }
+        }
+
+        /**
+         * Функция загрузки договоренностей текущей встречи
+         */
+        async function loadCurrentMeetingAgreements() {
+            if (!currentMeetingId) {
+                console.log('Нет активной встречи для загрузки договоренностей');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`http://localhost:3001/api/meetings/${currentMeetingId}`);
+                const result = await response.json();
+                
+                if (response.ok && result.success && result.data.content?.agreements) {
+                    console.log('Загружены договоренности текущей встречи:', result.data.content.agreements);
+                    renderAgreements(result.data.content.agreements);
+                } else {
+                    console.log('Нет договоренностей в текущей встрече');
+                    showAgreementsPlaceholder();
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки договоренностей текущей встречи:', error);
                 showAgreementsPlaceholder();
             }
         }
@@ -1468,13 +1701,41 @@
                 // Добавляем обработчик событий для чекбокса
                 const checkbox = agreementElement.querySelector('input[type="checkbox"]');
                 if (checkbox && !checkboxDisabled) {
-                    checkbox.addEventListener('change', function() {
-                        handleAgreementStatusChange(agreement.id, this.checked);
-                    });
+                    addCheckboxEventListener(checkbox, agreement.id);
                 }
                 
                 agreementsList.appendChild(agreementElement);
             });
+        }
+
+        /**
+         * Восстановление контекста встречи (заметки и договоренности)
+         */
+        async function restoreMeetingContext(meeting) {
+            console.log('Восстанавливаем контекст встречи:', meeting);
+            
+            try {
+                // Восстанавливаем заметки
+                if (meeting.content && meeting.content.notes) {
+                    const notesTextarea = document.getElementById('meeting-notes');
+                    if (notesTextarea) {
+                        notesTextarea.value = meeting.content.notes;
+                        lastSavedNotes = meeting.content.notes; // Инициализируем для автосохранения
+                        hasUnsavedChanges = false;
+                        console.log('Заметки восстановлены:', meeting.content.notes.substring(0, 50) + '...');
+                    }
+                }
+                
+                // Восстанавливаем договоренности
+                if (meeting.content && meeting.content.agreements && Array.isArray(meeting.content.agreements)) {
+                    console.log('Восстанавливаем договоренности:', meeting.content.agreements.length);
+                    renderAgreements(meeting.content.agreements);
+                }
+                
+                console.log('Контекст встречи полностью восстановлен');
+            } catch (error) {
+                console.error('Ошибка восстановления контекста встречи:', error);
+            }
         }
 
         /**
@@ -1502,6 +1763,9 @@
                         // Устанавливаем время начала встречи
                         startTime = new Date(meeting.started_at).getTime();
                         isRunning = true;
+                        
+                        // Запускаем автосохранение
+                        startAutoSave();
                         
                         // Обновляем кнопку
                         const startBtn = document.getElementById('start-meeting-btn');
@@ -1532,6 +1796,9 @@
                             console.log('Кнопка обновлена на "Завершить встречу"');
                         }
                         
+                        // Восстанавливаем контекст встречи (заметки и договоренности)
+                        await restoreMeetingContext(meeting);
+                        
                         console.log('Активная встреча инициализирована:', meeting);
                         console.log('isRunning:', isRunning);
                         console.log('currentMeetingId:', currentMeetingId);
@@ -1544,6 +1811,107 @@
             } catch (error) {
                 console.error('Ошибка проверки активной встречи:', error);
             }
+        }
+
+        /**
+         * Проверка активной встречи для конкретного сотрудника
+         */
+        async function checkEmployeeActiveMeeting(employeeId) {
+            try {
+                console.log('Проверяем активную встречу для сотрудника:', employeeId);
+                const response = await fetch(`http://localhost:3001/api/meetings/active-for-employee/${employeeId}`);
+                const result = await response.json();
+                
+                if (response.ok && result.success && result.data) {
+                    const meeting = result.data;
+                    console.log('Найдена активная встреча для сотрудника:', meeting);
+                    
+                    // Устанавливаем ID встречи
+                    currentMeetingId = meeting.id;
+                    
+                    // Инициализируем активную встречу
+                    await initializeActiveMeeting(meeting);
+                } else {
+                    console.log('Активной встречи для сотрудника не найдено');
+                    // Проверяем, может есть активная встреча в системе с другим сотрудником
+                    await checkForActiveMeetingInSystem();
+                }
+            } catch (error) {
+                console.error('Ошибка проверки активной встречи для сотрудника:', error);
+            }
+        }
+
+        /**
+         * Проверка любой активной встречи в системе
+         */
+        async function checkForActiveMeetingInSystem() {
+            try {
+                console.log('Проверяем любую активную встречу в системе');
+                const response = await fetch('http://localhost:3001/api/meetings/active');
+                const result = await response.json();
+                
+                if (response.ok && result.success && result.data) {
+                    const meeting = result.data;
+                    console.log('Найдена активная встреча в системе:', meeting);
+                    
+                    // Обновляем текущего сотрудника на того, с кем идет встреча
+                    if (meeting.employee_id) {
+                        await loadEmployeeById(meeting.employee_id);
+                    }
+                    
+                    // Устанавливаем ID встречи
+                    currentMeetingId = meeting.id;
+                    
+                    // Инициализируем активную встречу
+                    await initializeActiveMeeting(meeting);
+                } else {
+                    console.log('Активных встреч в системе не найдено');
+                }
+            } catch (error) {
+                console.error('Ошибка проверки активной встречи в системе:', error);
+            }
+        }
+
+        /**
+         * Инициализация активной встречи
+         */
+        async function initializeActiveMeeting(meeting) {
+            console.log('Инициализируем активную встречу:', meeting);
+            
+            // Устанавливаем время начала встречи
+            startTime = new Date(meeting.started_at).getTime();
+            isRunning = true;
+            
+            // Запускаем автосохранение
+            startAutoSave();
+            
+            // Обновляем кнопку встречи
+            const startBtn = document.getElementById('start-meeting-btn');
+            if (startBtn) {
+                startBtn.textContent = 'Завершить встречу';
+                console.log('Кнопка обновлена на "Завершить встречу"');
+            }
+            
+            // Запускаем таймер
+            timerInterval = setInterval(updateTimer, 1000);
+            updateTimer(); // Сразу обновляем
+            
+            // Обновляем состояние кнопки "Сменить сотрудника"
+            updateChangeEmployeeButton();
+            
+            // Обновляем состояние полей
+            updateNotesFieldState();
+            updateAgreementsFieldState();
+            
+            // Восстанавливаем контекст встречи (заметки и договоренности)
+            await restoreMeetingContext(meeting);
+            
+            // Если в текущей встрече нет договоренностей, загружаем с предыдущей встречи
+            if (!meeting.content?.agreements || meeting.content.agreements.length === 0) {
+                await loadLastMeetingAgreements(currentEmployee.id);
+            }
+            
+            console.log('Активная встреча инициализирована. isRunning:', isRunning, 'currentMeetingId:', currentMeetingId);
         }
 
         /**
@@ -1566,6 +1934,9 @@
                         // Устанавливаем время начала встречи
                         startTime = new Date(activeMeeting.started_at).getTime();
                         isRunning = true;
+                        
+                        // Запускаем автосохранение
+                        startAutoSave();
                         
                         // Обновляем кнопку
                         const actionBtn = document.getElementById('start-meeting-btn');
@@ -1613,6 +1984,9 @@
             sidebar.mount('sidebar-container');
             sidebar.startActiveMeetingCheck();
             
+            // Инициализация обработчика видимости страницы для автосохранения
+            setupVisibilityChangeHandler();
+            
             // Инициализация иконок
             feather.replace();
             
@@ -1652,15 +2026,19 @@
                 });
             }
             
-            // Автосохранение заметок
+            // Автосохранение заметок (дополнительное к основному автосохранению каждые 5 сек)
             const notesTextarea = document.getElementById('meeting-notes');
             if (notesTextarea) {
                 let timeout;
                 notesTextarea.addEventListener('input', function() {
+                    hasUnsavedChanges = true; // Отмечаем что есть несохраненные изменения
                     clearTimeout(timeout);
+                    // Дебаунс для быстрого сохранения при активной печати
                     timeout = setTimeout(() => {
-                        saveNotesToServer(this.value);
-                    }, 2000);
+                        if (isRunning && currentMeetingId) {
+                            saveNotesToServer(this.value);
+                        }
+                    }, 3000); // 3 секунды после остановки печати
                 });
             }
         });
