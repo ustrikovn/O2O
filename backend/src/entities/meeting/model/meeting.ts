@@ -3,6 +3,7 @@
  */
 
 import { query } from '@/shared/database/connection.js';
+import { AgreementEntity } from '../../agreement/model/agreement.js';
 import { 
   Meeting,
   MeetingStatus,
@@ -114,6 +115,15 @@ export class MeetingEntity {
     
     if (result.rows.length === 0) {
       return null;
+    }
+    
+    // НОВАЯ ЛОГИКА: Завершаем помеченные договоренности при окончании встречи
+    try {
+      const completedCount = await AgreementEntity.completeMarkedAgreements(meetingId);
+      console.log(`✅ При завершении встречи ${meetingId} завершено ${completedCount} договоренностей`);
+    } catch (error) {
+      console.error('⚠️ Ошибка завершения договоренностей при окончании встречи:', error);
+      // Не прерываем процесс завершения встречи из-за ошибки с договоренностями
     }
     
     const meeting = result.rows[0];

@@ -15,6 +15,7 @@ import { connectDatabase } from '@/shared/database/connection.js';
 import { getServerConfig } from '@/shared/config/server.js';
 import { employeeRoutes } from '@/features/employees/index.js';
 import { meetingsRoutes } from '@/features/meetings/index.js';
+import agreementRoutes from '@/features/agreements/api/routes.js';
 
 // Настройка для ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -52,6 +53,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 // Маршруты API
 app.use('/api/employees', employeeRoutes);
 app.use('/api/meetings', meetingsRoutes);
+app.use('/api', agreementRoutes); // Новые API для договоренностей
 
 // Базовый маршрут для проверки здоровья сервиса
 app.get('/api/health', (req, res) => {

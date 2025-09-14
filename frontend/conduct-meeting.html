@@ -521,9 +521,9 @@
             
             let savedAgreement = null;
             
-            // Сохраняем на сервер, если есть активная встреча
+            // НОВАЯ ЛОГИКА: Сохраняем через новый API
             if (currentMeetingId) {
-                savedAgreement = await addAgreementToServer(task, agreementType, dueDate);
+                savedAgreement = await createAgreement(task, agreementType, dueDate);
                 if (!savedAgreement) {
                     alert('Ошибка сохранения договоренности на сервер');
                     return;
@@ -551,38 +551,8 @@
                 <span class="text-xs ${responsibleClass} px-2 py-0.5 rounded">${responsibleText}</span>
             `;
             
-            // Добавляем обработчик событий для чекбокса (только если есть активная встреча)
-            if (isRunning) {
-                const checkbox = agreementElement.querySelector('input[type="checkbox"]');
-                if (checkbox) {
-                    // Если договоренность только что создана и еще не сохранена на сервере
-                    if (!savedAgreement) {
-                        // Сначала отключаем чекбокс, показываем что идет сохранение
-                        checkbox.disabled = true;
-                        checkbox.classList.add('opacity-50', 'cursor-not-allowed');
-                        console.log('Договоренность еще не сохранена, чекбокс отключен');
-                        
-                        // После сохранения на сервер нужно будет включить чекбокс и добавить обработчик
-                        // Это будет сделано в функции добавления договоренности
-                    } else {
-                        // Если договоренность уже сохранена, добавляем обработчик сразу
-                        addCheckboxEventListener(checkbox, savedAgreement.id);
-                    }
-                }
-            }
-            
-            // Если договоренность была успешно сохранена на сервер, активируем чекбокс
-            if (savedAgreement && isRunning) {
-                const checkbox = agreementElement.querySelector('input[type="checkbox"]');
-                if (checkbox && checkbox.disabled) {
-                    checkbox.disabled = false;
-                    checkbox.classList.remove('opacity-50', 'cursor-not-allowed');
-                    console.log('Чекбокс активирован после сохранения, ID:', savedAgreement.id);
-                    
-                    // Добавляем обработчик события для нового чекбокса
-                    addCheckboxEventListener(checkbox, savedAgreement.id);
-                }
-            }
+            // ЕДИНАЯ ЛОГИКА настройки чекбокса (исправляет БАГ #3 - дублирование)
+            setupAgreementCheckbox(agreementElement, savedAgreement, isRunning);
         }
         
         async function saveAllEditingAgreements() {
@@ -628,11 +598,12 @@
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 document.addEventListener('click', async function(event) {
-                    // Игнорируем клики по кнопкам и элементам управления
+                    // ИСПРАВЛЯЕМ БАГ #5: Исключаем чекбоксы договоренностей от автосохранения
                     if (event.target.closest('button') || 
                         event.target.closest('input') || 
                         event.target.closest('select') ||
-                        event.target.closest('.editing')) {
+                        event.target.closest('.editing') ||
+                        event.target.matches('input[type="checkbox"].custom-checkbox')) { // НОВОЕ: исключаем чекбоксы
                         return;
                     }
                     
@@ -816,8 +787,8 @@
                             // Обновляем состояние области договоренностей
                             updateAgreementsFieldState();
                             
-                            // Загружаем невыполненные договоренности с последней встречи
-                            await loadLastMeetingAgreements(currentEmployee.id);
+                            // НОВАЯ ЛОГИКА: Загружаем открытые договоренности
+                            await loadOpenAgreements(currentEmployee.id);
                             
                             // Перерисовываем иконки Feather
                             feather.replace();
@@ -1180,8 +1151,8 @@
             // Очищаем текущие заметки и договоренности только если встреча не активна
             if (!isRunning) {
                 clearNotesAndAgreements();
-                // Загружаем договоренности с последней встречи
-                loadLastMeetingAgreements(employee.id);
+                // НОВАЯ ЛОГИКА: Загружаем открытые договоренности из таблицы
+                loadOpenAgreements(employee.id);
             }
             
             console.log('Сотрудник изменен на:', employee);
@@ -1214,6 +1185,108 @@
             event.preventDefault();
             // На странице встречи ничего не делаем - остаемся где были
             console.log('Уже на странице встречи');
+        }
+
+        /**
+         * НОВАЯ ЛОГИКА: Загрузка открытых договоренностей из таблицы (без копирования!)
+         */
+        async function loadOpenAgreements(employeeId) {
+            if (!employeeId) {
+                console.log('Не указан ID сотрудника для загрузки договоренностей');
+                showAgreementsPlaceholder();
+                return;
+            }
+            
+            try {
+                console.log(`📋 Загружаем открытые договоренности для сотрудника: ${employeeId}`);
+                const response = await fetch(`http://localhost:3001/api/employees/${employeeId}/agreements/open`);
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    const { agreements } = result.data;
+                    
+                    if (agreements && agreements.length > 0) {
+                        console.log(`✅ Найдено ${agreements.length} открытых договоренностей`);
+                        renderAgreements(agreements);
+                    } else {
+                        console.log('📭 Нет открытых договоренностей');
+                        showAgreementsPlaceholder();
+                    }
+                } else {
+                    console.error('❌ Ошибка загрузки открытых договоренностей:', result.message);
+                    showAgreementsPlaceholder();
+                }
+            } catch (error) {
+                console.error('❌ Ошибка при загрузке открытых договоренностей:', error);
+                showAgreementsPlaceholder();
+            }
+        }
+
+        /**
+         * НОВАЯ ЛОГИКА: Создание договоренности через новый API
+         */
+        async function createAgreement(title, responsibleType, dueDate) {
+            if (!currentMeetingId || !currentEmployee) {
+                console.error('Нет активной встречи или сотрудника');
+                return null;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/agreements', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        meeting_id: currentMeetingId,
+                        employee_id: currentEmployee.id,
+                        title: title,
+                        responsible_type: responsibleType,
+                        due_date: dueDate || null
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    console.log('✅ Договоренность создана:', result.data);
+                    return result.data;
+                } else {
+                    console.error('❌ Ошибка создания договоренности:', result);
+                    return null;
+                }
+            } catch (error) {
+                console.error('❌ Ошибка при создании договоренности:', error);
+                return null;
+            }
+        }
+
+        /**
+         * НОВАЯ ЛОГИКА: Обновление статуса договоренности
+         */
+        async function updateAgreementStatus(agreementId, status) {
+            try {
+                const response = await fetch(`http://localhost:3001/api/agreements/${agreementId}/status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    console.log('✅ Статус договоренности обновлен:', result.data);
+                    return result.data;
+                } else {
+                    console.error('❌ Ошибка обновления статуса:', result);
+                    return null;
+                }
+            } catch (error) {
+                console.error('❌ Ошибка при обновлении статуса:', error);
+                return null;
+            }
         }
 
         /**
@@ -1319,45 +1392,47 @@
             });
         }
 
+
         /**
-         * Функция для добавления договоренности на сервер
+         * НОВАЯ: Централизованная функция настройки чекбокса (исправляет БАГ #3)
+         * Сохраняет ВСЕ возможности: включение/отключение, обработчики событий, визуальные состояния
          */
-        async function addAgreementToServer(title, type, dueDate) {
-            if (!currentMeetingId || !title.trim()) {
-                return false;
+        function setupAgreementCheckbox(agreementElement, savedAgreement, meetingIsRunning) {
+            const checkbox = agreementElement.querySelector('input[type="checkbox"]');
+            if (!checkbox) {
+                console.warn('Чекбокс не найден в элементе договоренности');
+                return;
             }
             
-            try {
-                const response = await fetch(`http://localhost:3001/api/meetings/${currentMeetingId}/agreements`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        title: title,
-                        type: type, // 'employee_task' или 'manager_task'
-                        description: '',
-                        dueDate: dueDate
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok && result.success) {
-                    console.log('Договоренность добавлена на сервер');
-                    // Возвращаем созданную договоренность
-                    const agreements = result.data.content.agreements;
-                    return agreements[agreements.length - 1]; // Последняя добавленная договоренность
-                } else {
-                    console.error('Ошибка добавления договоренности:', result.message);
-                    return null;
-                }
-            } catch (error) {
-                console.error('Ошибка при добавлении договоренности:', error);
-                return false;
+            // ЛОГИКА 1: Встреча НЕ активна - чекбокс отключен (сохраняем существующее поведение)
+            if (!meetingIsRunning) {
+                checkbox.disabled = true;
+                checkbox.classList.add('opacity-50', 'cursor-not-allowed');
+                console.log('Встреча неактивна - чекбокс отключен');
+                return;
             }
+            
+            // ЛОГИКА 2: Встреча активна, но договоренность не сохранена - показываем процесс сохранения
+            if (!savedAgreement) {
+                checkbox.disabled = true;
+                checkbox.classList.add('opacity-50', 'cursor-not-allowed');
+                checkbox.title = 'Сохранение договоренности...';
+                console.log('Договоренность еще не сохранена, чекбокс отключен');
+                return;
+            }
+            
+            // ЛОГИКА 3: Встреча активна и договоренность сохранена - полная функциональность
+            checkbox.disabled = false;
+            checkbox.classList.remove('opacity-50', 'cursor-not-allowed');
+            checkbox.title = 'Отметить как выполненное / снять отметку';
+            checkbox.setAttribute('data-agreement-id', savedAgreement.id);
+            
+            // Добавляем обработчик событий (сохраняем всю существующую логику)
+            addCheckboxEventListener(checkbox, savedAgreement.id);
+            
+            console.log('Чекбокс полностью настроен для договоренности:', savedAgreement.id);
         }
-
+        
         /**
          * Централизованная функция для добавления обработчика событий к чекбоксу
          */
@@ -1381,18 +1456,18 @@
         }
 
         /**
-         * Функция для обновления статуса договоренности
+         * НОВАЯ ЛОГИКА: Обработка изменения статуса договоренности
          */
         async function handleAgreementStatusChange(agreementId, isChecked) {
-            console.log('handleAgreementStatusChange вызвана:', { agreementId, isChecked, currentMeetingId });
+            console.log('📝 Изменение статуса договоренности:', { agreementId, isChecked });
             
-            if (!currentMeetingId || !agreementId) {
-                console.error('Не указан ID встречи или договоренности');
-                alert('Ошибка: не указан ID встречи или договоренности');
+            if (!agreementId) {
+                console.error('Не указан ID договоренности');
                 return;
             }
             
-            const newStatus = isChecked ? 'completed' : 'pending';
+            // НОВАЯ ЛОГИКА СТАТУСОВ: pending ↔ marked_for_completion
+            const newStatus = isChecked ? 'marked_for_completion' : 'pending';
             
             // Временно блокируем чекбокс во время запроса
             const checkbox = document.querySelector(`input[data-agreement-id="${agreementId}"]`);
@@ -1401,40 +1476,21 @@
             }
             
             try {
-                console.log('Отправляем запрос на сервер:', {
-                    url: `http://localhost:3001/api/meetings/${currentMeetingId}/agreements/status`,
-                    body: { agreementId, status: newStatus }
-                });
+                const updatedAgreement = await updateAgreementStatus(agreementId, newStatus);
                 
-                const response = await fetch(`http://localhost:3001/api/meetings/${currentMeetingId}/agreements/status`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        agreementId: agreementId,
-                        status: newStatus
-                    })
-                });
-                
-                const result = await response.json();
-                console.log('Ответ сервера:', result);
-                
-                if (response.ok && result.success) {
-                    console.log('Статус договоренности успешно обновлен');
-                    
-                    // Обновляем отображение договоренности на странице
-                    updateAgreementDisplay(agreementId, newStatus, result.data.content.agreements);
+                if (updatedAgreement) {
+                    console.log('✅ Статус успешно обновлен');
+                    // Обновляем отображение
+                    updateAgreementDisplay(agreementId, newStatus, updatedAgreement);
                 } else {
-                    console.error('Ошибка обновления статуса договоренности:', result);
                     // Возвращаем чекбокс в исходное состояние
                     if (checkbox) {
                         checkbox.checked = !isChecked;
                     }
-                    alert(`Ошибка обновления статуса договоренности: ${result.message || result.error || 'Неизвестная ошибка'}`);
+                    alert('Ошибка обновления статуса договоренности');
                 }
             } catch (error) {
-                console.error('Ошибка при обновлении статуса договоренности:', error);
+                console.error('❌ Ошибка при обновлении статуса договоренности:', error);
                 // Возвращаем чекбокс в исходное состояние
                 if (checkbox) {
                     checkbox.checked = !isChecked;
@@ -1449,51 +1505,36 @@
         }
 
         /**
-         * Функция для обновления отображения договоренности
+         * НОВАЯ ЛОГИКА: Обновление отображения договоренности
          */
-        function updateAgreementDisplay(agreementId, newStatus, agreements) {
+        function updateAgreementDisplay(agreementId, newStatus, updatedAgreement) {
             const checkbox = document.querySelector(`input[data-agreement-id="${agreementId}"]`);
             if (!checkbox) return;
             
             const agreementElement = checkbox.closest('.flex');
             if (!agreementElement) return;
             
-            // Найдем обновленную договоренность в массиве
-            const updatedAgreement = agreements.find(a => a.id === agreementId);
-            if (!updatedAgreement) return;
-            
-            // Обновляем стиль текста
+            // Обновляем стиль текста в зависимости от статуса
             const titleSpan = agreementElement.querySelector('.text-sm.font-medium.flex-1');
             if (titleSpan) {
                 if (newStatus === 'completed') {
                     titleSpan.style.textDecoration = 'line-through';
                     titleSpan.style.opacity = '0.7';
+                } else if (newStatus === 'marked_for_completion') {
+                    titleSpan.style.textDecoration = 'none';
+                    titleSpan.style.opacity = '0.8';
+                    titleSpan.style.fontStyle = 'italic';
                 } else {
                     titleSpan.style.textDecoration = 'none';
                     titleSpan.style.opacity = '1';
+                    titleSpan.style.fontStyle = 'normal';
                 }
             }
             
-            // Обновляем или добавляем информацию о времени выполнения
-            const existingCompletedSpan = agreementElement.querySelector('.text-green-600');
-            if (existingCompletedSpan) {
-                existingCompletedSpan.remove();
-            }
+            // Обновляем состояние чекбокса
+            checkbox.checked = (newStatus === 'marked_for_completion' || newStatus === 'completed');
             
-            if (newStatus === 'completed' && updatedAgreement.completed_at) {
-                const completedDate = new Date(updatedAgreement.completed_at);
-                const completedText = `Выполнено: ${completedDate.toLocaleDateString('ru-RU')} ${completedDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}`;
-                
-                const completedSpan = document.createElement('span');
-                completedSpan.className = 'text-xs text-green-600';
-                completedSpan.textContent = completedText;
-                
-                // Вставляем перед последним элементом (label ответственного)
-                const responsibleSpan = agreementElement.querySelector('.text-xs:last-child');
-                if (responsibleSpan) {
-                    agreementElement.insertBefore(completedSpan, responsibleSpan);
-                }
-            }
+            console.log(`📝 Отображение договоренности ${agreementId} обновлено. Статус: ${newStatus}`);
         }
 
         /**
@@ -1513,111 +1554,7 @@
             }
         }
 
-        /**
-         * Функция загрузки договоренностей с последней встречи
-         */
-        async function loadLastMeetingAgreements(employeeId) {
-            if (!employeeId) {
-                console.log('Не указан ID сотрудника для загрузки договоренностей');
-                showAgreementsPlaceholder();
-                return;
-            }
-            
-            try {
-                const response = await fetch(`http://localhost:3001/api/meetings/employees/${employeeId}/last-agreements`);
-                const result = await response.json();
-                
-                if (response.ok && result.success) {
-                    const { agreements } = result.data;
-                    
-                    if (agreements && agreements.length > 0) {
-                        console.log('Загружены договоренности с последней встречи:', agreements);
-                        
-                        // Если есть активная встреча - копируем договоренности в текущую встречу
-                        if (isRunning && currentMeetingId) {
-                            await copyAgreementsToCurrentMeeting(agreements);
-                        } else {
-                            // Если встреча не активна - просто отображаем
-                            renderAgreements(agreements);
-                        }
-                    } else {
-                        console.log('Нет договоренностей с последней встречи');
-                        showAgreementsPlaceholder();
-                    }
-                } else {
-                    console.error('Ошибка загрузки договоренностей:', result.message);
-                    showAgreementsPlaceholder();
-                }
-            } catch (error) {
-                console.error('Ошибка при загрузке договоренностей:', error);
-                showAgreementsPlaceholder();
-            }
-        }
 
-        /**
-         * Функция копирования договоренностей в текущую встречу
-         */
-        async function copyAgreementsToCurrentMeeting(agreements) {
-            console.log('Копируем договоренности в текущую встречу:', agreements);
-            
-            // ВРЕМЕННО: просто отображаем договоренности без копирования
-            // чтобы они не исчезали при начале встречи
-            renderAgreements(agreements);
-            
-            // Фоново копируем в базу для возможности изменения статуса
-            try {
-                for (const agreement of agreements) {
-                    const agreementType = agreement.type === 'employee_task' ? 'employee' : 'manager';
-                    
-                    fetch(`http://localhost:3001/api/meetings/${currentMeetingId}/agreements`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            title: agreement.title,
-                            description: agreement.description || '',
-                            type: agreementType,
-                            dueDate: agreement.due_date || null
-                        })
-                    }).then(response => response.json()).then(result => {
-                        if (result.success) {
-                            console.log('Договоренность скопирована в фоне:', result.data);
-                        }
-                    }).catch(error => {
-                        console.log('Ошибка фонового копирования:', error);
-                    });
-                }
-            } catch (error) {
-                console.error('Ошибка при фоновом копировании:', error);
-            }
-        }
-
-        /**
-         * Функция загрузки договоренностей текущей встречи
-         */
-        async function loadCurrentMeetingAgreements() {
-            if (!currentMeetingId) {
-                console.log('Нет активной встречи для загрузки договоренностей');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`http://localhost:3001/api/meetings/${currentMeetingId}`);
-                const result = await response.json();
-                
-                if (response.ok && result.success && result.data.content?.agreements) {
-                    console.log('Загружены договоренности текущей встречи:', result.data.content.agreements);
-                    renderAgreements(result.data.content.agreements);
-                } else {
-                    console.log('Нет договоренностей в текущей встрече');
-                    showAgreementsPlaceholder();
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки договоренностей текущей встречи:', error);
-                showAgreementsPlaceholder();
-            }
-        }
 
         /**
          * Функция отображения заглушки для договоренностей
@@ -1679,16 +1616,20 @@
                     completedText = `Выполнено: ${completedDate.toLocaleDateString('ru-RU')} ${completedDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}`;
                 }
                 
-                // Определяем состояние чекбокса в зависимости от активности встречи и статуса
-                const checkboxDisabled = !isRunning;
+                // НОВАЯ ЛОГИКА: Определяем состояние задачи с учетом новых статусов
                 const isCompleted = agreement.status === 'completed';
-                const checkboxClasses = checkboxDisabled ? 'custom-checkbox opacity-50 cursor-not-allowed' : 'custom-checkbox';
+                const isMarked = agreement.status === 'marked_for_completion';
+                const isChecked = isCompleted || isMarked;
                 
-                // Стиль для выполненных задач
-                const taskStyle = isCompleted ? 'text-decoration: line-through; opacity: 0.7;' : '';
+                let taskStyle = '';
+                if (isCompleted) {
+                    taskStyle = 'text-decoration: line-through; opacity: 0.7;';
+                } else if (isMarked) {
+                    taskStyle = 'opacity: 0.8; font-style: italic;';
+                }
                 
                 agreementElement.innerHTML = `
-                    <input type="checkbox" class="${checkboxClasses}" ${checkboxDisabled ? 'disabled' : ''} ${isCompleted ? 'checked' : ''} data-agreement-id="${agreement.id}">
+                    <input type="checkbox" class="custom-checkbox" ${isChecked ? 'checked' : ''}>
                     <span class="text-sm font-medium flex-1" style="${taskStyle}">${agreement.title}</span>
                     <div class="text-xs flex flex-col space-y-1">
                         ${createdDateText ? `<span class="text-muted">${createdDateText}</span>` : ''}
@@ -1698,11 +1639,8 @@
                     <span class="text-xs ${responsibleClass} px-2 py-0.5 rounded">${responsibleText}</span>
                 `;
                 
-                // Добавляем обработчик событий для чекбокса
-                const checkbox = agreementElement.querySelector('input[type="checkbox"]');
-                if (checkbox && !checkboxDisabled) {
-                    addCheckboxEventListener(checkbox, agreement.id);
-                }
+                // ИСПОЛЬЗУЕМ НОВУЮ централизованную логику настройки чекбокса
+                setupAgreementCheckbox(agreementElement, agreement, isRunning);
                 
                 agreementsList.appendChild(agreementElement);
             });
@@ -1906,10 +1844,8 @@
                     // Восстанавливаем контекст встречи (заметки и договоренности)
                     await restoreMeetingContext(meeting);
                     
-                    // Если в текущей встрече нет договоренностей, загружаем с предыдущей встречи
-                    if (!meeting.content?.agreements || meeting.content.agreements.length === 0) {
-                        await loadLastMeetingAgreements(currentEmployee.id);
-                    }
+                    // НОВАЯ ЛОГИКА: Всегда загружаем открытые договоренности из таблицы
+                    await loadOpenAgreements(currentEmployee.id);
                     
                     console.log('Активная встреча инициализирована. isRunning:', isRunning, 'currentMeetingId:', currentMeetingId);
                 }
@@ -2005,3 +1941,4 @@
     </script>
 </body>
 </html>
+
