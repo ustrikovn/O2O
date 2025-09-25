@@ -134,27 +134,6 @@ const questionSchema = Joi.alternatives().try(
   textareaQuestionSchema
 );
 
-// Схема для профилей
-const profileConditionSchema = Joi.object({
-  questionId: Joi.string().required(),
-  operator: conditionOperatorSchema.required(),
-  value: Joi.any().required(),
-  weight: Joi.number().min(0).optional()
-});
-
-const surveyProfileSchema = Joi.object({
-  name: Joi.string().required(),
-  title: Joi.string().optional(),
-  description: Joi.string().optional(),
-  conditions: Joi.array().items(profileConditionSchema).min(1).required(),
-  minScore: Joi.number().min(0).optional()
-});
-
-// Схема для системы скоринга
-const surveyScoringSchema = Joi.object({
-  profiles: Joi.array().items(surveyProfileSchema).min(1).required(),
-  defaultProfile: Joi.string().optional()
-});
 
 // Схема для настроек опроса
 const surveySettingsSchema = Joi.object({
@@ -190,7 +169,6 @@ export const createSurveySchema = Joi.object<CreateSurveyDto>({
   description: Joi.string().max(2000).optional(),
   questions: Joi.array().items(questionSchema).min(1).required(),
   logic: surveyLogicSchema.required(),
-  scoring: surveyScoringSchema.optional(),
   settings: surveySettingsSchema.optional(),
   metadata: surveyMetadataSchema.optional()
 }).custom((value, helpers) => {
@@ -253,7 +231,6 @@ export const updateSurveySchema = Joi.object<UpdateSurveyDto>({
   description: Joi.string().max(2000).optional(),
   questions: Joi.array().items(questionSchema).min(1).optional(),
   logic: surveyLogicSchema.optional(),
-  scoring: surveyScoringSchema.optional(),
   settings: surveySettingsSchema.optional(),
   metadata: surveyMetadataSchema.optional(),
   isActive: Joi.boolean().optional()

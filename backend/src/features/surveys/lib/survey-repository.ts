@@ -23,9 +23,9 @@ export class SurveyRepository {
   async create(survey: Survey): Promise<Survey> {
     const query = `
       INSERT INTO surveys (
-        id, title, description, questions, logic, scoring, settings,
+        id, title, description, questions, logic, settings,
         metadata, version, category, estimated_duration, author, tags, is_active
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *
     `;
 
@@ -35,7 +35,6 @@ export class SurveyRepository {
       survey.description,
       JSON.stringify(survey.questions),
       JSON.stringify(survey.logic),
-      survey.scoring ? JSON.stringify(survey.scoring) : null,
       survey.settings ? JSON.stringify(survey.settings) : null,
       survey.metadata ? JSON.stringify(survey.metadata) : null,
       survey.metadata?.version || '1.0.0',
@@ -110,10 +109,6 @@ export class SurveyRepository {
       values.push(JSON.stringify(updates.logic));
     }
 
-    if (updates.scoring !== undefined) {
-      setClauses.push(`scoring = $${paramIndex++}`);
-      values.push(updates.scoring ? JSON.stringify(updates.scoring) : null);
-    }
 
     if (updates.settings !== undefined) {
       setClauses.push(`settings = $${paramIndex++}`);
@@ -235,15 +230,6 @@ export class SurveyRepository {
       values.push(JSON.stringify(updates.answers));
     }
 
-    if (updates.profile !== undefined) {
-      setClauses.push(`profile = $${paramIndex++}`);
-      values.push(updates.profile);
-    }
-
-    if (updates.score !== undefined) {
-      setClauses.push(`score = $${paramIndex++}`);
-      values.push(updates.score);
-    }
 
     if (updates.status !== undefined) {
       setClauses.push(`status = $${paramIndex++}`);
@@ -371,20 +357,6 @@ export class SurveyRepository {
     const mainStatsResult = await this.db.query(mainStatsQuery, [surveyId]);
     const mainStats = mainStatsResult.rows[0];
 
-    // Распределение профилей
-    const profileStatsQuery = `
-      SELECT profile, COUNT(*) as count
-      FROM survey_results 
-      WHERE survey_id = $1 AND profile IS NOT NULL AND status = 'completed'
-      GROUP BY profile
-    `;
-
-    const profileStatsResult = await this.db.query(profileStatsQuery, [surveyId]);
-    const profileDistribution: Record<string, number> = {};
-    
-    for (const row of profileStatsResult.rows) {
-      profileDistribution[row.profile] = parseInt(row.count);
-    }
 
     // Получаем опрос для анализа вопросов
     const survey = await this.findById(surveyId);
@@ -449,7 +421,6 @@ export class SurveyRepository {
       completedResponses: parseInt(mainStats.completed_responses),
       abandonedResponses: parseInt(mainStats.abandoned_responses),
       averageDuration: mainStats.average_duration ? parseFloat(mainStats.average_duration) : undefined,
-      profileDistribution,
       questionStats
     };
   }
@@ -479,7 +450,6 @@ export class SurveyRepository {
       description: row.description,
       questions: row.questions,
       logic: row.logic,
-      scoring: row.scoring,
       settings: row.settings,
       metadata: {
         ...row.metadata,
@@ -505,8 +475,6 @@ export class SurveyRepository {
       employeeId: row.employee_id || undefined,
       meetingId: row.meeting_id || undefined,
       answers: row.answers || [],
-      profile: row.profile || undefined,
-      score: row.score ? parseFloat(row.score) : undefined,
       status: row.status,
       startedAt: row.started_at,
       completedAt: row.completed_at || undefined,

@@ -174,37 +174,9 @@
             feather.replace();
         }
 
-        // === МОКОВЫЕ ДАННЫЕ ===
-        // === ДАННЫЕ ОПРОСОВ ===
+        // === ДАННЫЕ ===
         let surveys = [];
-        let mockSurveys = {}; // Для обратной совместимости
-
-        // Реальные сотрудники будут загружаться из API
         let employees = [];
-
-        // Моковые данные о прохождении опросов
-        const mockSurveyResults = {
-            'emp1_motivation-test': {
-                completed: true,
-                completedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 дней назад
-                score: 85
-            },
-            'emp1_leadership-style': {
-                completed: true,
-                completedAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000), // 12 дней назад
-                score: 78
-            },
-            'emp2_work-life-balance': {
-                completed: true,
-                completedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 дня назад
-                score: 92
-            },
-            'emp3_career-development': {
-                completed: true,
-                completedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000), // 8 дней назад
-                score: 88
-            }
-        };
 
         // === ОСНОВНЫЕ ПЕРЕМЕННЫЕ ===
         let selectedSurvey = '';
@@ -251,18 +223,6 @@
                     option.textContent = survey.title;
                     surveySelect.appendChild(option);
                     console.log('Добавлен опрос:', survey.title);
-                });
-
-                // Создаем объект для обратной совместимости
-                mockSurveys = {};
-                surveys.forEach(survey => {
-                    mockSurveys[survey.id] = {
-                        id: survey.id,
-                        title: survey.title,
-                        description: survey.description || '',
-                        estimatedTime: survey.metadata?.estimatedDuration ? `${survey.metadata.estimatedDuration} минут` : 'Не указано',
-                        questionsCount: survey.questions?.length || 0
-                    };
                 });
 
                 console.log(`Загружено ${surveys.length} опросов`);
@@ -515,19 +475,26 @@
         function updateSurveyDescription() {
             const descriptionDiv = document.getElementById('survey-description');
             
-            if (selectedSurvey && mockSurveys[selectedSurvey]) {
-                const survey = mockSurveys[selectedSurvey];
-                descriptionDiv.innerHTML = `
-                    <div class="space-y-2">
-                        <p class="font-medium">${survey.description}</p>
-                        <div class="flex flex-wrap gap-4 text-xs text-gray-500">
-                            <span class="flex items-center"><i data-feather="clock" class="w-3 h-3 mr-1"></i> ${survey.estimatedTime}</span>
-                            <span class="flex items-center"><i data-feather="help-circle" class="w-3 h-3 mr-1"></i> ${survey.questionsCount} вопросов</span>
+            if (selectedSurvey) {
+                const survey = surveys.find(s => s.id === selectedSurvey);
+                if (survey) {
+                    const estimatedTime = survey.metadata?.estimatedDuration ? `${survey.metadata.estimatedDuration} минут` : 'Не указано';
+                    const questionsCount = survey.questions?.length || 0;
+                    
+                    descriptionDiv.innerHTML = `
+                        <div class="space-y-2">
+                            <p class="font-medium">${survey.description || 'Описание не указано'}</p>
+                            <div class="flex flex-wrap gap-4 text-xs text-gray-500">
+                                <span class="flex items-center"><i data-feather="clock" class="w-3 h-3 mr-1"></i> ${estimatedTime}</span>
+                                <span class="flex items-center"><i data-feather="help-circle" class="w-3 h-3 mr-1"></i> ${questionsCount} вопросов</span>
+                            </div>
                         </div>
-                    </div>
-                `;
-                descriptionDiv.classList.remove('hidden');
-                feather.replace();
+                    `;
+                    descriptionDiv.classList.remove('hidden');
+                    feather.replace();
+                } else {
+                    descriptionDiv.classList.add('hidden');
+                }
             } else {
                 descriptionDiv.classList.add('hidden');
             }
@@ -725,16 +692,37 @@
             }
         }
 
-        function viewResults() {
+        async function viewResults() {
             if (!selectedSurvey || !selectedEmployee) return;
             
-            const resultKey = `${selectedEmployee}_${selectedSurvey}`;
-            const result = mockSurveyResults[resultKey];
             const employee = employees.find(emp => emp.id === selectedEmployee);
-            const survey = mockSurveys[selectedSurvey];
+            const survey = surveys.find(s => s.id === selectedSurvey);
             
-            if (result && employee && survey) {
-                alert(`Результаты опроса "${survey.title}"\nСотрудник: ${employee.first_name} ${employee.last_name}\nРезультат: ${result.score}%\nДата прохождения: ${result.completedAt.toLocaleDateString('ru-RU')}\n\nЗдесь будет детальный просмотр результатов.`);
+            if (!employee || !survey) {
+                alert('Ошибка: не найден сотрудник или опрос');
+                return;
+            }
+
+            try {
+                // Загружаем результаты через API
+                const surveyResults = await loadSurveyResults();
+                
+                if (surveyResults) {
+                    const completedAt = new Date(surveyResults.completedAt || surveyResults.startedAt);
+                    const answersCount = surveyResults.answers ? surveyResults.answers.length : 0;
+                    
+                    alert(`Результаты опроса "${survey.title}"\n` +
+                          `Сотрудник: ${employee.first_name} ${employee.last_name}\n` +
+                          `Дата прохождения: ${completedAt.toLocaleDateString('ru-RU')}\n` +
+                          `Ответов: ${answersCount}\n` +
+                          `Статус: ${surveyResults.status}\n\n` +
+                          `Здесь будет детальный просмотр результатов.`);
+                } else {
+                    alert('Результаты опроса не найдены');
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке результатов:', error);
+                alert('Не удалось загрузить результаты опроса');
             }
         }
 
@@ -742,9 +730,14 @@
             if (!selectedSurvey || !selectedEmployee) return;
             
             const employee = employees.find(emp => emp.id === selectedEmployee);
-            const survey = mockSurveys[selectedSurvey];
+            const survey = surveys.find(s => s.id === selectedSurvey);
             
-            if (employee && survey && confirm(`Вы уверены, что хотите пройти опрос "${survey.title}" заново?\n\nПредыдущие результаты будут перезаписаны.`)) {
+            if (!employee || !survey) {
+                alert('Ошибка: не найден сотрудник или опрос');
+                return;
+            }
+            
+            if (confirm(`Вы уверены, что хотите пройти опрос "${survey.title}" заново?\n\nПредыдущие результаты будут перезаписаны.`)) {
                 // Запускаем опрос заново
                 startSurvey();
             }

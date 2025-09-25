@@ -130,28 +130,6 @@ export interface SkipLogic {
   conditions: ConditionalLogic[];
 }
 
-// Условия для профилей
-export interface ProfileCondition {
-  questionId: string;
-  operator: ConditionOperator;
-  value: any;
-  weight?: number; // Вес условия для скоринга
-}
-
-// Профиль результата
-export interface SurveyProfile {
-  name: string;
-  title?: string;
-  description?: string;
-  conditions: ProfileCondition[];
-  minScore?: number; // Минимальный балл для активации профиля
-}
-
-// Система скоринга
-export interface SurveyScoring {
-  profiles: SurveyProfile[];
-  defaultProfile?: string;
-}
 
 // Настройки опроса
 export interface SurveySettings {
@@ -186,7 +164,6 @@ export interface Survey {
     endPoints: string[];
     skipLogic?: SkipLogic | undefined;
   };
-  scoring?: SurveyScoring | undefined;
   settings?: SurveySettings | undefined;
   isActive?: boolean | undefined;
 }
@@ -207,8 +184,6 @@ export interface SurveyResult {
   employeeId?: string | undefined; // ID сотрудника, если привязан к сотруднику
   meetingId?: string | undefined; // ID встречи, если проводится в рамках one-to-one
   answers: QuestionAnswer[];
-  profile?: string | undefined; // Определенный профиль
-  score?: number | undefined; // Общий балл
   status: 'started' | 'in_progress' | 'completed' | 'abandoned';
   startedAt: Date;
   completedAt?: Date | undefined;
@@ -226,7 +201,6 @@ export interface SurveyStats {
   completedResponses: number;
   abandonedResponses: number;
   averageDuration?: number | undefined;
-  profileDistribution: Record<string, number>;
   questionStats: Array<{
     questionId: string;
     responseCount: number;
@@ -241,7 +215,6 @@ export interface CreateSurveyDto {
   description?: string;
   questions: Question[];
   logic: Survey['logic'];
-  scoring?: SurveyScoring;
   settings?: SurveySettings;
   metadata?: Omit<SurveyMetadata, 'createdAt' | 'updatedAt'>;
 }
@@ -274,8 +247,6 @@ export interface CompleteSurveyDto {
 export interface NextQuestionResponse {
   question?: Question | undefined;
   isCompleted: boolean;
-  profile?: string | undefined;
-  score?: number | undefined;
   progress?: {
     current: number;
     total: number;

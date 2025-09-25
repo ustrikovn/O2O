@@ -206,31 +206,21 @@ export class SurveyService {
     const isCompleted = !nextQuestion || surveyEntity.isCompleted(data.questionId, resultEntity.answers);
     console.log(`✅ Опрос завершен:`, isCompleted);
     
-    let profile: string | undefined;
-    let score: number | undefined;
-
     if (isCompleted) {
-      // НЕ ВЫЧИСЛЯЕМ профиль и балл автоматически
-      // Это будет делаться отдельной функцией интерпретации
-      
-      // Завершаем опрос БЕЗ профиля и оценки
-      resultEntity.complete(undefined, undefined);
+      // Завершаем опрос
+      resultEntity.complete();
     }
 
     // Сохраняем обновленный результат
     await this.surveyRepository.updateResult(data.resultId, {
       answers: resultEntity.answers,
       status: resultEntity.status,
-      profile: resultEntity.profile || undefined,
-      score: resultEntity.score || undefined,
       completedAt: resultEntity.completedAt || undefined
     });
 
     const response: NextQuestionResponse = {
       question: nextQuestion || undefined,
       isCompleted,
-      profile,
-      score,
       progress: surveyEntity.calculateProgress(resultEntity.answers)
     };
 
@@ -254,25 +244,18 @@ export class SurveyService {
     const surveyEntity = new SurveyEntity(survey);
     const resultEntity = new SurveyResultEntity(result);
 
-    // НЕ ВЫЧИСЛЯЕМ профиль и балл автоматически
-    // Интерпретация будет делаться отдельно
-    
-    // Завершаем опрос БЕЗ профиля и оценки
-    resultEntity.complete(undefined, undefined);
+    // Завершаем опрос
+    resultEntity.complete();
 
     // Сохраняем результат
     await this.surveyRepository.updateResult(resultId, {
       status: resultEntity.status,
-      profile: resultEntity.profile || undefined,
-      score: resultEntity.score || undefined,
       completedAt: resultEntity.completedAt || undefined
     });
 
     return {
       question: undefined,
       isCompleted: true,
-      profile: resultEntity.profile,
-      score: resultEntity.score,
       progress: surveyEntity.calculateProgress(resultEntity.answers)
     };
   }

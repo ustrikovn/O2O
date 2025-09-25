@@ -72,7 +72,6 @@ CREATE TABLE IF NOT EXISTS surveys (
     -- JSON содержимое опроса
     questions JSONB NOT NULL,
     logic JSONB NOT NULL,
-    scoring JSONB,
     settings JSONB,
     
     -- Метаданные
@@ -98,12 +97,10 @@ CREATE TABLE IF NOT EXISTS survey_results (
     
     -- Связи
     employee_id UUID, -- NULL если анонимный опрос
-    meeting_id VARCHAR(255),  -- NULL если не связан с встречей
+    meeting_id UUID,  -- NULL если не связан с встречей
     
     -- Ответы и результаты
     answers JSONB NOT NULL DEFAULT '[]',
-    profile VARCHAR(255),
-    score DECIMAL(10,2),
     
     -- Состояние прохождения
     status VARCHAR(20) DEFAULT 'started' CHECK (status IN ('started', 'in_progress', 'completed', 'abandoned')),
@@ -143,7 +140,6 @@ CREATE INDEX IF NOT EXISTS idx_survey_results_survey_id ON survey_results(survey
 CREATE INDEX IF NOT EXISTS idx_survey_results_employee_id ON survey_results(employee_id) WHERE employee_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_survey_results_status ON survey_results(status);
 CREATE INDEX IF NOT EXISTS idx_survey_results_started_at ON survey_results(started_at);
-CREATE INDEX IF NOT EXISTS idx_survey_results_profile ON survey_results(profile) WHERE profile IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_survey_templates_category ON survey_templates(category);
 CREATE INDEX IF NOT EXISTS idx_survey_templates_public ON survey_templates(is_public) WHERE is_public = true;
@@ -214,10 +210,7 @@ COMMENT ON VIEW survey_statistics IS 'Статистика по опросам: 
 -- Комментарии к основным колонкам
 COMMENT ON COLUMN surveys.questions IS 'JSON структура с вопросами опроса';
 COMMENT ON COLUMN surveys.logic IS 'JSON с логикой переходов между вопросами';
-COMMENT ON COLUMN surveys.scoring IS 'JSON с правилами подсчета баллов и определения профилей';
 COMMENT ON COLUMN surveys.settings IS 'JSON с настройками опроса (возврат, прогресс и т.д.)';
 
 COMMENT ON COLUMN survey_results.answers IS 'JSON массив с ответами на вопросы';
-COMMENT ON COLUMN survey_results.profile IS 'Определенный профиль на основе ответов';
-COMMENT ON COLUMN survey_results.score IS 'Общий балл по результатам опроса';
 COMMENT ON COLUMN survey_results.current_question_id IS 'ID текущего вопроса для незавершенных опросов';

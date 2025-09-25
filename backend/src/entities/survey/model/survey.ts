@@ -11,7 +11,6 @@ export class SurveyEntity implements Survey {
   metadata?: Survey['metadata'] | undefined;
   questions: Question[];
   logic: Survey['logic'];
-  scoring?: Survey['scoring'] | undefined;
   settings?: Survey['settings'] | undefined;
   isActive?: boolean | undefined;
 
@@ -22,7 +21,6 @@ export class SurveyEntity implements Survey {
     this.metadata = data.metadata;
     this.questions = data.questions;
     this.logic = data.logic;
-    this.scoring = data.scoring;
     this.settings = data.settings;
     this.isActive = data.isActive ?? true;
   }
@@ -111,45 +109,6 @@ export class SurveyEntity implements Survey {
            this.getNextQuestion(currentQuestionId, answers[answers.length - 1]?.value, answers) === null;
   }
 
-  /**
-   * Вычислить профиль на основе ответов
-   */
-  calculateProfile(answers: QuestionAnswer[]): { profile?: string | undefined; score?: number | undefined } {
-    if (!this.scoring?.profiles) {
-      return {};
-    }
-
-    let bestProfile: string | undefined;
-    let bestScore = 0;
-
-    for (const profile of this.scoring.profiles) {
-      let score = 0;
-      let matchedConditions = 0;
-
-      for (const condition of profile.conditions) {
-        const answer = answers.find(a => a.questionId === condition.questionId);
-        if (answer && this.evaluateCondition(condition, answer.value, answers)) {
-          matchedConditions++;
-          score += condition.weight || 1;
-        }
-      }
-
-      // Проверяем минимальный балл и количество совпадений
-      if (score > bestScore && 
-          (profile.minScore === undefined || score >= profile.minScore) &&
-          matchedConditions > 0) {
-        bestScore = score;
-        bestProfile = profile.name;
-      }
-    }
-
-    const finalProfile = bestProfile || this.scoring.defaultProfile;
-    
-    return {
-      profile: finalProfile || undefined,
-      score: bestScore > 0 ? bestScore : undefined
-    };
-  }
 
   /**
    * Вычислить прогресс прохождения
@@ -299,8 +258,6 @@ export class SurveyResultEntity implements SurveyResult {
   employeeId?: string | undefined;
   meetingId?: string | undefined;
   answers: QuestionAnswer[];
-  profile?: string | undefined;
-  score?: number | undefined;
   status: SurveyResult['status'];
   startedAt: Date;
   completedAt?: Date | undefined;
@@ -312,8 +269,6 @@ export class SurveyResultEntity implements SurveyResult {
     this.employeeId = data.employeeId || undefined;
     this.meetingId = data.meetingId || undefined;
     this.answers = data.answers || [];
-    this.profile = data.profile || undefined;
-    this.score = data.score || undefined;
     this.status = data.status;
     this.startedAt = data.startedAt;
     this.completedAt = data.completedAt || undefined;
@@ -337,11 +292,9 @@ export class SurveyResultEntity implements SurveyResult {
   /**
    * Завершить опрос
    */
-  complete(profile?: string, score?: number): void {
+  complete(): void {
     this.status = 'completed';
     this.completedAt = new Date();
-    if (profile) this.profile = profile;
-    if (score !== undefined) this.score = score;
     
     // Обновляем метаданные
     if (!this.metadata) this.metadata = {};
