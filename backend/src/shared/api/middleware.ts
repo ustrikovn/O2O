@@ -6,6 +6,52 @@ import { Request, Response, NextFunction } from 'express';
 import { ValidationError } from '@/shared/types/common.js';
 
 /**
+ * Класс для API ошибок
+ */
+export class ApiError extends Error {
+  public status: number;
+  public details?: any;
+
+  constructor(status: number, message: string, details?: any) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.details = details;
+  }
+}
+
+/**
+ * Общий middleware для валидации с помощью Joi
+ */
+export const validationMiddleware = (
+  validationFn: (data: any) => { error?: any; value: any },
+  source: 'body' | 'params' | 'query' = 'body'
+) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const data = req[source];
+    const result = validationFn(data);
+
+    if (result.error) {
+      const errorMessage = result.error.details
+        ? result.error.details.map((detail: any) => detail.message).join(', ')
+        : result.error.message;
+
+      res.status(400).json({
+        success: false,
+        error: 'Ошибка валидации',
+        message: errorMessage,
+        details: result.error.details || []
+      });
+      return;
+    }
+
+    // Заменяем исходные данные валидированными
+    req[source] = result.value;
+    next();
+  };
+};
+
+/**
  * Middleware для валидации UUID
  */
 export const validateUUID = (paramName: string = 'id') => {

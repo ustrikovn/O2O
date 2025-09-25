@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Опросы - O2O</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <link rel="stylesheet" href="shared/styles/base.css">
+</head>
+<body>
+    <div class="flex min-h-screen">
+        <!-- Sidebar Container -->
+        <div id="sidebar-container"></div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 ml-64 p-8">
+            <div class="max-w-6xl mx-auto">
+                <!-- Выбор опроса и сотрудника -->
+                <div class="grid md:grid-cols-2 gap-8 mb-8">
+                    <!-- Выбор опроса -->
+                    <div class="glass-card p-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i data-feather="clipboard" class="mr-2 w-5 h-5"></i>
+                            Выбор опроса
+                        </h2>
+                        <div class="space-y-3">
+                            <select id="survey-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+                                <option value="">Выберите опрос...</option>
+                                <option value="motivation-test">Тест мотивации сотрудников</option>
+                                <option value="leadership-style">Стиль лидерства</option>
+                                <option value="team-dynamics">Командная динамика</option>
+                                <option value="work-life-balance">Work-Life баланс</option>
+                                <option value="career-development">Карьерное развитие</option>
+                            </select>
+                            <div id="survey-description" class="text-sm text-gray-600 p-3 bg-gray-50 rounded-lg hidden">
+                                <p>Описание опроса появится здесь после выбора</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Выбор сотрудника -->
+                    <div class="glass-card p-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i data-feather="user" class="mr-2 w-5 h-5"></i>
+                            Выбор сотрудника
+                        </h2>
+                        <div class="space-y-3">
+                            <select id="employee-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+                                <option value="">Выберите сотрудника...</option>
+                            </select>
+                            <div id="employee-info" class="text-sm text-gray-600 p-3 bg-gray-50 rounded-lg hidden">
+                                <div class="flex items-center space-x-3">
+                                    <img id="employee-avatar" src="" alt="" class="w-10 h-10 rounded-full bg-gray-200">
+                                    <div>
+                                        <p id="employee-name" class="font-medium"></p>
+                                        <p id="employee-position" class="text-gray-500"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Статус прохождения опроса -->
+                <div class="glass-card p-6 mb-8" id="survey-status-card" style="display: none;">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i data-feather="activity" class="mr-2 w-5 h-5"></i>
+                        Статус прохождения
+                    </h2>
+                    <div id="survey-status-content">
+                        <!-- Контент будет добавляться динамически -->
+                    </div>
+                </div>
+
+                <!-- Действия -->
+                <div class="glass-card p-6" id="actions-card" style="display: none;">
+                    <div class="flex flex-wrap gap-4">
+                        <button id="start-survey-btn" class="glass-button px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i data-feather="play" class="mr-2 w-4 h-4 inline"></i>
+                            Начать опрос
+                        </button>
+                        <button id="view-results-btn" class="glass-button px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:shadow-lg" style="display: none;">
+                            <i data-feather="eye" class="mr-2 w-4 h-4 inline"></i>
+                            Посмотреть результаты
+                        </button>
+                        <button id="retake-survey-btn" class="glass-button px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:shadow-lg" style="display: none;">
+                            <i data-feather="refresh-cw" class="mr-2 w-4 h-4 inline"></i>
+                            Пройти заново
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Интерфейс прохождения опроса -->
+            <div class="glass-card p-6 hidden" id="survey-taking-interface">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <i data-feather="help-circle" class="mr-2"></i>
+                        <span id="survey-taking-title">Прохождение опроса</span>
+                    </h2>
+                    <button onclick="cancelSurvey()" class="glass-button px-4 py-2 rounded-lg flex items-center">
+                        <i data-feather="x" class="mr-2"></i>
+                        Отменить
+                    </button>
+                </div>
+                
+                <!-- Прогресс бар -->
+                <div class="mb-6">
+                    <div class="flex justify-between text-sm text-gray-600 mb-2">
+                        <span>Прогресс прохождения</span>
+                        <span id="progress-text">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="progress-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <!-- Вопрос -->
+                <div id="question-container">
+                    <div class="mb-4">
+                        <h3 class="text-lg font-medium text-gray-800 mb-4" id="question-title">Загрузка вопроса...</h3>
+                        <div id="question-options" class="space-y-3">
+                            <!-- Опции будут добавлены динамически -->
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between mt-6">
+                        <button onclick="previousQuestion()" id="prev-btn" class="glass-button px-4 py-2 rounded-lg flex items-center disabled:opacity-50" disabled>
+                            <i data-feather="chevron-left" class="mr-2"></i>
+                            Назад
+                        </button>
+                        <button onclick="nextQuestion()" id="next-btn" class="glass-button px-4 py-2 rounded-lg flex items-center disabled:opacity-50" disabled>
+                            Далее
+                            <i data-feather="chevron-right" class="ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Результат опроса -->
+                <div id="survey-completion" class="hidden text-center">
+                    <div class="mb-6">
+                        <i data-feather="check-circle" class="mx-auto text-green-500 mb-4" style="width: 64px; height: 64px;"></i>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Опрос завершен!</h3>
+                        <p class="text-gray-600">Спасибо за участие. Ваши ответы сохранены.</p>
+                    </div>
+                    <div class="space-y-3">
+                        <button onclick="viewSurveyResults()" class="glass-button px-6 py-3 rounded-lg flex items-center mx-auto">
+                            <i data-feather="eye" class="mr-2"></i>
+                            Посмотреть результаты
+                        </button>
+                        <button onclick="startNewSurvey()" class="glass-button px-6 py-3 rounded-lg flex items-center mx-auto">
+                            <i data-feather="refresh-cw" class="mr-2"></i>
+                            Пройти другой опрос
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared/ui/sidebar.js"></script>
+    <script>
+        // Инициализация sidebar
+        if (typeof O2OSidebar !== 'undefined') {
+            const sidebar = new O2OSidebar('surveys');
+            sidebar.mount('sidebar-container');
+        }
+
+        // Инициализация Feather иконок
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+
+        // === МОКОВЫЕ ДАННЫЕ ===
+        // === ДАННЫЕ ОПРОСОВ ===
+        let surveys = [];
+        let mockSurveys = {}; // Для обратной совместимости
+
+        // Реальные сотрудники будут загружаться из API
+        let employees = [];
+
+        // Моковые данные о прохождении опросов
+        const mockSurveyResults = {
+            'emp1_motivation-test': {
+                completed: true,
+                completedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 дней назад
+                score: 85
+            },
+            'emp1_leadership-style': {
+                completed: true,
+                completedAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000), // 12 дней назад
+                score: 78
+            },
+            'emp2_work-life-balance': {
+                completed: true,
+                completedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 дня назад
+                score: 92
+            },
+            'emp3_career-development': {
+                completed: true,
+                completedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000), // 8 дней назад
+                score: 88
+            }
+        };
+
+        // === ОСНОВНЫЕ ПЕРЕМЕННЫЕ ===
+        let selectedSurvey = '';
+        let selectedEmployee = '';
+        
+        // === ПЕРЕМЕННЫЕ ПРОХОЖДЕНИЯ ОПРОСА ===
+        let currentSurveyResult = null;
+        let currentQuestion = null;
+        let currentQuestionIndex = 0;
+        let surveyQuestions = [];
+        let answers = {};
+        let isTakingSurvey = false;
+
+        // === ИНИЦИАЛИЗАЦИЯ ===
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSurveys();
+            loadEmployees();
+            setupEventListeners();
+            feather.replace();
+        });
+
+        // === ЗАГРУЗКА ОПРОСОВ ===
+        async function loadSurveys() {
+            const surveySelect = document.getElementById('survey-select');
+            surveySelect.innerHTML = '<option value="">Загрузка опросов...</option>';
+
+            try {
+                const response = await fetch('http://localhost:3001/api/surveys?active=true');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                surveys = data.data || [];
+
+                console.log('Ответ API опросов:', data);
+                console.log('Массив опросов:', surveys);
+
+                surveySelect.innerHTML = '<option value="">Выберите опрос...</option>';
+                
+                surveys.forEach(survey => {
+                    const option = document.createElement('option');
+                    option.value = survey.id;
+                    option.textContent = survey.title;
+                    surveySelect.appendChild(option);
+                    console.log('Добавлен опрос:', survey.title);
+                });
+
+                // Создаем объект для обратной совместимости
+                mockSurveys = {};
+                surveys.forEach(survey => {
+                    mockSurveys[survey.id] = {
+                        id: survey.id,
+                        title: survey.title,
+                        description: survey.description || '',
+                        estimatedTime: survey.metadata?.estimatedDuration ? `${survey.metadata.estimatedDuration} минут` : 'Не указано',
+                        questionsCount: survey.questions?.length || 0
+                    };
+                });
+
+                console.log(`Загружено ${surveys.length} опросов`);
+
+            } catch (error) {
+                console.error('Ошибка при загрузке опросов:', error);
+                surveySelect.innerHTML = '<option value="">Ошибка загрузки опросов</option>';
+            }
+        }
+
+        // === ЗАГРУЗКА СОТРУДНИКОВ ===
+        async function loadEmployees() {
+            const employeeSelect = document.getElementById('employee-select');
+            employeeSelect.innerHTML = '<option value="">Загрузка сотрудников...</option>';
+
+            try {
+                const response = await fetch('http://localhost:3001/api/employees');
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки сотрудников');
+                }
+                
+                const data = await response.json();
+                employees = data.data || [];
+
+                console.log('Ответ API сотрудников:', data);
+                console.log('Массив сотрудников:', employees);
+
+                employeeSelect.innerHTML = '<option value="">Выберите сотрудника...</option>';
+                
+                employees.forEach(employee => {
+                    const option = document.createElement('option');
+                    option.value = employee.id;
+                    option.textContent = `${employee.first_name} ${employee.last_name} — ${employee.position}`;
+                    employeeSelect.appendChild(option);
+                    console.log(`Добавлен сотрудник: ${employee.first_name} ${employee.last_name}`);
+                });
+
+                console.log(`✅ Загружено ${employees.length} сотрудников`);
+            } catch (error) {
+                console.error('Ошибка при загрузке сотрудников:', error);
+                employeeSelect.innerHTML = '<option value="">Ошибка загрузки сотрудников</option>';
+            }
+        }
+
+        // === ФУНКЦИИ ПРОХОЖДЕНИЯ ОПРОСА ===
+        function initializeSurveyTaking(survey, employee) {
+            isTakingSurvey = true;
+            answers = {};
+            currentQuestionIndex = 0;
+            
+            // Показываем интерфейс прохождения опроса
+            document.getElementById('survey-taking-interface').classList.remove('hidden');
+            document.getElementById('survey-taking-title').textContent = survey.title;
+            
+            // Скрываем основной интерфейс
+            document.querySelector('.grid').style.display = 'none';
+            
+            feather.replace();
+        }
+
+
+        function displayQuestion(question) {
+            const titleElement = document.getElementById('question-title');
+            const optionsElement = document.getElementById('question-options');
+            
+            titleElement.textContent = question.title;
+            optionsElement.innerHTML = '';
+            
+            if (question.type === 'single-choice') {
+                question.options.forEach(option => {
+                    const optionDiv = document.createElement('div');
+                    optionDiv.className = 'flex items-center';
+                    optionDiv.innerHTML = `
+                        <input type="radio" id="option-${option.value}" name="question-answer" value="${option.value}" class="mr-3">
+                        <label for="option-${option.value}" class="cursor-pointer flex-1">${option.label}</label>
+                    `;
+                    optionsElement.appendChild(optionDiv);
+                });
+            }
+            
+            // Включаем кнопку "Далее" когда выбран ответ
+            document.querySelectorAll('input[name="question-answer"]').forEach(input => {
+                input.addEventListener('change', () => {
+                    document.getElementById('next-btn').disabled = false;
+                });
+            });
+        }
+
+        async function nextQuestion() {
+            const selectedOption = document.querySelector('input[name="question-answer"]:checked');
+            if (!selectedOption) return;
+
+            const answer = selectedOption.value;
+            answers[currentQuestion.id] = answer;
+
+            try {
+                // Отправляем ответ на сервер
+                const response = await fetch('http://localhost:3001/api/surveys/answer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        resultId: currentSurveyResult.id,
+                        questionId: currentQuestion.id,
+                        value: answer
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Ответ отправлен:', data);
+
+                // Проверяем статус опроса
+                if (data.data.isCompleted) {
+                    // Опрос уже завершён на бэкенде
+                    console.log('Опрос автоматически завершён на бэкенде');
+                    showSurveyCompletion();
+                    await updateSurveyStatus(); // Обновляем статус на главной странице
+                } else if (data.data.question) {
+                    // Есть следующий вопрос
+                    currentQuestion = data.data.question;
+                    displayQuestion(currentQuestion);
+                    updateProgress(data.data.progress);
+                    
+                    // Сбрасываем кнопку "Далее"
+                    document.getElementById('next-btn').disabled = true;
+                } else {
+                    // Странная ситуация - нет вопроса, но опрос не завершён
+                    console.warn('Неожиданное состояние: нет вопроса, но опрос не завершён');
+                    showSurveyCompletion();
+                }
+
+            } catch (error) {
+                console.error('Ошибка при отправке ответа:', error);
+                alert('Не удалось отправить ответ');
+            }
+        }
+
+        async function completeSurvey() {
+            try {
+                const response = await fetch('http://localhost:3001/api/surveys/complete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        resultId: currentSurveyResult.id
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Опрос завершен:', data);
+                
+                showSurveyCompletion();
+                
+                // Обновляем статус на главном экране
+                updateSurveyStatus();
+
+            } catch (error) {
+                console.error('Ошибка при завершении опроса:', error);
+                alert('Не удалось завершить опрос');
+            }
+        }
+
+        function showSurveyCompletion() {
+            document.getElementById('question-container').classList.add('hidden');
+            document.getElementById('survey-completion').classList.remove('hidden');
+            updateProgress({ percentage: 100 });
+            feather.replace();
+        }
+
+        function updateProgress(progress) {
+            if (progress && progress.percentage !== undefined) {
+                document.getElementById('progress-bar').style.width = `${progress.percentage}%`;
+                document.getElementById('progress-text').textContent = `${progress.percentage}%`;
+            }
+        }
+
+        function cancelSurvey() {
+            if (confirm('Вы уверены, что хотите отменить прохождение опроса? Прогресс будет потерян.')) {
+                resetSurveyInterface();
+            }
+        }
+
+        function previousQuestion() {
+            // Функционал "Назад" пока не реализован
+            alert('Функция "Назад" будет добавлена в будущем');
+        }
+
+        function viewSurveyResults() {
+            resetSurveyInterface();
+            // Здесь можно добавить показ результатов
+            alert('Результаты опроса сохранены в базе данных');
+        }
+
+        function startNewSurvey() {
+            resetSurveyInterface();
+        }
+
+        function resetSurveyInterface() {
+            // Скрываем интерфейс прохождения
+            document.getElementById('survey-taking-interface').classList.add('hidden');
+            document.getElementById('question-container').classList.remove('hidden');
+            document.getElementById('survey-completion').classList.add('hidden');
+            
+            // Показываем основной интерфейс
+            document.querySelector('.grid').style.display = 'grid';
+            
+            // Сбрасываем переменные
+            isTakingSurvey = false;
+            currentSurveyResult = null;
+            currentQuestion = null;
+            answers = {};
+            
+            // Обновляем статус
+            updateSurveyStatus();
+        }
+
+        // === ОБРАБОТЧИКИ СОБЫТИЙ ===
+        function setupEventListeners() {
+            // Выбор опроса
+            document.getElementById('survey-select').addEventListener('change', function(e) {
+                selectedSurvey = e.target.value;
+                updateSurveyDescription();
+                updateSurveyStatus();
+            });
+
+            // Выбор сотрудника
+            document.getElementById('employee-select').addEventListener('change', function(e) {
+                selectedEmployee = e.target.value;
+                updateEmployeeInfo();
+                updateSurveyStatus();
+            });
+
+            // Кнопки действий
+            document.getElementById('start-survey-btn').addEventListener('click', startSurvey);
+            document.getElementById('view-results-btn').addEventListener('click', viewResults);
+            document.getElementById('retake-survey-btn').addEventListener('click', retakeSurvey);
+        }
+
+        // === ОБНОВЛЕНИЕ ОПИСАНИЯ ОПРОСА ===
+        function updateSurveyDescription() {
+            const descriptionDiv = document.getElementById('survey-description');
+            
+            if (selectedSurvey && mockSurveys[selectedSurvey]) {
+                const survey = mockSurveys[selectedSurvey];
+                descriptionDiv.innerHTML = `
+                    <div class="space-y-2">
+                        <p class="font-medium">${survey.description}</p>
+                        <div class="flex flex-wrap gap-4 text-xs text-gray-500">
+                            <span class="flex items-center"><i data-feather="clock" class="w-3 h-3 mr-1"></i> ${survey.estimatedTime}</span>
+                            <span class="flex items-center"><i data-feather="help-circle" class="w-3 h-3 mr-1"></i> ${survey.questionsCount} вопросов</span>
+                        </div>
+                    </div>
+                `;
+                descriptionDiv.classList.remove('hidden');
+                feather.replace();
+            } else {
+                descriptionDiv.classList.add('hidden');
+            }
+        }
+
+        // === ЗАГРУЗКА СТАТУСА ПРОХОЖДЕНИЯ ОПРОСОВ ===
+        async function loadSurveyResults() {
+            if (!selectedEmployee || !selectedSurvey) return null;
+            
+            try {
+                const response = await fetch(`http://localhost:3001/api/surveys/${selectedSurvey}/results?employeeId=${selectedEmployee}`);
+                if (!response.ok) {
+                    // Если результатов нет, это нормально
+                    if (response.status === 404) {
+                        return null;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Результаты опроса:', data);
+                
+                // API возвращает массив результатов, нужно найти завершённый
+                if (data.data && data.data.length > 0) {
+                    // Ищем завершённый результат для этого сотрудника
+                    const completedResult = data.data.find(result => 
+                        result.employeeId === selectedEmployee && result.status === 'completed'
+                    );
+                    
+                    if (completedResult) {
+                        return completedResult;
+                    }
+                }
+                
+                return null; // Завершённых результатов нет
+                
+            } catch (error) {
+                console.error('Ошибка при загрузке результатов опроса:', error);
+                return null;
+            }
+        }
+
+        // === ОБНОВЛЕНИЕ ИНФОРМАЦИИ О СОТРУДНИКЕ ===
+        function updateEmployeeInfo() {
+            const employeeInfoDiv = document.getElementById('employee-info');
+            
+            if (selectedEmployee) {
+                const employee = employees.find(emp => emp.id === selectedEmployee);
+                if (employee) {
+                    // Проверяем есть ли фото, если нет - используем дефолтную аватарку
+                    const avatarUrl = employee.photo_url || 'https://via.placeholder.com/40x40/e5e7eb/6b7280?text=' + employee.first_name.charAt(0);
+                    
+                    document.getElementById('employee-avatar').src = avatarUrl;
+                    document.getElementById('employee-avatar').alt = `${employee.first_name} ${employee.last_name}`;
+                    document.getElementById('employee-name').textContent = `${employee.first_name} ${employee.last_name}`;
+                    document.getElementById('employee-position').textContent = `${employee.position}${employee.team ? ' • ' + employee.team : ''}`;
+                    employeeInfoDiv.classList.remove('hidden');
+                }
+            } else {
+                employeeInfoDiv.classList.add('hidden');
+            }
+        }
+
+        // === ОБНОВЛЕНИЕ СТАТУСА ОПРОСА ===
+        async function updateSurveyStatus() {
+            const statusCard = document.getElementById('survey-status-card');
+            const actionsCard = document.getElementById('actions-card');
+            const statusContent = document.getElementById('survey-status-content');
+
+            if (selectedSurvey && selectedEmployee) {
+                // Загружаем реальные результаты из API
+                const surveyResults = await loadSurveyResults();
+
+                statusCard.style.display = 'block';
+                actionsCard.style.display = 'block';
+
+                if (surveyResults) {
+                    // У нас есть завершённый результат
+                    const completedAt = new Date(surveyResults.completedAt || surveyResults.startedAt);
+                    const daysAgo = Math.floor((Date.now() - completedAt.getTime()) / (1000 * 60 * 60 * 24));
+                    const daysText = getDaysText(daysAgo);
+
+                    statusContent.innerHTML = `
+                        <div class="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i data-feather="check-circle" class="w-5 h-5 text-green-600"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-green-800">Опрос пройден</p>
+                                    <p class="text-sm text-green-600">Завершен ${daysText} • ${surveyResults.answers ? surveyResults.answers.length : 0} ответов</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-bold text-green-600">✓</div>
+                                <div class="text-xs text-green-500">Завершен</div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Показать кнопки для просмотра и повторного прохождения
+                    document.getElementById('start-survey-btn').style.display = 'none';
+                    document.getElementById('view-results-btn').style.display = 'inline-flex';
+                    document.getElementById('retake-survey-btn').style.display = 'inline-flex';
+                } else {
+                    // Опрос не пройден
+                    statusContent.innerHTML = `
+                        <div class="flex items-center p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i data-feather="play-circle" class="w-5 h-5 text-blue-600"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="font-medium text-blue-800">Опрос не пройден</p>
+                                <p class="text-sm text-blue-600">Этот сотрудник еще не проходил данный опрос</p>
+                            </div>
+                        </div>
+                    `;
+
+                    // Показать только кнопку начала опроса
+                    document.getElementById('start-survey-btn').style.display = 'inline-flex';
+                    document.getElementById('view-results-btn').style.display = 'none';
+                    document.getElementById('retake-survey-btn').style.display = 'none';
+                }
+
+                feather.replace();
+            } else {
+                statusCard.style.display = 'none';
+                actionsCard.style.display = 'none';
+            }
+        }
+
+        // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
+        function getDaysText(days) {
+            if (days === 0) return 'сегодня';
+            if (days === 1) return 'вчера';
+            if (days >= 2 && days <= 4) return `${days} дня назад`;
+            if (days >= 5 && days <= 20) return `${days} дней назад`;
+            if (days % 10 === 1 && days % 100 !== 11) return `${days} день назад`;
+            if ((days % 10 >= 2 && days % 10 <= 4) && !(days % 100 >= 12 && days % 100 <= 14)) return `${days} дня назад`;
+            return `${days} дней назад`;
+        }
+
+        // === ДЕЙСТВИЯ ===
+        async function startSurvey() {
+            if (!selectedSurvey || !selectedEmployee) return;
+            
+            const employee = employees.find(emp => emp.id === selectedEmployee);
+            const survey = surveys.find(s => s.id === selectedSurvey);
+            
+            if (!employee || !survey) {
+                alert('Ошибка: не найден сотрудник или опрос');
+                return;
+            }
+
+            try {
+                // Начинаем опрос через API
+                const response = await fetch('http://localhost:3001/api/surveys/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        surveyId: selectedSurvey,
+                        employeeId: selectedEmployee
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                console.log('Опрос начат:', data);
+
+                // API /start уже возвращает первый вопрос и resultId
+                currentSurveyResult = { id: data.data.resultId };
+                
+                // Инициализируем интерфейс прохождения
+                initializeSurveyTaking(survey, employee);
+                
+                // Отображаем первый вопрос, который уже пришел в ответе
+                if (data.data.question) {
+                    currentQuestion = data.data.question;
+                    displayQuestion(currentQuestion);
+                    updateProgress(data.data.progress);
+                } else {
+                    // Опрос уже завершен
+                    showSurveyCompletion();
+                }
+
+            } catch (error) {
+                console.error('Ошибка при начале опроса:', error);
+                alert('Не удалось начать опрос. Попробуйте еще раз.');
+            }
+        }
+
+        function viewResults() {
+            if (!selectedSurvey || !selectedEmployee) return;
+            
+            const resultKey = `${selectedEmployee}_${selectedSurvey}`;
+            const result = mockSurveyResults[resultKey];
+            const employee = employees.find(emp => emp.id === selectedEmployee);
+            const survey = mockSurveys[selectedSurvey];
+            
+            if (result && employee && survey) {
+                alert(`Результаты опроса "${survey.title}"\nСотрудник: ${employee.first_name} ${employee.last_name}\nРезультат: ${result.score}%\nДата прохождения: ${result.completedAt.toLocaleDateString('ru-RU')}\n\nЗдесь будет детальный просмотр результатов.`);
+            }
+        }
+
+        function retakeSurvey() {
+            if (!selectedSurvey || !selectedEmployee) return;
+            
+            const employee = employees.find(emp => emp.id === selectedEmployee);
+            const survey = mockSurveys[selectedSurvey];
+            
+            if (employee && survey && confirm(`Вы уверены, что хотите пройти опрос "${survey.title}" заново?\n\nПредыдущие результаты будут перезаписаны.`)) {
+                // Запускаем опрос заново
+                startSurvey();
+            }
+        }
+    </script>
+</body>
+</html>

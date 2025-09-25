@@ -30,6 +30,10 @@ class O2OSidebar {
               <i data-feather="zap" class="mr-3"></i>
               <span>Встреча</span>
             </a>
+                <a href="surveys.html" class="flex items-center p-3 rounded-lg sidebar-item ${this.currentPage === 'surveys' ? 'active' : ''}">
+                    <i data-feather="clipboard" class="mr-3"></i>
+                    <span>Опросы</span>
+                </a>
           </div>
         </nav>
         
