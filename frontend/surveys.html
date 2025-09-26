@@ -27,14 +27,9 @@
                             Выбор опроса
                         </h2>
                         <div class="space-y-3">
-                            <select id="survey-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
-                                <option value="">Выберите опрос...</option>
-                                <option value="motivation-test">Тест мотивации сотрудников</option>
-                                <option value="leadership-style">Стиль лидерства</option>
-                                <option value="team-dynamics">Командная динамика</option>
-                                <option value="work-life-balance">Work-Life баланс</option>
-                                <option value="career-development">Карьерное развитие</option>
-                            </select>
+                            <div id="survey-dropdown-container"></div>
+                            <!-- Hidden input для совместимости с существующим кодом -->
+                            <input type="hidden" id="survey-select" value="">
                             <div id="survey-description" class="text-sm text-gray-600 p-3 bg-gray-50 rounded-lg hidden">
                                 <p>Описание опроса появится здесь после выбора</p>
                             </div>
@@ -181,6 +176,7 @@
         let selectedSurvey = '';
         let selectedEmployee = '';
         let employeeDropdown = null;
+        let surveyDropdown = null;
         
         // === ПЕРЕМЕННЫЕ ПРОХОЖДЕНИЯ ОПРОСА ===
         let currentSurveyResult = null;
@@ -196,14 +192,94 @@
             loadEmployees();
             setupEventListeners();
             initializeEmployeeDropdown();
+            initializeSurveyDropdown();
             feather.replace();
         });
 
+        // === ИНИЦИАЛИЗАЦИЯ ВЫПАДАЮЩЕГО СПИСКА ОПРОСОВ ===
+        function initializeSurveyDropdown() {
+            surveyDropdown = new CustomDropdown({
+                placeholder: 'Выберите опрос...',
+                maxVisibleItems: 3,
+                enableSearch: false,
+                formatItem: function(survey) {
+                    // Показываем до 80 символов описания
+                    const shortDescription = survey.description && survey.description.length > 80 
+                        ? survey.description.substring(0, 80) + '...' 
+                        : survey.description || 'Описание не указано';
+                    
+                    return `
+                        <div class="flex items-start space-x-3">
+                            <div class="w-2 h-2 bg-primary rounded-full mt-2 opacity-60"></div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-medium text-gray-900 truncate">
+                                    ${survey.title}
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1 truncate">${shortDescription}</div>
+                            </div>
+                        </div>
+                    `;
+                },
+                onChange: function(survey) {
+                    selectedSurvey = survey.id;
+                    
+                    // Обновляем скрытый input для совместимости
+                    document.getElementById('survey-select').value = survey.id;
+                    
+                    // Вызываем обновление статуса
+                    updateSurveyStatus();
+                    
+                    // Показываем описание опроса
+                    showSurveyDescription(survey);
+                    
+                    console.log('Выбран опрос:', survey.id, survey.title);
+                }
+            });
+
+            surveyDropdown.mount('survey-dropdown-container');
+            
+            // Загружаем опросы из API после создания dropdown
+            loadSurveysIntoDropdown();
+        }
+        
+        function showSurveyDescription(survey) {
+            const descriptionEl = document.getElementById('survey-description');
+            
+            if (survey && survey.description) {
+                descriptionEl.querySelector('p').textContent = survey.description;
+                descriptionEl.classList.remove('hidden');
+            } else {
+                descriptionEl.classList.add('hidden');
+            }
+        }
+        
+        // === ЗАГРУЗКА ОПРОСОВ В DROPDOWN ===
+        async function loadSurveysIntoDropdown() {
+            try {
+                const response = await fetch('http://localhost:3001/api/surveys?active=true');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const surveysFromAPI = data.data || [];
+
+                console.log('Загружено опросов из API:', surveysFromAPI.length);
+                
+                if (surveyDropdown && surveysFromAPI.length > 0) {
+                    surveyDropdown.setItems(surveysFromAPI);
+                } else {
+                    console.warn('Опросы не найдены или dropdown не инициализирован');
+                }
+
+            } catch (error) {
+                console.error('Ошибка при загрузке опросов для dropdown:', error);
+                // В случае ошибки оставляем dropdown пустым
+            }
+        }
+
         // === ЗАГРУЗКА ОПРОСОВ ===
         async function loadSurveys() {
-            const surveySelect = document.getElementById('survey-select');
-            surveySelect.innerHTML = '<option value="">Загрузка опросов...</option>';
-
             try {
                 const response = await fetch('http://localhost:3001/api/surveys?active=true');
                 if (!response.ok) {
@@ -215,22 +291,11 @@
 
                 console.log('Ответ API опросов:', data);
                 console.log('Массив опросов:', surveys);
-
-                surveySelect.innerHTML = '<option value="">Выберите опрос...</option>';
-                
-                surveys.forEach(survey => {
-                    const option = document.createElement('option');
-                    option.value = survey.id;
-                    option.textContent = survey.title;
-                    surveySelect.appendChild(option);
-                    console.log('Добавлен опрос:', survey.title);
-                });
-
                 console.log(`Загружено ${surveys.length} опросов`);
 
             } catch (error) {
                 console.error('Ошибка при загрузке опросов:', error);
-                surveySelect.innerHTML = '<option value="">Ошибка загрузки опросов</option>';
+                // В случае ошибки API, dropdown будет работать с захардкоженными опциями
             }
         }
 
@@ -564,13 +629,29 @@
             if (selectedEmployee) {
                 const employee = employees.find(emp => emp.id === selectedEmployee);
                 if (employee) {
-                    // Проверяем есть ли фото, если нет - используем дефолтную аватарку
-                    const avatarUrl = employee.photoUrl || 'https://via.placeholder.com/40x40/e5e7eb/6b7280?text=' + employee.first_name.charAt(0);
+                    // Получаем контейнер для аватара
+                    const avatarContainer = employeeInfoDiv.querySelector('.flex.items-center.space-x-3');
                     
-                    document.getElementById('employee-avatar').src = avatarUrl;
-                    document.getElementById('employee-avatar').alt = `${employee.first_name} ${employee.last_name}`;
-                    document.getElementById('employee-name').textContent = `${employee.first_name} ${employee.last_name}`;
-                    document.getElementById('employee-position').textContent = `${employee.position}${employee.team ? ' • ' + employee.team : ''}`;
+                    // Инициалы для случая отсутствия фото
+                    const initials = `${employee.first_name.charAt(0)}${employee.last_name.charAt(0)}`;
+                    
+                    // Создаем HTML для аватара
+                    let avatarHtml;
+                    if (employee.photoUrl) {
+                        avatarHtml = `<img src="${employee.photoUrl}" alt="${employee.first_name} ${employee.last_name}" class="w-10 h-10 rounded-full object-cover">`;
+                    } else {
+                        avatarHtml = `<div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium">${initials}</div>`;
+                    }
+                    
+                    // Обновляем контент
+                    avatarContainer.innerHTML = `
+                        ${avatarHtml}
+                        <div>
+                            <p id="employee-name" class="font-medium">${employee.first_name} ${employee.last_name}</p>
+                            <p id="employee-position" class="text-gray-500">${employee.position}${employee.team ? ' • ' + employee.team : ''}</p>
+                        </div>
+                    `;
+                    
                     employeeInfoDiv.classList.remove('hidden');
                 }
             } else {
