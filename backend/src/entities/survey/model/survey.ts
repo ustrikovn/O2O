@@ -114,16 +114,15 @@ export class SurveyEntity implements Survey {
    * Вычислить прогресс прохождения
    */
   calculateProgress(answers: QuestionAnswer[]): { current: number; total: number; percentage: number } {
-    // Для опросов с ветвлениями используем оценочный прогресс
-    // Считаем что средний путь составляет 60% от всех вопросов
-    const totalQuestions = this.questions.length;
-    const estimatedPath = Math.max(3, Math.ceil(totalQuestions * 0.6));
-    
-    const current = answers.length;
-    const total = Math.max(current + 1, estimatedPath); // Минимум текущий + 1
-    const percentage = Math.min(95, Math.round((current / total) * 100)); // Максимум 95% до завершения
+    // Равномерный прогресс: считаем от общего числа вопросов
+    // (при ветвлениях фронт покажет 100% по завершении, даже если отвечено меньше)
+    const totalQuestions = Math.max(this.questions.length, 1);
+    const current = Math.min(answers.length, totalQuestions);
+    const rawPercentage = (current / totalQuestions) * 100;
+    // Держим максимум 99% до явного завершения (UI ставит 100% при completion)
+    const percentage = Math.min(99, Math.floor(rawPercentage));
 
-    return { current, total, percentage };
+    return { current, total: totalQuestions, percentage };
   }
 
   /**

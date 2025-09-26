@@ -37,7 +37,6 @@ export class SurveyService {
       description: data.description || undefined,
       questions: data.questions,
       logic: data.logic,
-      scoring: data.scoring || undefined,
       settings: data.settings || undefined,
       metadata: {
         ...data.metadata,
