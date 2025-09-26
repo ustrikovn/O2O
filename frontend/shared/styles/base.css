@@ -425,3 +425,98 @@ body {
   border-color: var(--primary-blue);
   outline: none;
 }
+
+/* === Custom Dropdown Styles === */
+.custom-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.custom-dropdown-trigger {
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-family: inherit;
+  color: var(--text-primary);
+  outline: none;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  user-select: none;
+  min-height: 42px;
+}
+
+.custom-dropdown-trigger:focus,
+.custom-dropdown-trigger:hover {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+}
+
+.custom-dropdown-trigger .custom-dropdown-value {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ВЕРСИЯ 2.0 - ПРИНУДИТЕЛЬНЫЕ СКРУГЛЕНИЯ */
+.custom-dropdown-menu {
+  border-radius: 25px !important;
+  overflow: hidden !important;
+}
+
+.custom-dropdown-content {
+  border-radius: 25px !important;
+  overflow: hidden !important;
+}
+
+.custom-dropdown-items {
+  overflow-y: auto !important;
+  padding: 4px !important;
+}
+
+.custom-dropdown-item {
+  padding: var(--spacing-sm) var(--spacing-md) !important;
+  transition: all var(--transition-fast) !important;
+  cursor: pointer !important;
+  margin-bottom: 2px !important;
+}
+
+.custom-dropdown-item:last-child {
+  margin-bottom: 0 !important;
+  border-bottom-left-radius: 25px !important;
+  border-bottom-right-radius: 25px !important;
+}
+
+/* Перебиваем любые другие hover стили */
+.custom-dropdown-items .custom-dropdown-item:hover,
+.custom-dropdown-item:hover,
+.custom-dropdown-items .custom-dropdown-item.focused,
+.custom-dropdown-item.focused {
+  background: rgba(74, 144, 226, 0.1) !important;
+  border-radius: 25px !important;
+  margin: 2px !important;
+  border-color: transparent !important;
+}
+
+.custom-dropdown-items .custom-dropdown-item:last-child:hover,
+.custom-dropdown-item:last-child:hover,
+.custom-dropdown-items .custom-dropdown-item:last-child.focused,
+.custom-dropdown-item:last-child.focused {
+  background: rgba(74, 144, 226, 0.1) !important;
+  border-radius: 25px !important;
+  margin: 2px !important;
+  margin-bottom: 2px !important;
+  border-color: transparent !important;
+}
+
+/* Скрываем полосу прокрутки */
+.custom-dropdown-items {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.custom-dropdown-items::-webkit-scrollbar {
+  display: none; /* WebKit */
+}

@@ -48,9 +48,7 @@
                             Выбор сотрудника
                         </h2>
                         <div class="space-y-3">
-                            <select id="employee-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
-                                <option value="">Выберите сотрудника...</option>
-                            </select>
+                            <div id="employee-dropdown-container"></div>
                             <div id="employee-info" class="text-sm text-gray-600 p-3 bg-gray-50 rounded-lg hidden">
                                 <div class="flex items-center space-x-3">
                                     <img id="employee-avatar" src="" alt="" class="w-10 h-10 rounded-full bg-gray-200">
@@ -162,6 +160,7 @@
     </div>
 
     <script src="shared/ui/sidebar.js"></script>
+    <script src="shared/ui/custom-dropdown.js"></script>
     <script>
         // Инициализация sidebar
         if (typeof O2OSidebar !== 'undefined') {
@@ -181,6 +180,7 @@
         // === ОСНОВНЫЕ ПЕРЕМЕННЫЕ ===
         let selectedSurvey = '';
         let selectedEmployee = '';
+        let employeeDropdown = null;
         
         // === ПЕРЕМЕННЫЕ ПРОХОЖДЕНИЯ ОПРОСА ===
         let currentSurveyResult = null;
@@ -195,6 +195,7 @@
             loadSurveys();
             loadEmployees();
             setupEventListeners();
+            initializeEmployeeDropdown();
             feather.replace();
         });
 
@@ -233,11 +234,43 @@
             }
         }
 
+        // === ИНИЦИАЛИЗАЦИЯ ВЫПАДАЮЩЕГО СПИСКА СОТРУДНИКОВ ===
+        function initializeEmployeeDropdown() {
+            employeeDropdown = new CustomDropdown({
+                placeholder: 'Выберите сотрудника...',
+                maxVisibleItems: 2.5,
+                enableSearch: false,
+                formatItem: function(employee) {
+                    // Создаем аватар (инициалы или фото)
+                    const initials = `${employee.first_name.charAt(0)}${employee.last_name.charAt(0)}`;
+                    const avatarHtml = employee.photo_url 
+                        ? `<img src="${employee.photo_url}" alt="${employee.first_name} ${employee.last_name}" class="w-8 h-8 rounded-full object-cover">`
+                        : `<div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-medium">${initials}</div>`;
+
+                    return `
+                        <div class="flex items-center space-x-3">
+                            ${avatarHtml}
+                            <div class="flex-1 min-w-0">
+                                <div class="font-medium text-gray-900 truncate">
+                                    ${employee.first_name} ${employee.last_name}
+                                </div>
+                                <div class="text-sm text-gray-600 truncate">${employee.position}</div>
+                            </div>
+                        </div>
+                    `;
+                },
+                onChange: function(employee) {
+                    selectedEmployee = employee.id;
+                    updateEmployeeInfo();
+                    updateSurveyStatus();
+                }
+            });
+
+            employeeDropdown.mount('employee-dropdown-container');
+        }
+
         // === ЗАГРУЗКА СОТРУДНИКОВ ===
         async function loadEmployees() {
-            const employeeSelect = document.getElementById('employee-select');
-            employeeSelect.innerHTML = '<option value="">Загрузка сотрудников...</option>';
-
             try {
                 const response = await fetch('http://localhost:3001/api/employees');
                 if (!response.ok) {
@@ -250,20 +283,14 @@
                 console.log('Ответ API сотрудников:', data);
                 console.log('Массив сотрудников:', employees);
 
-                employeeSelect.innerHTML = '<option value="">Выберите сотрудника...</option>';
-                
-                employees.forEach(employee => {
-                    const option = document.createElement('option');
-                    option.value = employee.id;
-                    option.textContent = `${employee.first_name} ${employee.last_name} — ${employee.position}`;
-                    employeeSelect.appendChild(option);
-                    console.log(`Добавлен сотрудник: ${employee.first_name} ${employee.last_name}`);
-                });
+                // Обновляем кастомный выпадающий список
+                if (employeeDropdown) {
+                    employeeDropdown.setItems(employees);
+                }
 
                 console.log(`✅ Загружено ${employees.length} сотрудников`);
             } catch (error) {
                 console.error('Ошибка при загрузке сотрудников:', error);
-                employeeSelect.innerHTML = '<option value="">Ошибка загрузки сотрудников</option>';
             }
         }
 
@@ -455,13 +482,6 @@
             document.getElementById('survey-select').addEventListener('change', function(e) {
                 selectedSurvey = e.target.value;
                 updateSurveyDescription();
-                updateSurveyStatus();
-            });
-
-            // Выбор сотрудника
-            document.getElementById('employee-select').addEventListener('change', function(e) {
-                selectedEmployee = e.target.value;
-                updateEmployeeInfo();
                 updateSurveyStatus();
             });
 
