@@ -62,23 +62,23 @@
                     <div id="survey-status-content">
                         <!-- Контент будет добавляться динамически -->
                     </div>
-                </div>
-
-                <!-- Действия -->
-                <div class="glass-card p-4" id="actions-card" style="display: none;">
-                    <div class="flex flex-wrap gap-3">
-                        <button id="start-survey-btn" class="glass-button px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm">
-                            <i data-feather="play" class="mr-2 w-4 h-4 inline"></i>
-                            Начать опрос
-                        </button>
-                        <button id="view-results-btn" class="glass-button px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg text-sm" style="display: none;">
-                            <i data-feather="eye" class="mr-2 w-4 h-4 inline"></i>
-                            Посмотреть результаты
-                        </button>
-                        <button id="retake-survey-btn" class="glass-button px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg text-sm" style="display: none;">
-                            <i data-feather="refresh-cw" class="mr-2 w-4 h-4 inline"></i>
-                            Пройти заново
-                        </button>
+                    
+                    <!-- Действия интегрированы в статусный блок -->
+                    <div class="mt-4 pt-4 border-t border-gray-200" id="survey-actions">
+                        <div class="flex flex-wrap gap-3">
+                            <button id="start-survey-btn" class="glass-button px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm">
+                                <i data-feather="play" class="mr-2 w-4 h-4 inline"></i>
+                                Начать опрос
+                            </button>
+                            <button id="view-results-btn" class="glass-button px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg text-sm" style="display: none;">
+                                <i data-feather="eye" class="mr-2 w-4 h-4 inline"></i>
+                                Просмотреть результаты
+                            </button>
+                            <button id="retake-survey-btn" class="glass-button px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg text-sm" style="display: none;">
+                                <i data-feather="refresh-cw" class="mr-2 w-4 h-4 inline"></i>
+                                Пройти заново
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -658,7 +658,6 @@
         // === ОБНОВЛЕНИЕ СТАТУСА ОПРОСА ===
         async function updateSurveyStatus() {
             const statusCard = document.getElementById('survey-status-card');
-            const actionsCard = document.getElementById('actions-card');
             const statusContent = document.getElementById('survey-status-content');
 
             if (selectedSurvey && selectedEmployee) {
@@ -666,7 +665,6 @@
                 const surveyResults = await loadSurveyResults();
 
                 statusCard.style.display = 'block';
-                actionsCard.style.display = 'block';
 
                 if (surveyResults) {
                     // У нас есть завершённый результат
@@ -765,7 +763,6 @@
                 feather.replace();
             } else {
                 statusCard.style.display = 'none';
-                actionsCard.style.display = 'none';
             }
         }
 
