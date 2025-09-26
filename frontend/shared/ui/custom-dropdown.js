@@ -57,7 +57,7 @@ class CustomDropdown {
         
         // Выпадающий список
         this.dropdown = document.createElement('div');
-        this.dropdown.className = 'custom-dropdown-menu absolute top-full left-0 right-0 mt-1 hidden z-50';
+        this.dropdown.className = 'custom-dropdown-menu absolute top-full left-0 right-0 mt-1 hidden';
         this.dropdown.innerHTML = `
             <div class="custom-dropdown-content bg-white border border-gray-200 shadow-lg">
                 ${this.options.enableSearch ? `

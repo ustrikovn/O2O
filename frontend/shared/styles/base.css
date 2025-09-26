@@ -464,11 +464,15 @@ body {
 .custom-dropdown-menu {
   border-radius: 25px !important;
   overflow: hidden !important;
+  z-index: 9999 !important;
+  position: absolute !important;
 }
 
 .custom-dropdown-content {
   border-radius: 25px !important;
   overflow: hidden !important;
+  z-index: 9999 !important;
+  position: relative !important;
 }
 
 .custom-dropdown-items {
