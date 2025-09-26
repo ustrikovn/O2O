@@ -35,9 +35,25 @@ const limiter = rateLimit({
   message: { error: 'Слишком много запросов, попробуйте позже' }
 });
 
-// Middleware
+// Middleware  
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      baseUri: ["'self'"],
+      fontSrc: ["'self'", "https:", "data:"],
+      formAction: ["'self'"],
+      frameAncestors: ["'self'"],
+      // Разрешаем загрузку изображений с любых источников для совместимости с фронтендом
+      imgSrc: ["*", "data:", "'self'"],
+      objectSrc: ["'none'"],
+      scriptSrc: ["'self'"],
+      scriptSrcAttr: ["'none'"],
+      styleSrc: ["'self'", "https:", "'unsafe-inline'"],
+      upgradeInsecureRequests: []
+    }
+  }
 }));
 app.use(compression());
 app.use(limiter);
@@ -48,8 +64,14 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Статические файлы для загруженных фотографий
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+// Статические файлы для загруженных фотографий с CORS заголовками
+app.use('/uploads', (req, res, next) => {
+  // Добавляем CORS заголовки для статических файлов
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+}, express.static(path.join(process.cwd(), 'uploads')));
 
 // Маршруты API
 app.use('/api/employees', employeeRoutes);

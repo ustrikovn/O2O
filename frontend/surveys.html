@@ -243,8 +243,8 @@
                 formatItem: function(employee) {
                     // Создаем аватар (инициалы или фото)
                     const initials = `${employee.first_name.charAt(0)}${employee.last_name.charAt(0)}`;
-                    const avatarHtml = employee.photo_url 
-                        ? `<img src="${employee.photo_url}" alt="${employee.first_name} ${employee.last_name}" class="w-8 h-8 rounded-full object-cover">`
+                    const avatarHtml = employee.photoUrl 
+                        ? `<img src="${employee.photoUrl}" alt="${employee.first_name} ${employee.last_name}" class="w-8 h-8 rounded-full object-cover">`
                         : `<div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-medium">${initials}</div>`;
 
                     return `
@@ -565,7 +565,7 @@
                 const employee = employees.find(emp => emp.id === selectedEmployee);
                 if (employee) {
                     // Проверяем есть ли фото, если нет - используем дефолтную аватарку
-                    const avatarUrl = employee.photo_url || 'https://via.placeholder.com/40x40/e5e7eb/6b7280?text=' + employee.first_name.charAt(0);
+                    const avatarUrl = employee.photoUrl || 'https://via.placeholder.com/40x40/e5e7eb/6b7280?text=' + employee.first_name.charAt(0);
                     
                     document.getElementById('employee-avatar').src = avatarUrl;
                     document.getElementById('employee-avatar').alt = `${employee.first_name} ${employee.last_name}`;
