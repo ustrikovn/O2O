@@ -32,6 +32,131 @@
             background: rgba(255, 255, 255, 0.25);
             transform: translateY(-2px);
         }
+
+        /* Стили для вкладок */
+        .tab-button {
+            display: flex;
+            align-items: center;
+        }
+
+        .tab-button.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+
+        .tab-content {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Стили для карточек встреч */
+        .meeting-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 300ms ease;
+        }
+
+        .meeting-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .meeting-header {
+            display: flex;
+            align-items: center;
+            justify-content: between;
+            margin-bottom: 16px;
+        }
+
+        .meeting-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .meeting-status.completed {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .meeting-status.active {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .meeting-notes {
+            background: rgba(248, 250, 252, 0.8);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 12px 0;
+        }
+
+        .meeting-notes.collapsed {
+            max-height: 72px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .meeting-notes.collapsed::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(transparent, rgba(248, 250, 252, 0.9));
+        }
+
+        .expand-button {
+            color: #2563eb;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .expand-button:hover {
+            background-color: rgba(37, 99, 235, 0.1);
+        }
+
+        .agreement-section {
+            margin-top: 16px;
+        }
+
+        .agreement-item {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(229, 231, 235, 0.6);
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .agreement-new {
+            border-left: 4px solid #10b981;
+        }
+
+        .agreement-active {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .agreement-completed {
+            border-left: 4px solid #6b7280;
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
@@ -61,7 +186,8 @@
 
                 <!-- Контент профиля (скрыт изначально) -->
                 <div id="profile-content" class="hidden">
-                    <div class="flex items-start space-x-8">
+                    <!-- Заголовок профиля -->
+                    <div class="flex items-start space-x-8 mb-8">
                         <!-- Фото и основная информация -->
                         <div class="flex-shrink-0">
                             <div class="relative" id="employee-photo-container">
@@ -83,17 +209,6 @@
                                 </p>
                             </div>
 
-                            <!-- Контактная информация -->
-                            <div class="mb-6">
-                                <h3 class="text-lg font-semibold text-gray-900 mb-3">Контактная информация</h3>
-                                <div class="space-y-2">
-                                    <div class="flex items-center text-gray-600">
-                                        <i data-feather="mail" class="mr-3"></i>
-                                        <span id="employee-email"><!-- Email будет добавлен динамически --></span>
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- Быстрые действия -->
                             <div class="flex space-x-4">
                                 <button class="glass-button px-6 py-3 flex items-center" onclick="startMeetingWithCurrentEmployee()">
@@ -104,6 +219,94 @@
                                     <i data-feather="calendar" class="mr-2"></i>
                                     Запланировать встречу
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Вкладки -->
+                    <div class="mb-6">
+                        <div class="flex border-b border-gray-200">
+                            <button 
+                                class="tab-button px-6 py-3 font-medium text-sm text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300 transition-colors duration-200" 
+                                onclick="switchTab('overview')"
+                                id="tab-overview"
+                            >
+                                <i data-feather="user" class="mr-2"></i>
+                                Обзор сотрудника
+                            </button>
+                            <button 
+                                class="tab-button px-6 py-3 font-medium text-sm text-blue-600 border-b-2 border-blue-600 transition-colors duration-200" 
+                                onclick="switchTab('meetings')"
+                                id="tab-meetings"
+                            >
+                                <i data-feather="calendar" class="mr-2"></i>
+                                История встреч
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Содержимое вкладок -->
+                    <!-- Вкладка "Обзор сотрудника" -->
+                    <div id="tab-content-overview" class="tab-content hidden">
+                        <!-- Контактная информация -->
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Контактная информация</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center text-gray-600">
+                                    <i data-feather="mail" class="mr-3"></i>
+                                    <span id="employee-email"><!-- Email будет добавлен динамически --></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Метрики и аналитика (заглушка) -->
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Ключевые метрики</h3>
+                            <div class="text-gray-500 text-center py-8">
+                                <i data-feather="bar-chart-2" class="mx-auto mb-4"></i>
+                                <p>Раздел с метриками будет реализован позже</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Вкладка "История встреч" -->
+                    <div id="tab-content-meetings" class="tab-content">
+                        <!-- Загрузочное состояние для встреч -->
+                        <div class="text-center" id="meetings-loading-state">
+                            <div class="text-gray-500">
+                                <i data-feather="loader" class="mx-auto mb-4 animate-spin"></i>
+                                <p>Загрузка истории встреч...</p>
+                            </div>
+                        </div>
+
+                        <!-- Контент встреч -->
+                        <div id="meetings-content" class="hidden">
+                            <div class="mb-6">
+                                <h3 class="text-lg font-semibold text-gray-900">История встреч с сотрудником</h3>
+                                <p class="text-sm text-gray-600">Хронология всех проведённых встреч и договорённостей</p>
+                            </div>
+
+                            <!-- Список встреч -->
+                            <div id="meetings-list" class="space-y-6">
+                                <!-- Встречи будут добавлены динамически -->
+                            </div>
+
+                            <!-- Пустое состояние -->
+                            <div id="meetings-empty-state" class="hidden text-center py-12">
+                                <div class="text-gray-400">
+                                    <i data-feather="calendar" class="mx-auto mb-4 text-6xl"></i>
+                                    <h3 class="text-lg font-medium text-gray-500 mb-2">Встреч пока нет</h3>
+                                    <p class="text-gray-400">Начните первую встречу с этим сотрудником</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ошибка загрузки встреч -->
+                        <div id="meetings-error-state" class="hidden text-center">
+                            <div class="text-red-500">
+                                <i data-feather="alert-circle" class="mx-auto mb-4"></i>
+                                <p class="font-medium">Не удалось загрузить историю встреч</p>
+                                <p class="text-sm mt-2">Проверьте подключение к серверу</p>
                             </div>
                         </div>
                     </div>
@@ -128,6 +331,8 @@
     <script src="shared/ui/active-meeting-modal.js"></script>
     <script>
         let currentEmployee = null;
+        let employeeMeetings = [];
+        let currentTab = 'meetings';
 
         // Инициализация компонентов
         document.addEventListener('DOMContentLoaded', function() {
@@ -137,6 +342,9 @@
             
             // Загрузка профиля сотрудника
             loadEmployeeProfile();
+            
+            // Устанавливаем активную вкладку (по умолчанию "История встреч")
+            switchTab('meetings');
             
             // Инициализация иконок
             feather.replace();
@@ -209,11 +417,278 @@
             // Показываем контент профиля
             document.getElementById('profile-content').classList.remove('hidden');
             
+            // Загружаем данные о встречах
+            if (currentTab === 'meetings') {
+                loadEmployeeMeetings();
+            }
+            
             // Обновляем заголовок страницы
             document.title = `${employee.first_name} ${employee.last_name} - Профиль сотрудника - O2O`;
             
             // Обновляем иконки
             feather.replace();
+        }
+
+        // Функция переключения вкладок
+        function switchTab(tabName) {
+            currentTab = tabName;
+            
+            // Обновляем стили кнопок вкладок
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+                button.classList.add('text-gray-500', 'border-transparent');
+                button.classList.remove('text-blue-600', 'border-blue-600');
+            });
+            
+            const activeTabButton = document.getElementById(`tab-${tabName}`);
+            if (activeTabButton) {
+                activeTabButton.classList.add('active');
+                activeTabButton.classList.remove('text-gray-500', 'border-transparent');
+                activeTabButton.classList.add('text-blue-600', 'border-blue-600');
+            }
+            
+            // Скрываем все содержимое вкладок
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Показываем активную вкладку
+            const activeContent = document.getElementById(`tab-content-${tabName}`);
+            if (activeContent) {
+                activeContent.classList.remove('hidden');
+            }
+            
+            // Загружаем данные для вкладки встреч
+            if (tabName === 'meetings' && currentEmployee) {
+                loadEmployeeMeetings();
+            }
+            
+            // Обновляем иконки
+            feather.replace();
+        }
+
+        // Функция загрузки встреч сотрудника
+        async function loadEmployeeMeetings() {
+            if (!currentEmployee) return;
+            
+            try {
+                // Показываем состояние загрузки
+                document.getElementById('meetings-loading-state').classList.remove('hidden');
+                document.getElementById('meetings-content').classList.add('hidden');
+                document.getElementById('meetings-error-state').classList.add('hidden');
+                
+                const response = await fetch(`http://localhost:3001/api/meetings?employeeId=${currentEmployee.id}&limit=100`);
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    employeeMeetings = result.data || [];
+                    displayEmployeeMeetings(employeeMeetings);
+                } else {
+                    console.error('Ошибка загрузки встреч:', result);
+                    showMeetingsErrorState(result.message || 'Не удалось загрузить встречи');
+                }
+            } catch (error) {
+                console.error('Ошибка подключения к серверу:', error);
+                showMeetingsErrorState('Не удается подключиться к серверу');
+            }
+        }
+
+        // Функция отображения встреч
+        function displayEmployeeMeetings(meetings) {
+            // Скрываем состояние загрузки
+            document.getElementById('meetings-loading-state').classList.add('hidden');
+            
+            if (!meetings || meetings.length === 0) {
+                // Показываем пустое состояние
+                document.getElementById('meetings-empty-state').classList.remove('hidden');
+                document.getElementById('meetings-content').classList.add('hidden');
+                return;
+            }
+            
+            // Сортируем встречи по дате (новые сначала)
+            const sortedMeetings = meetings.sort((a, b) => new Date(b.started_at || b.created_at) - new Date(a.started_at || a.created_at));
+            
+            // Показываем контент встреч
+            document.getElementById('meetings-content').classList.remove('hidden');
+            document.getElementById('meetings-empty-state').classList.add('hidden');
+            
+            // Отображаем список встреч
+            const meetingsList = document.getElementById('meetings-list');
+            meetingsList.innerHTML = sortedMeetings.map(meeting => createMeetingCard(meeting)).join('');
+            
+            // Обновляем иконки
+            feather.replace();
+        }
+
+        // Функция создания карточки встречи
+        function createMeetingCard(meeting) {
+            const meetingDate = meeting.started_at ? new Date(meeting.started_at) : new Date(meeting.created_at);
+            const formattedDate = meetingDate.toLocaleDateString('ru-RU', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Рассчитываем длительность встречи
+            let duration = '';
+            if (meeting.started_at && meeting.ended_at) {
+                const start = new Date(meeting.started_at);
+                const end = new Date(meeting.ended_at);
+                const durationMinutes = Math.round((end - start) / (1000 * 60));
+                duration = `${durationMinutes} мин`;
+            }
+            
+            // Получаем заметки
+            const notes = meeting.content?.notes || '';
+            const hasNotes = notes && notes.trim().length > 0;
+            
+            // Обрабатываем договорённости
+            const agreements = meeting.content?.agreements || [];
+            const newAgreements = agreements.filter(a => a.created_at && new Date(a.created_at).toDateString() === meetingDate.toDateString());
+            const activeAgreements = agreements.filter(a => a.status === 'pending' && !newAgreements.includes(a));
+            const completedAgreements = agreements.filter(a => a.status === 'completed' && a.completed_at && new Date(a.completed_at).toDateString() === meetingDate.toDateString());
+            
+            // Создаём карточку встречи
+            return `
+                <div class="meeting-card">
+                    <div class="meeting-header">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center text-gray-600">
+                                <i data-feather="calendar" class="mr-2"></i>
+                                <span class="font-medium">${formattedDate}</span>
+                                ${duration ? `<span class="ml-2 text-sm text-gray-500">(${duration})</span>` : ''}
+                            </div>
+                            <span class="meeting-status ${meeting.status}">
+                                ${getStatusLabel(meeting.status)}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    ${hasNotes ? `
+                        <div class="meeting-notes ${notes.split('\n').length > 3 ? 'collapsed' : ''}" id="notes-${meeting.id}">
+                            <div class="text-sm text-gray-700 whitespace-pre-wrap">${notes}</div>
+                        </div>
+                        ${notes.split('\n').length > 3 ? `
+                            <div class="text-center mt-2">
+                                <span class="expand-button" onclick="toggleNotes('${meeting.id}')">
+                                    <span class="expand-text">Развернуть</span>
+                                    <i data-feather="chevron-down" class="ml-1"></i>
+                                </span>
+                            </div>
+                        ` : ''}
+                    ` : `
+                        <div class="text-sm text-gray-500 italic">Заметки не добавлены</div>
+                    `}
+                    
+                    ${agreements.length > 0 ? `
+                        <div class="agreement-section">
+                            ${newAgreements.length > 0 ? `
+                                <div class="mb-4">
+                                    <h4 class="text-sm font-semibold text-green-700 mb-2">
+                                        <i data-feather="plus-circle" class="mr-1"></i>
+                                        Новые договорённости (${newAgreements.length})
+                                    </h4>
+                                    ${newAgreements.map(agreement => `
+                                        <div class="agreement-item agreement-new">
+                                            <div class="font-medium">${agreement.title}</div>
+                                            ${agreement.description ? `<div class="text-sm text-gray-600 mt-1">${agreement.description}</div>` : ''}
+                                            <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            
+                            ${activeAgreements.length > 0 ? `
+                                <div class="mb-4">
+                                    <h4 class="text-sm font-semibold text-yellow-700 mb-2">
+                                        <i data-feather="clock" class="mr-1"></i>
+                                        Активные договорённости (${activeAgreements.length})
+                                    </h4>
+                                    ${activeAgreements.map(agreement => `
+                                        <div class="agreement-item agreement-active">
+                                            <div class="font-medium">${agreement.title}</div>
+                                            ${agreement.description ? `<div class="text-sm text-gray-600 mt-1">${agreement.description}</div>` : ''}
+                                            <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            
+                            ${completedAgreements.length > 0 ? `
+                                <div class="mb-4">
+                                    <h4 class="text-sm font-semibold text-gray-700 mb-2">
+                                        <i data-feather="check-circle" class="mr-1"></i>
+                                        Закрытые договорённости (${completedAgreements.length})
+                                    </h4>
+                                    ${completedAgreements.map(agreement => `
+                                        <div class="agreement-item agreement-completed">
+                                            <div class="font-medium">${agreement.title}</div>
+                                            ${agreement.description ? `<div class="text-sm text-gray-600 mt-1">${agreement.description}</div>` : ''}
+                                            <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Вспомогательные функции
+        function getStatusLabel(status) {
+            const labels = {
+                'scheduled': 'Запланирована',
+                'active': 'Активна',
+                'completed': 'Завершена',
+                'cancelled': 'Отменена'
+            };
+            return labels[status] || status;
+        }
+
+        function getAgreementTypeLabel(type) {
+            const labels = {
+                'employee': 'Задача сотрудника',
+                'manager': 'Задача руководителя',
+                'both': 'Совместная задача'
+            };
+            return labels[type] || type;
+        }
+
+        // Функция переключения развёрнутого состояния заметок
+        function toggleNotes(meetingId) {
+            const notesElement = document.getElementById(`notes-${meetingId}`);
+            const expandText = notesElement.parentElement.querySelector('.expand-text');
+            const chevronIcon = notesElement.parentElement.querySelector('[data-feather="chevron-down"], [data-feather="chevron-up"]');
+            
+            if (notesElement.classList.contains('collapsed')) {
+                notesElement.classList.remove('collapsed');
+                expandText.textContent = 'Свернуть';
+                chevronIcon.setAttribute('data-feather', 'chevron-up');
+            } else {
+                notesElement.classList.add('collapsed');
+                expandText.textContent = 'Развернуть';
+                chevronIcon.setAttribute('data-feather', 'chevron-down');
+            }
+            
+            // Обновляем иконки
+            feather.replace();
+        }
+
+        // Функция отображения состояния ошибки для встреч
+        function showMeetingsErrorState(message) {
+            document.getElementById('meetings-loading-state').classList.add('hidden');
+            document.getElementById('meetings-content').classList.add('hidden');
+            document.getElementById('meetings-error-state').classList.remove('hidden');
+            
+            if (message) {
+                const errorElement = document.querySelector('#meetings-error-state p.font-medium');
+                if (errorElement) {
+                    errorElement.textContent = message;
+                }
+            }
         }
 
         // Функция отображения состояния ошибки
