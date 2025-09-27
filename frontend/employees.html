@@ -212,7 +212,7 @@
                         </div>
                         
                         <div class="flex justify-between pt-4 border-t border-white/10">
-                            <button class="glass-button px-4 py-2 text-sm flex items-center">
+                            <button class="glass-button px-4 py-2 text-sm flex items-center" onclick="viewEmployeeProfile('${employee.id}')">
                                 <i data-feather="eye" class="mr-1"></i> View Profile
                             </button>
                             <button class="glass-button px-4 py-2 text-sm flex items-center" onclick="startMeetingWithEmployee('${employee.id}')">
@@ -279,6 +279,14 @@
                 console.error('Ошибка при создании встречи:', error);
                 alert('Произошла ошибка при создании встречи. Попробуйте еще раз.');
             }
+        }
+
+        /**
+         * Функция для перехода к профилю сотрудника
+         */
+        function viewEmployeeProfile(employeeId) {
+            console.log('Переход к профилю сотрудника:', employeeId);
+            window.location.href = `employee-profile.html?employeeId=${employeeId}`;
         }
 
         /**

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль сотрудника - O2O</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <link rel="stylesheet" href="shared/styles/base.css">
+    <style>
+        /* Стили из UI-kit */
+        .profile-card {
+            transition: all 300ms ease;
+        }
+        
+        .profile-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+        }
+        
+        .glass-button {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            transition: all 300ms ease-in-out;
+        }
+        
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="flex min-h-screen">
+        <!-- Sidebar Container -->
+        <div id="sidebar-container"></div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 ml-64 p-8">
+            <!-- Кнопка возврата -->
+            <div class="mb-6">
+                <button onclick="goBack()" class="glass-button px-4 py-2 text-sm flex items-center text-gray-700 hover:text-gray-900">
+                    <i data-feather="arrow-left" class="mr-2"></i>
+                    Назад к списку сотрудников
+                </button>
+            </div>
+
+            <!-- Профиль сотрудника -->
+            <div class="glass-card p-8" id="employee-profile-container">
+                <!-- Загрузочное состояние -->
+                <div class="text-center" id="loading-state">
+                    <div class="text-gray-500">
+                        <i data-feather="loader" class="mx-auto mb-4 animate-spin"></i>
+                        <p>Загрузка профиля сотрудника...</p>
+                    </div>
+                </div>
+
+                <!-- Контент профиля (скрыт изначально) -->
+                <div id="profile-content" class="hidden">
+                    <div class="flex items-start space-x-8">
+                        <!-- Фото и основная информация -->
+                        <div class="flex-shrink-0">
+                            <div class="relative" id="employee-photo-container">
+                                <!-- Фото будет добавлено динамически -->
+                            </div>
+                        </div>
+                        
+                        <!-- Детали профиля -->
+                        <div class="flex-1">
+                            <div class="mb-6">
+                                <h1 class="text-3xl font-bold text-gray-900 mb-2" id="employee-name">
+                                    <!-- ФИО будет добавлено динамически -->
+                                </h1>
+                                <p class="text-lg text-gray-600" id="employee-position">
+                                    <!-- Должность будет добавлена динамически -->
+                                </p>
+                                <p class="text-sm text-gray-500" id="employee-team">
+                                    <!-- Команда будет добавлена динамически -->
+                                </p>
+                            </div>
+
+                            <!-- Контактная информация -->
+                            <div class="mb-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-3">Контактная информация</h3>
+                                <div class="space-y-2">
+                                    <div class="flex items-center text-gray-600">
+                                        <i data-feather="mail" class="mr-3"></i>
+                                        <span id="employee-email"><!-- Email будет добавлен динамически --></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Быстрые действия -->
+                            <div class="flex space-x-4">
+                                <button class="glass-button px-6 py-3 flex items-center" onclick="startMeetingWithCurrentEmployee()">
+                                    <i data-feather="zap" class="mr-2"></i>
+                                    Начать one-to-one
+                                </button>
+                                <button class="glass-button px-6 py-3 flex items-center">
+                                    <i data-feather="calendar" class="mr-2"></i>
+                                    Запланировать встречу
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Состояние ошибки -->
+                <div id="error-state" class="hidden text-center">
+                    <div class="text-red-500">
+                        <i data-feather="alert-circle" class="mx-auto mb-4"></i>
+                        <p class="font-medium">Не удалось загрузить профиль сотрудника</p>
+                        <p class="text-sm mt-2">Проверьте подключение к серверу или попробуйте позже</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared/ui/sidebar.js"></script>
+    <script src="shared/ui/modal.js"></script>
+    <script src="shared/ui/employee-selector-modal.js"></script>
+    <script src="shared/ui/meeting-initiator.js"></script>
+    <script src="shared/ui/active-meeting-modal.js"></script>
+    <script>
+        let currentEmployee = null;
+
+        // Инициализация компонентов
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = new O2OSidebar('employees');
+            sidebar.mount('sidebar-container');
+            sidebar.startActiveMeetingCheck();
+            
+            // Загрузка профиля сотрудника
+            loadEmployeeProfile();
+            
+            // Инициализация иконок
+            feather.replace();
+        });
+
+        // Получение ID сотрудника из URL
+        function getEmployeeIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('employeeId');
+        }
+
+        // Функция загрузки профиля сотрудника
+        async function loadEmployeeProfile() {
+            const employeeId = getEmployeeIdFromUrl();
+            
+            if (!employeeId) {
+                showErrorState('Не указан ID сотрудника');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3001/api/employees/${employeeId}`);
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    currentEmployee = result.data;
+                    displayEmployeeProfile(result.data);
+                } else {
+                    console.error('Ошибка загрузки профиля сотрудника:', result);
+                    showErrorState(result.message || 'Не удалось загрузить профиль сотрудника');
+                }
+            } catch (error) {
+                console.error('Ошибка подключения к серверу:', error);
+                showErrorState('Не удается подключиться к серверу');
+            }
+        }
+
+        // Функция отображения профиля сотрудника
+        function displayEmployeeProfile(employee) {
+            // Скрываем состояние загрузки
+            document.getElementById('loading-state').classList.add('hidden');
+            
+            // Отображаем фото
+            const photoContainer = document.getElementById('employee-photo-container');
+            if (employee.photoUrl) {
+                photoContainer.innerHTML = `
+                    <img src="${employee.photoUrl}" alt="${employee.first_name} ${employee.last_name}" 
+                         class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg">
+                `;
+            } else {
+                photoContainer.innerHTML = `
+                    <div class="w-32 h-32 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-3xl border-4 border-white shadow-lg">
+                        ${employee.first_name.charAt(0)}${employee.last_name.charAt(0)}
+                    </div>
+                `;
+            }
+            
+            // Заполняем ФИО
+            document.getElementById('employee-name').textContent = `${employee.first_name} ${employee.last_name}`;
+            
+            // Заполняем должность
+            document.getElementById('employee-position').textContent = employee.position || 'Должность не указана';
+            
+            // Заполняем команду
+            document.getElementById('employee-team').textContent = employee.team || 'Команда не указана';
+            
+            // Заполняем email
+            document.getElementById('employee-email').textContent = employee.email || 'Email не указан';
+            
+            // Показываем контент профиля
+            document.getElementById('profile-content').classList.remove('hidden');
+            
+            // Обновляем заголовок страницы
+            document.title = `${employee.first_name} ${employee.last_name} - Профиль сотрудника - O2O`;
+            
+            // Обновляем иконки
+            feather.replace();
+        }
+
+        // Функция отображения состояния ошибки
+        function showErrorState(message) {
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('error-state').classList.remove('hidden');
+            
+            if (message) {
+                const errorElement = document.querySelector('#error-state p.font-medium');
+                if (errorElement) {
+                    errorElement.textContent = message;
+                }
+            }
+        }
+
+        // Функция возврата к списку сотрудников
+        function goBack() {
+            window.location.href = 'employees.html';
+        }
+
+        // Функция начала встречи с текущим сотрудником
+        async function startMeetingWithCurrentEmployee() {
+            if (!currentEmployee) {
+                alert('Ошибка: информация о сотруднике не загружена');
+                return;
+            }
+
+            try {
+                // Проверяем, есть ли активная встреча
+                const activeResponse = await fetch('http://localhost:3001/api/meetings/active');
+                const activeResult = await activeResponse.json();
+                
+                if (activeResponse.ok && activeResult.success && activeResult.data) {
+                    const activeMeeting = activeResult.data;
+                    
+                    // Проверяем, совпадает ли активная встреча с текущим сотрудником
+                    if (activeMeeting.employeeId === currentEmployee.id) {
+                        // Это тот же сотрудник - переходим к активной встрече
+                        window.location.href = `conduct-meeting.html?employeeId=${currentEmployee.id}&meetingId=${activeMeeting.id}`;
+                        return;
+                    } else {
+                        // Активная встреча с другим сотрудником - показываем дисклеймер
+                        const activeEmployee = {
+                            id: activeMeeting.employeeId,
+                            firstName: activeMeeting.first_name,
+                            lastName: activeMeeting.last_name
+                        };
+                        
+                        const modal = new ActiveMeetingModal({
+                            employee: activeEmployee,
+                            meetingId: activeMeeting.id,
+                            onGoToMeeting: () => {
+                                console.log('Переход к активной встрече');
+                            },
+                            onClose: () => {
+                                console.log('Модальное окно закрыто');
+                            }
+                        });
+                        
+                        modal.open();
+                        return;
+                    }
+                }
+                
+                // Нет активной встречи - создаем новую
+                const meetingId = await window.meetingInitiator.createMeeting(currentEmployee.id);
+                if (meetingId) {
+                    // Перенаправляем на страницу встречи
+                    window.location.href = `conduct-meeting.html?employeeId=${currentEmployee.id}&meetingId=${meetingId}`;
+                }
+            } catch (error) {
+                console.error('Ошибка при создании встречи:', error);
+                alert('Произошла ошибка при создании встречи. Попробуйте еще раз.');
+            }
+        }
+
+        /**
+         * Глобальная функция для обработки клика на "Встреча" в сайдбаре
+         */
+        async function startMeetingFromSidebar(event) {
+            event.preventDefault();
+            
+            // Если уже на странице встречи, ничего не делаем
+            if (window.location.pathname.includes('conduct-meeting.html')) {
+                return;
+            }
+            
+            try {
+                // Проверяем, есть ли активная встреча
+                const response = await fetch('http://localhost:3001/api/meetings/active');
+                const result = await response.json();
+                
+                if (response.ok && result.success && result.data) {
+                    // Есть активная встреча - перенаправляем на неё
+                    const activeMeeting = result.data;
+                    window.location.href = `conduct-meeting.html?employeeId=${activeMeeting.employeeId}&meetingId=${activeMeeting.id}`;
+                } else {
+                    // Нет активной встречи - используем обычную логику
+                    window.meetingInitiator.initiateMeeting();
+                }
+            } catch (error) {
+                console.error('Ошибка при проверке активной встречи:', error);
+                // В случае ошибки используем обычную логику
+                window.meetingInitiator.initiateMeeting();
+            }
+        }
+    </script>
+</body>
+</html>
