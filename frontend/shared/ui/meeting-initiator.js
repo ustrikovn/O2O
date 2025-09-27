@@ -64,22 +64,14 @@ class MeetingInitiator {
         this.showLoadingState();
         
         try {
-            // Создаем встречу через API
-            const meetingId = await this.createMeeting(selectedEmployee.id);
-            
-            if (meetingId) {
-                console.log('Встреча создана успешно, ID:', meetingId);
-                
-                // Вызываем колбэк успеха если он есть
-                if (onSuccess) {
-                    onSuccess(selectedEmployee, meetingId);
-                } else {
-                    // По умолчанию перенаправляем на страницу встречи
-                    this.redirectToMeeting(selectedEmployee.id, meetingId, redirectUrl);
-                }
-                
-                this.cleanup();
+            // Больше НЕ создаем встречу заранее. Просто переходим на страницу встречи с employeeId
+            const employeeId = selectedEmployee.id;
+            if (onSuccess) {
+                onSuccess(selectedEmployee, null);
+            } else {
+                this.redirectToMeetingPage(employeeId, redirectUrl);
             }
+            this.cleanup();
         } catch (error) {
             console.error('Ошибка при создании встречи:', error);
             
@@ -104,7 +96,7 @@ class MeetingInitiator {
         const selectBtn = document.getElementById('select-employee-btn');
         if (selectBtn) {
             selectBtn.disabled = true;
-            selectBtn.innerHTML = '<i data-feather="loader" class="w-4 h-4 animate-spin inline mr-2"></i>Создание встречи...';
+            selectBtn.innerHTML = '<i data-feather="loader" class="w-4 h-4 animate-spin inline mr-2"></i>Открываем страницу встречи...';
             if (typeof feather !== 'undefined') {
                 feather.replace();
             }
@@ -164,6 +156,15 @@ class MeetingInitiator {
     redirectToMeeting(employeeId, meetingId, redirectUrl) {
         const url = `${redirectUrl}?employeeId=${employeeId}&meetingId=${meetingId}`;
         console.log('Перенаправление на:', url);
+        window.location.href = url;
+    }
+
+    /**
+     * Перенаправление на страницу встречи без предварительного создания (только employeeId)
+     */
+    redirectToMeetingPage(employeeId, redirectUrl) {
+        const url = `${redirectUrl}?employeeId=${employeeId}`;
+        console.log('Перенаправление на страницу встречи (без предварительного создания):', url);
         window.location.href = url;
     }
 

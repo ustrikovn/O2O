@@ -269,12 +269,8 @@
                     }
                 }
                 
-                // Нет активной встречи - создаем новую
-                const meetingId = await window.meetingInitiator.createMeeting(employeeId);
-                if (meetingId) {
-                    // Перенаправляем на страницу встречи
-                    window.location.href = `conduct-meeting.html?employeeId=${employeeId}&meetingId=${meetingId}`;
-                }
+                // Нет активной встречи - просто переходим на страницу встречи с выбранным сотрудником
+                window.location.href = `conduct-meeting.html?employeeId=${employeeId}`;
             } catch (error) {
                 console.error('Ошибка при создании встречи:', error);
                 alert('Произошла ошибка при создании встречи. Попробуйте еще раз.');
