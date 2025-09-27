@@ -104,7 +104,12 @@ router.get('/', validateQueryParams, async (req: Request, res: Response): Promis
       ...(hasAgreements === 'true' && { hasAgreements: true })
     };
     
-    const meetings = await MeetingEntity.findAll(filters, Number(limit), Number(offset));
+    console.log('API: Loading meetings with agreements for filters:', filters);
+    const meetings = await MeetingEntity.findAllWithAgreements(filters, Number(limit), Number(offset));
+    console.log('API: Loaded', meetings.length, 'meetings');
+    if (meetings.length > 0) {
+      console.log('API: First meeting content:', meetings[0].content);
+    }
     const meetingsWithDetails = meetings.map(transformMeetingResponse);
     
     const response: ApiResponse<MeetingResponse[]> = {
@@ -343,141 +348,48 @@ router.put('/:id/notes', validateUUID('id'), validateUpdateNotes, async (req: Re
  * POST /api/meetings/:id/agreements
  * Добавление договоренности к встрече
  */
-router.post('/:id/agreements', validateUUID('id'), validateAddAgreement, async (req: Request, res: Response): Promise<void> => {
-  try {
-    const meetingId = req.params.id!;
-    const { title, description, type } = req.body;
-    
-    const agreementData = { title, description, type };
-    const updatedMeeting = await MeetingEntity.addAgreement(meetingId, agreementData);
-    
-    if (!updatedMeeting) {
-      res.status(404).json({
-        error: 'Встреча не найдена',
-        message: 'Встреча с указанным ID не существует'
-      });
-      return;
-    }
-    
-    const response: ApiResponse<MeetingResponse> = {
-      success: true,
-      message: 'Договоренность успешно добавлена',
-      data: transformMeetingResponse(updatedMeeting)
-    };
-    
-    res.status(201).json(response);
-  } catch (error) {
-    console.error('Ошибка добавления договоренности:', error);
-    res.status(500).json({
-      error: 'Ошибка сервера',
-      message: 'Не удалось добавить договоренность'
-    });
-  }
+router.post('/:id/agreements', validateUUID('id'), validateAddAgreement, async (_req: Request, res: Response): Promise<void> => {
+  res.status(410).json({
+    success: false as any,
+    error: 'Deprecated',
+    message: 'Эндпоинт устарел. Используйте /api/agreements (табличное хранение)'
+  });
 });
 
 /**
  * PUT /api/meetings/:id/agreements
  * Обновление договоренности
  */
-router.put('/:id/agreements', validateUUID('id'), validateUpdateAgreement, async (req: Request, res: Response): Promise<void> => {
-  try {
-    const meetingId = req.params.id!;
-    const updateData = req.body;
-    
-    const updatedMeeting = await MeetingEntity.updateAgreement(meetingId, updateData);
-    
-    if (!updatedMeeting) {
-      res.status(404).json({
-        error: 'Встреча или договоренность не найдены',
-        message: 'Встреча с указанным ID не существует или договоренность не найдена'
-      });
-      return;
-    }
-    
-    const response: ApiResponse<MeetingResponse> = {
-      success: true,
-      message: 'Договоренность успешно обновлена',
-      data: transformMeetingResponse(updatedMeeting)
-    };
-    
-    res.json(response);
-  } catch (error) {
-    console.error('Ошибка обновления договоренности:', error);
-    res.status(500).json({
-      error: 'Ошибка сервера',
-      message: 'Не удалось обновить договоренность'
-    });
-  }
+router.put('/:id/agreements', validateUUID('id'), validateUpdateAgreement, async (_req: Request, res: Response): Promise<void> => {
+  res.status(410).json({
+    success: false as any,
+    error: 'Deprecated',
+    message: 'Эндпоинт устарел. Используйте /api/agreements (табличное хранение)'
+  });
 });
 
 /**
  * DELETE /api/meetings/:id/agreements/:agreementId
  * Удаление договоренности
  */
-router.delete('/:id/agreements/:agreementId', validateUUID('id'), async (req: Request, res: Response): Promise<void> => {
-  try {
-    const meetingId = req.params.id!;
-    const agreementId = req.params.agreementId!;
-    
-    const updatedMeeting = await MeetingEntity.removeAgreement(meetingId, agreementId);
-    
-    if (!updatedMeeting) {
-      res.status(404).json({
-        error: 'Встреча или договоренность не найдены',
-        message: 'Встреча с указанным ID не существует или договоренность не найдена'
-      });
-      return;
-    }
-    
-    const response: ApiResponse<MeetingResponse> = {
-      success: true,
-      message: 'Договоренность успешно удалена',
-      data: transformMeetingResponse(updatedMeeting)
-    };
-    
-    res.json(response);
-  } catch (error) {
-    console.error('Ошибка удаления договоренности:', error);
-    res.status(500).json({
-      error: 'Ошибка сервера',
-      message: 'Не удалось удалить договоренность'
-    });
-  }
+router.delete('/:id/agreements/:agreementId', validateUUID('id'), async (_req: Request, res: Response): Promise<void> => {
+  res.status(410).json({
+    success: false as any,
+    error: 'Deprecated',
+    message: 'Эндпоинт устарел. Используйте /api/agreements (табличное хранение)'
+  });
 });
 
 /**
  * PATCH /api/meetings/:id/agreements/status
  * Обновление статуса договоренности
  */
-router.patch('/:id/agreements/status', validateUUID('id'), validateUpdateAgreementStatus, async (req: Request, res: Response): Promise<void> => {
-  try {
-    const meetingId = req.params.id!;
-    const updateData = req.body;
-    
-    const updatedMeeting = await MeetingEntity.updateAgreementStatus(meetingId, updateData);
-    
-    if (!updatedMeeting) {
-      res.status(404).json({
-        error: 'Встреча или договоренность не найдены',
-        message: 'Встреча с указанным ID не существует или договоренность не найдена'
-      });
-      return;
-    }
-    
-    const response: ApiResponse<MeetingResponse> = {
-      success: true,
-      message: 'Статус договоренности успешно обновлен',
-      data: transformMeetingResponse(updatedMeeting)
-    };
-    
-    res.json(response);
-  } catch (error) {
-    console.error('Ошибка обновления статуса договоренности:', error);
-    res.status(500).json({
-      error: 'Ошибка сервера',
-      message: 'Не удалось обновить статус договоренности'
-    });
-  }
+router.patch('/:id/agreements/status', validateUUID('id'), validateUpdateAgreementStatus, async (_req: Request, res: Response): Promise<void> => {
+  res.status(410).json({
+    success: false as any,
+    error: 'Deprecated',
+    message: 'Эндпоинт устарел. Используйте /api/agreements (табличное хранение)'
+  });
 });
 
 /**

@@ -126,10 +126,13 @@
             padding: 4px 8px;
             border-radius: 4px;
             transition: background-color 0.2s;
+            display: inline-block;
+            text-align: center;
         }
 
         .expand-button:hover {
             background-color: rgba(37, 99, 235, 0.1);
+            text-decoration: none;
         }
 
         .agreement-section {
@@ -481,7 +484,8 @@
                 const result = await response.json();
                 
                 if (response.ok && result.success) {
-                    employeeMeetings = result.data || [];
+                    const rawMeetings = result.data || [];
+                    employeeMeetings = await enrichMeetingsWithAgreements(rawMeetings);
                     displayEmployeeMeetings(employeeMeetings);
                 } else {
                     console.error('Ошибка загрузки встреч:', result);
@@ -544,8 +548,8 @@
             const notes = meeting.content?.notes || '';
             const hasNotes = notes && notes.trim().length > 0;
             
-            // Обрабатываем договорённости
-            const agreements = meeting.content?.agreements || [];
+            // Обрабатываем договорённости (после рефакторинга всегда из таблицы; здесь уже подгружено enrichMeetingsWithAgreements)
+            const agreements = Array.isArray(meeting.content?.agreements) ? meeting.content.agreements : [];
             const newAgreements = agreements.filter(a => a.created_at && new Date(a.created_at).toDateString() === meetingDate.toDateString());
             const activeAgreements = agreements.filter(a => a.status === 'pending' && !newAgreements.includes(a));
             const completedAgreements = agreements.filter(a => a.status === 'completed' && a.completed_at && new Date(a.completed_at).toDateString() === meetingDate.toDateString());
@@ -574,7 +578,6 @@
                             <div class="text-center mt-2">
                                 <span class="expand-button" onclick="toggleNotes('${meeting.id}')">
                                     <span class="expand-text">Развернуть</span>
-                                    <i data-feather="chevron-down" class="ml-1"></i>
                                 </span>
                             </div>
                         ` : ''}
@@ -651,30 +654,71 @@
         function getAgreementTypeLabel(type) {
             const labels = {
                 'employee': 'Задача сотрудника',
+                'employee_task': 'Задача сотрудника',
                 'manager': 'Задача руководителя',
-                'both': 'Совместная задача'
+                'manager_task': 'Задача руководителя',
+                'both': 'Совместная задача',
+                'mutual_agreement': 'Совместная задача'
             };
             return labels[type] || type;
+        }
+
+        function mapResponsibleType(type) {
+            switch (type) {
+                case 'employee_task':
+                case 'employee':
+                    return 'employee';
+                case 'manager_task':
+                case 'manager':
+                    return 'manager';
+                case 'mutual_agreement':
+                case 'both':
+                    return 'both';
+                default:
+                    return type || 'employee';
+            }
+        }
+
+        async function enrichMeetingsWithAgreements(meetings) {
+            const enriched = await Promise.all((meetings || []).map(async (meeting) => {
+                if (!meeting.content) meeting.content = {};
+                const hasAgreements = Array.isArray(meeting.content.agreements) && meeting.content.agreements.length > 0;
+                if (hasAgreements) return meeting;
+                try {
+                    const res = await fetch(`http://localhost:3001/api/meetings/${meeting.id}/agreements`);
+                    const data = await res.json();
+                    if (res.ok && data.success && data.data && Array.isArray(data.data.agreements)) {
+                        meeting.content.agreements = data.data.agreements.map(a => ({
+                            id: a.id,
+                            title: a.title,
+                            description: a.description || '',
+                            type: mapResponsibleType(a.responsible_type || a.type),
+                            status: a.status,
+                            created_at: a.created_at,
+                            completed_at: a.completed_at,
+                            due_date: a.due_date
+                        }));
+                    }
+                } catch (e) {
+                    console.error('Не удалось подгрузить договоренности встречи', meeting.id, e);
+                }
+                return meeting;
+            }));
+            return enriched;
         }
 
         // Функция переключения развёрнутого состояния заметок
         function toggleNotes(meetingId) {
             const notesElement = document.getElementById(`notes-${meetingId}`);
             const expandText = notesElement.parentElement.querySelector('.expand-text');
-            const chevronIcon = notesElement.parentElement.querySelector('[data-feather="chevron-down"], [data-feather="chevron-up"]');
             
             if (notesElement.classList.contains('collapsed')) {
                 notesElement.classList.remove('collapsed');
                 expandText.textContent = 'Свернуть';
-                chevronIcon.setAttribute('data-feather', 'chevron-up');
             } else {
                 notesElement.classList.add('collapsed');
                 expandText.textContent = 'Развернуть';
-                chevronIcon.setAttribute('data-feather', 'chevron-down');
             }
-            
-            // Обновляем иконки
-            feather.replace();
         }
 
         // Функция отображения состояния ошибки для встреч

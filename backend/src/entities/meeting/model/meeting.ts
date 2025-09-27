@@ -232,7 +232,7 @@ export class MeetingEntity {
     }
     
     if (filters.hasAgreements) {
-      sql += ` AND m.content->'agreements' IS NOT NULL AND jsonb_array_length(m.content->'agreements') > 0`;
+      sql += ` AND EXISTS (SELECT 1 FROM agreements a WHERE a.meeting_id = m.id)`;
     }
     
     sql += ` ORDER BY m.created_at DESC LIMIT $${++paramCount} OFFSET $${++paramCount}`;
@@ -244,6 +244,88 @@ export class MeetingEntity {
       ...row,
       content: row.content || {}
     })) as Meeting[];
+  }
+
+  /**
+   * Получение всех встреч с договорённостями из отдельной таблицы
+   */
+  static async findAllWithAgreements(filters: MeetingFilterParams = {}, limit = 50, offset = 0): Promise<any[]> {
+    let sql = `
+      SELECT m.*, e.first_name, e.last_name, e.email, e.photo_url
+      FROM meetings m
+      JOIN employees e ON m.employee_id = e.id
+      WHERE 1=1
+    `;
+    
+    const values: any[] = [];
+    let paramCount = 0;
+    
+    // Применяем фильтры
+    if (filters.employeeId) {
+      sql += ` AND m.employee_id = $${++paramCount}`;
+      values.push(filters.employeeId);
+    }
+    
+    if (filters.status) {
+      sql += ` AND m.status = $${++paramCount}`;
+      values.push(filters.status);
+    }
+    
+    if (filters.dateFrom) {
+      sql += ` AND m.started_at >= $${++paramCount}`;
+      values.push(filters.dateFrom);
+    }
+    
+    if (filters.dateTo) {
+      sql += ` AND m.started_at <= $${++paramCount}`;
+      values.push(filters.dateTo);
+    }
+    
+    if (filters.hasNotes) {
+      sql += ` AND m.content->>'notes' IS NOT NULL AND m.content->>'notes' != ''`;
+    }
+    
+    if (filters.hasAgreements) {
+      sql += ` AND EXISTS (SELECT 1 FROM agreements a WHERE a.meeting_id = m.id)`;
+    }
+    
+    sql += ` ORDER BY m.created_at DESC LIMIT $${++paramCount} OFFSET $${++paramCount}`;
+    values.push(limit, offset);
+    
+    const result = await query(sql, values);
+    const meetings = result.rows;
+    
+    // Загружаем договорённости для каждой встречи
+    for (const meeting of meetings) {
+      const agreementsResult = await query(
+        'SELECT id, title, description, responsible_type as type, status, due_date, created_at, completed_at FROM agreements WHERE meeting_id = $1 ORDER BY created_at ASC',
+        [meeting.id]
+      );
+      
+      console.log(`Meeting ${meeting.id} has ${agreementsResult.rows.length} agreements`);
+      
+      // Обновляем content с договорённостями
+      meeting.content = meeting.content || {};
+      meeting.content.agreements = agreementsResult.rows.map(agreement => ({
+        id: agreement.id,
+        title: agreement.title,
+        description: agreement.description,
+        type: agreement.type,
+        status: agreement.status,
+        due_date: agreement.due_date,
+        created_at: agreement.created_at,
+        completed_at: agreement.completed_at
+      }));
+      
+      if (agreementsResult.rows.length > 0) {
+        console.log(`Added agreements to meeting ${meeting.id}:`, meeting.content.agreements);
+      }
+    }
+    
+    return meetings.map(row => ({
+      ...row,
+      content: row.content || {}
+    }));
   }
 
   /**
