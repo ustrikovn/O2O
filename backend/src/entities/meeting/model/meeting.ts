@@ -406,185 +406,22 @@ export class MeetingEntity {
     } as Meeting;
   }
 
-  /**
-   * Добавление договоренности к встрече
-   */
-  static async addAgreement(meetingId: UUID, agreementData: AddAgreementDto): Promise<Meeting | null> {
-    const { title, description, type, dueDate } = agreementData;
-    
-    // Создаем новую договоренность
-    const newAgreement: Agreement = {
-      id: `agreement-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      title,
-      description,
-      type,
-      status: 'pending', // Статус по умолчанию
-      due_date: dueDate, // Планируемая дата выполнения
-      created_at: new Date().toISOString()
-    };
-    
-    const sql = `
-      UPDATE meetings 
-      SET 
-        content = jsonb_set(
-          COALESCE(content, '{}'::jsonb),
-          '{agreements}',
-          COALESCE(content->'agreements', '[]'::jsonb) || $2::jsonb
-        ),
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = $1
-      RETURNING *;
-    `;
-    
-    const result = await query(sql, [meetingId, JSON.stringify([newAgreement])]);
-    
-    if (result.rows.length === 0) {
-      return null;
-    }
-    
-    const meeting = result.rows[0];
-    return {
-      ...meeting,
-      content: meeting.content || {}
-    } as Meeting;
-  }
+  // УДАЛЕНО: addAgreement (JSON) — договоренности хранятся только в таблицах
 
   /**
    * Обновление договоренности
    */
-  static async updateAgreement(meetingId: UUID, updateData: UpdateAgreementDto): Promise<Meeting | null> {
-    const { agreementId, title, description, type } = updateData;
-    
-    // Получаем текущую встречу
-    const meeting = await this.findById(meetingId);
-    if (!meeting || !meeting.content.agreements) {
-      return null;
-    }
-    
-    // Обновляем договоренность в массиве
-    const updatedAgreements = meeting.content.agreements.map(agreement => {
-      if (agreement.id === agreementId) {
-        return {
-          ...agreement,
-          ...(title && { title }),
-          ...(description !== undefined && { description }),
-          ...(type && { type })
-        };
-      }
-      return agreement;
-    });
-    
-    const sql = `
-      UPDATE meetings 
-      SET 
-        content = jsonb_set(content, '{agreements}', $2::jsonb),
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = $1
-      RETURNING *;
-    `;
-    
-    const result = await query(sql, [meetingId, JSON.stringify(updatedAgreements)]);
-    
-    if (result.rows.length === 0) {
-      return null;
-    }
-    
-    const updatedMeeting = result.rows[0];
-    return {
-      ...updatedMeeting,
-      content: updatedMeeting.content || {}
-    } as Meeting;
-  }
+  // УДАЛЕНО: updateAgreement (JSON)
 
   /**
    * Удаление договоренности
    */
-  static async removeAgreement(meetingId: UUID, agreementId: string): Promise<Meeting | null> {
-    // Получаем текущую встречу
-    const meeting = await this.findById(meetingId);
-    if (!meeting || !meeting.content.agreements) {
-      return null;
-    }
-    
-    // Удаляем договоренность из массива
-    const filteredAgreements = meeting.content.agreements.filter(agreement => agreement.id !== agreementId);
-    
-    const sql = `
-      UPDATE meetings 
-      SET 
-        content = jsonb_set(content, '{agreements}', $2::jsonb),
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = $1
-      RETURNING *;
-    `;
-    
-    const result = await query(sql, [meetingId, JSON.stringify(filteredAgreements)]);
-    
-    if (result.rows.length === 0) {
-      return null;
-    }
-    
-    const updatedMeeting = result.rows[0];
-    return {
-      ...updatedMeeting,
-      content: updatedMeeting.content || {}
-    } as Meeting;
-  }
+  // УДАЛЕНО: removeAgreement (JSON)
 
   /**
    * Обновление статуса договоренности
    */
-  static async updateAgreementStatus(meetingId: UUID, updateData: UpdateAgreementStatusDto): Promise<Meeting | null> {
-    const { agreementId, status } = updateData;
-    
-    // Получаем текущую встречу
-    const meeting = await this.findById(meetingId);
-    if (!meeting || !meeting.content.agreements) {
-      return null;
-    }
-    
-    // Обновляем статус договоренности в массиве
-    const updatedAgreements = meeting.content.agreements.map(agreement => {
-      if (agreement.id === agreementId) {
-        const updatedAgreement: Agreement = {
-          ...agreement,
-          status
-        };
-        
-        // Если статус "completed", добавляем время выполнения
-        if (status === 'completed') {
-          updatedAgreement.completed_at = new Date().toISOString();
-        } else {
-          // Если статус "pending", убираем время выполнения
-          delete updatedAgreement.completed_at;
-        }
-        
-        return updatedAgreement;
-      }
-      return agreement;
-    });
-    
-    const sql = `
-      UPDATE meetings 
-      SET 
-        content = jsonb_set(content, '{agreements}', $2::jsonb),
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = $1
-      RETURNING *;
-    `;
-    
-    const result = await query(sql, [meetingId, JSON.stringify(updatedAgreements)]);
-    
-    if (result.rows.length === 0) {
-      return null;
-    }
-    
-    const updatedMeeting = result.rows[0];
-    return {
-      ...updatedMeeting,
-      content: updatedMeeting.content || {}
-    } as Meeting;
-  }
+  // УДАЛЕНО: updateAgreementStatus (JSON)
 
   /**
    * Получение статистики встреч
