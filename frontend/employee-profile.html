@@ -613,8 +613,8 @@
             
             // Обрабатываем договорённости (все договоренности связанные с этой встречей)
             const agreements = Array.isArray(meeting.content?.agreements) ? meeting.content.agreements : [];
-            const newAgreements = agreements.filter(a => a.status === 'pending' || a.status === 'marked_for_completion');
-            const activeAgreements = []; // Не используем отдельную категорию активных
+            const newAgreements = agreements.filter(a => a.status === 'pending');
+            const activeAgreements = agreements.filter(a => a.status === 'marked_for_completion');
             const completedAgreements = agreements.filter(a => a.status === 'completed');
             
             // Создаём карточку встречи с двухколоночной компоновкой

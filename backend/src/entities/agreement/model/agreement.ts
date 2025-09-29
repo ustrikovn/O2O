@@ -178,4 +178,29 @@ export class AgreementEntity {
       return { total: 0, pending: 0, completed: 0, overdue: 0 };
     }
   }
+
+  /**
+   * Завершение всех "помеченных к выполнению" договоренностей сотрудника
+   * Используется при окончании встречи, чтобы закрыть задачи, тянущиеся из прошлых встреч
+   */
+  static async completeMarkedAgreementsByEmployee(employeeId: UUID): Promise<number> {
+    const sql = `
+      UPDATE agreements 
+      SET 
+        status = 'completed',
+        completed_at = CURRENT_TIMESTAMP
+      WHERE employee_id = $1 
+        AND status = 'marked_for_completion'
+      RETURNING id;
+    `;
+
+    try {
+      const result = await query(sql, [employeeId]);
+      console.log(`✅ Завершено ${result.rows.length} договоренностей сотрудника ${employeeId}`);
+      return result.rows.length;
+    } catch (error) {
+      console.error('Ошибка завершения помеченных договоренностей сотрудника:', error);
+      return 0;
+    }
+  }
 }

@@ -1,3 +1,4 @@
+
 /**
  * Главный файл приложения
  */
@@ -73,11 +74,11 @@ app.use('/uploads', (req, res, next) => {
   next();
 }, express.static(path.join(process.cwd(), 'uploads')));
 
-// Маршруты API
+// Маршруты API (важен порядок: сначала общие /api маршруты договоренностей, потом конкретные)
+app.use('/api', agreementRoutes); // Новые API для договоренностей (в т.ч. /api/meetings/:id/agreements)
 app.use('/api/employees', employeeRoutes);
 app.use('/api/meetings', meetingsRoutes);
 app.use('/api/surveys', surveyRoutes);
-app.use('/api', agreementRoutes); // Новые API для договоренностей
 
 // Базовый маршрут для проверки здоровья сервиса
 app.get('/api/health', (req, res) => {
