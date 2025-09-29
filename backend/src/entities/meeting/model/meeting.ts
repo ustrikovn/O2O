@@ -117,16 +117,20 @@ export class MeetingEntity {
       return null;
     }
     
+    const meeting = result.rows[0];
+    
     // НОВАЯ ЛОГИКА: Завершаем помеченные договоренности при окончании встречи
     try {
-      const completedCount = await AgreementEntity.completeMarkedAgreements(meetingId);
-      console.log(`✅ При завершении встречи ${meetingId} завершено ${completedCount} договоренностей`);
+      // 1) Завершаем договоренности, созданные на этой встрече и помеченные к завершению
+      const completedInCurrent = await AgreementEntity.completeMarkedAgreements(meetingId);
+      // 2) Дополнительно завершаем все помеченные договоренности сотрудника,
+      //    которые тянутся из прошлых встреч (если такие есть)
+      const completedForEmployee = await AgreementEntity.completeMarkedAgreementsByEmployee(meeting.employee_id);
+      console.log(`✅ Завершено договоренностей: на текущей встрече=${completedInCurrent}, по сотруднику=${completedForEmployee}`);
     } catch (error) {
       console.error('⚠️ Ошибка завершения договоренностей при окончании встречи:', error);
       // Не прерываем процесс завершения встречи из-за ошибки с договоренностями
     }
-    
-    const meeting = result.rows[0];
     return {
       ...meeting,
       content: meeting.content || {}
