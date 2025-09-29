@@ -153,7 +153,7 @@
         }
 
         .agreement-active {
-            border-left: 4px solid #f59e0b;
+            border-left: 4px solid #3b82f6;
         }
 
         .agreement-completed {
@@ -611,11 +611,11 @@
             const notes = meeting.content?.notes || '';
             const hasNotes = notes && notes.trim().length > 0;
             
-            // Обрабатываем договорённости (все договоренности связанные с этой встречей)
+            // Обрабатываем договорённости с новой логикой - по их состоянию на момент встречи
             const agreements = Array.isArray(meeting.content?.agreements) ? meeting.content.agreements : [];
-            const newAgreements = agreements.filter(a => a.status === 'pending');
-            const activeAgreements = agreements.filter(a => a.status === 'marked_for_completion');
-            const completedAgreements = agreements.filter(a => a.status === 'completed');
+            const createdAgreements = agreements.filter(a => a.meetingStatus === 'created');
+            const activeAgreements = agreements.filter(a => a.meetingStatus === 'active');
+            const completedAgreements = agreements.filter(a => a.meetingStatus === 'completed');
             
             // Создаём карточку встречи с двухколоночной компоновкой
             return `
@@ -663,11 +663,11 @@
                             </div>
                             ${agreements.length > 0 ? `
                                 <div class="agreement-section">
-                                    ${newAgreements.map(agreement => `
+                                    ${createdAgreements.map(agreement => `
                                         <div class="agreement-item agreement-new mb-3">
                                             <div class="font-medium">${agreement.title}</div>
                                             ${agreement.description ? `<div class="text-sm text-gray-600 mt-1">${agreement.description}</div>` : ''}
-                                            <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)}</div>
+                                            <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)} • Создана на встрече</div>
                                         </div>
                                     `).join('')}
                                     
@@ -675,7 +675,7 @@
                                         <div class="agreement-item agreement-active mb-3">
                                             <div class="font-medium">${agreement.title}</div>
                                             ${agreement.description ? `<div class="text-sm text-gray-600 mt-1">${agreement.description}</div>` : ''}
-                                            <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)}</div>
+                                            <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)} • Была активна</div>
                                         </div>
                                     `).join('')}
                                     
@@ -683,7 +683,7 @@
                                         <div class="agreement-item agreement-completed mb-3">
                                             <div class="font-medium">${agreement.title}</div>
                                             ${agreement.description ? `<div class="text-sm text-gray-600 mt-1">${agreement.description}</div>` : ''}
-                                            <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)}</div>
+                                            <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)} • Закрыта на встрече</div>
                                         </div>
                                     `).join('')}
                                 </div>
@@ -739,24 +739,43 @@
             const enriched = await Promise.all((meetings || []).map(async (meeting) => {
                 if (!meeting.content) meeting.content = {};
                 
-                // Всегда загружаем договоренности для каждой встречи
+                // Загружаем договоренности в контексте встречи
                 try {
-                    const res = await fetch(`http://localhost:3001/api/meetings/${meeting.id}/agreements`);
+                    const params = new URLSearchParams({
+                        employeeId: currentEmployee.id
+                    });
+                    
+                    if (meeting.started_at) {
+                        params.append('startedAt', meeting.started_at);
+                    }
+                    if (meeting.ended_at) {
+                        params.append('endedAt', meeting.ended_at);
+                    }
+                    
+                    const res = await fetch(`http://localhost:3001/api/meetings/${meeting.id}/agreements/context?${params}`);
                     const data = await res.json();
-                    if (res.ok && data.success && data.data && Array.isArray(data.data.agreements)) {
-                        meeting.content.agreements = data.data.agreements.map(a => ({
-                            id: a.id,
-                            title: a.title,
-                            description: a.description || '',
-                            type: mapResponsibleType(a.responsible_type || a.type),
-                            status: a.status,
-                            created_at: a.created_at,
-                            completed_at: a.completed_at,
-                            due_date: a.due_date
-                        }));
-                        console.log(`Загружено ${data.data.agreements.length} договоренностей для встречи ${meeting.id}`);
+                    
+                    if (res.ok && data.success && data.data) {
+                        const { created, completed, active } = data.data;
+                        
+                        // Объединяем все договоренности с маркерами их состояния на момент встречи
+                        meeting.content.agreements = [
+                            ...created.map(a => ({ 
+                                ...mapAgreement(a), 
+                                meetingStatus: 'created' 
+                            })),
+                            ...completed.map(a => ({ 
+                                ...mapAgreement(a), 
+                                meetingStatus: 'completed' 
+                            })),
+                            ...active.map(a => ({ 
+                                ...mapAgreement(a), 
+                                meetingStatus: 'active' 
+                            }))
+                        ];
+                        
+                        console.log(`Загружено договоренностей для встречи ${meeting.id}: создано ${created.length}, закрыто ${completed.length}, активно ${active.length}`);
                     } else {
-                        // Если нет договоренностей, устанавливаем пустой массив
                         meeting.content.agreements = [];
                     }
                 } catch (e) {
@@ -766,6 +785,19 @@
                 return meeting;
             }));
             return enriched;
+        }
+
+        function mapAgreement(a) {
+            return {
+                id: a.id,
+                title: a.title,
+                description: a.description || '',
+                type: mapResponsibleType(a.responsible_type || a.type),
+                status: a.status,
+                created_at: a.created_at,
+                completed_at: a.completed_at,
+                due_date: a.due_date
+            };
         }
 
         // Функция переключения развёрнутого состояния заметок

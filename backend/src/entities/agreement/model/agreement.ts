@@ -203,4 +203,76 @@ export class AgreementEntity {
       return 0;
     }
   }
+
+  /**
+   * Получение договоренностей для встречи с информацией об их состоянии на момент встречи
+   */
+  static async getAgreementsInMeetingContext(meetingId: UUID, employeeId: UUID, meetingStartedAt?: Date, meetingEndedAt?: Date): Promise<{
+    created: Agreement[];     // Созданы на этой встрече
+    completed: Agreement[];   // Закрыты на этой встрече  
+    active: Agreement[];      // Были активны на момент встречи
+  }> {
+    try {
+      // 1. Договоренности, созданные на этой встрече
+      const createdSql = `
+        SELECT * FROM agreements 
+        WHERE meeting_id = $1 
+        ORDER BY created_at ASC;
+      `;
+      const createdResult = await query(createdSql, [meetingId]);
+      const created = createdResult.rows as Agreement[];
+
+      let completed: Agreement[] = [];
+      let active: Agreement[] = [];
+
+      // Если есть временные рамки встречи, определяем закрытые и активные договоренности
+      if (meetingStartedAt) {
+        const endedAtWithMargin = meetingEndedAt ? new Date(meetingEndedAt.getTime() + 5000) : undefined;
+        // 2. Договоренности, закрытые во время этой встречи
+        const completedSql = `
+          SELECT * FROM agreements 
+          WHERE employee_id = $1 
+            AND completed_at IS NOT NULL
+            AND completed_at >= $2
+            ${meetingEndedAt ? 'AND completed_at <= $3' : ''}
+          ORDER BY completed_at ASC;
+        `;
+        const completedParams = meetingEndedAt 
+          ? [employeeId, meetingStartedAt, endedAtWithMargin]
+          : [employeeId, meetingStartedAt];
+        
+        const completedResult = await query(completedSql, completedParams);
+        completed = completedResult.rows as Agreement[];
+
+        // 3. Договоренности, которые были активны на момент встречи
+        // (созданы до встречи И ещё НЕ были завершены на момент начала встречи)
+        const activeSql = `
+          SELECT * FROM agreements 
+          WHERE employee_id = $1 
+            AND meeting_id != $2
+            AND created_at < $3
+            AND (completed_at IS NULL OR completed_at >= $3)
+          ORDER BY created_at ASC;
+        `;
+        const activeParams = [employeeId, meetingId, meetingStartedAt];
+          
+        const activeResult = await query(activeSql, activeParams);
+        active = activeResult.rows as Agreement[];
+      }
+
+      // Убираем дублирования - если договорённость есть в нескольких категориях
+      const createdIds = new Set(created.map(a => a.id));
+      const completedIds = new Set(completed.map(a => a.id));
+      
+      // Из активных убираем те, что уже есть в созданных или закрытых
+      const filteredActive = active.filter(a => !createdIds.has(a.id) && !completedIds.has(a.id));
+      
+      console.log(`Договорённости для встречи ${meetingId}: создано ${created.length}, закрыто ${completed.length}, активно ${filteredActive.length}`);
+      
+      return { created, completed, active: filteredActive };
+    } catch (error) {
+      console.error('Ошибка получения договоренностей в контексте встречи:', error);
+      return { created: [], completed: [], active: [] };
+    }
+  }
 }

@@ -59,6 +59,50 @@ router.get('/meetings/:id/agreements', validateUUID('id'), async (req: Request, 
 });
 
 /**
+ * GET /api/meetings/:id/agreements/context
+ * Получение договоренностей с информацией об их состоянии на момент встречи
+ * Query params: employeeId, startedAt, endedAt
+ */
+router.get('/meetings/:id/agreements/context', validateUUID('id'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const meetingId = req.params.id!;
+    const { employeeId, startedAt, endedAt } = req.query;
+    
+    if (!employeeId) {
+      res.status(400).json({
+        error: 'Неверный запрос',
+        message: 'Требуется параметр employeeId'
+      });
+      return;
+    }
+
+    const meetingStartedAt = startedAt ? new Date(startedAt as string) : undefined;
+    const meetingEndedAt = endedAt ? new Date(endedAt as string) : undefined;
+    
+    const agreementsContext = await AgreementEntity.getAgreementsInMeetingContext(
+      meetingId,
+      employeeId as string,
+      meetingStartedAt,
+      meetingEndedAt
+    );
+    
+    const response: ApiResponse<typeof agreementsContext> = {
+      success: true,
+      message: `Получен контекст договоренностей для встречи`,
+      data: agreementsContext
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('Ошибка получения контекста договоренностей встречи:', error);
+    res.status(500).json({
+      error: 'Ошибка сервера',
+      message: 'Не удалось получить контекст договоренностей встречи'
+    });
+  }
+});
+
+/**
  * POST /api/agreements
  * Создание новой договоренности
  */
