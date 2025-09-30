@@ -143,9 +143,39 @@
             background: rgba(255, 255, 255, 0.9);
             border: 1px solid rgba(229, 231, 235, 0.6);
             border-radius: 6px;
-            padding: 8px 12px;
+            padding: 12px;
             margin-bottom: 8px;
             font-size: 14px;
+        }
+
+        .agreement-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .agreement-title-section {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .agreement-deadline-section {
+            flex-shrink: 0;
+            text-align: right;
+        }
+
+        .agreement-item .deadline-info {
+            margin-top: 0;
+            justify-content: flex-end;
+            font-size: 11px;
+        }
+
+        .agreement-item .overdue-badge {
+            margin-left: 6px;
+            font-size: 9px;
+            padding: 1px 4px;
         }
 
         .agreement-new {
@@ -159,6 +189,25 @@
         .agreement-completed {
             border-left: 4px solid #6b7280;
             opacity: 0.8;
+        }
+
+        .deadline-info {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            margin-top: 4px;
+            color: #6b7280;
+        }
+
+        .overdue-badge {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-left: 8px;
         }
 
         /* Стили для двухколоночной компоновки карточек встреч */
@@ -267,7 +316,7 @@
                                 <h1 class="text-3xl font-bold text-gray-900 mb-2" id="employee-name">
                                     <!-- ФИО будет добавлено динамически -->
                                 </h1>
-                                <p class="text-lg text-gray-600" id="employee-position">
+                                <p class="text-lg " id="employee-position">
                                     <!-- Должность будет добавлена динамически -->
                                 </p>
                                 <p class="text-sm text-gray-500" id="employee-team">
@@ -318,7 +367,7 @@
                         <div class="mb-6">
                             <h3 class="text-lg font-semibold text-gray-900 mb-3">Контактная информация</h3>
                             <div class="space-y-2">
-                                <div class="flex items-center text-gray-600">
+                                <div class="flex items-center ">
                                     <i data-feather="mail" class="mr-3"></i>
                                     <span id="employee-email"><!-- Email будет добавлен динамически --></span>
                                 </div>
@@ -349,7 +398,7 @@
                         <div id="meetings-content" class="hidden">
                             <div class="mb-6">
                                 <h3 class="text-lg font-semibold text-gray-900">История встреч с сотрудником</h3>
-                                <p class="text-sm text-gray-600">Хронология всех проведённых встреч и договорённостей</p>
+                                <p class="text-sm ">Хронология всех проведённых встреч и договорённостей</p>
                             </div>
 
                             <!-- Список встреч -->
@@ -622,7 +671,7 @@
                 <div class="meeting-card">
                     <div class="meeting-header">
                         <div class="flex items-center space-x-4">
-                            <div class="flex items-center text-gray-600">
+                            <div class="flex items-center ">
                                 <i data-feather="calendar" class="mr-2"></i>
                                 <span class="font-medium">${formattedDate}</span>
                                 ${duration ? `<span class="ml-2 text-sm text-gray-500">(${duration})</span>` : ''}
@@ -658,36 +707,120 @@
                         
                         <!-- Правая колонка: Договоренности -->
                         <div class="meeting-agreements-column">
-                            <div class="column-header">
-                                Договоренности
-                            </div>
                             ${agreements.length > 0 ? `
-                                <div class="agreement-section">
-                                    ${createdAgreements.map(agreement => `
-                                        <div class="agreement-item agreement-new mb-3">
-                                            <div class="font-medium">${agreement.title}</div>
-                                            ${agreement.description ? `<div class="text-sm text-gray-600 mt-1">${agreement.description}</div>` : ''}
-                                            <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)} • Создана на встрече</div>
+                                <!-- Новые договоренности -->
+                                ${createdAgreements.length > 0 ? `
+                                    <div class="agreement-section mb-4">
+                                        <div class="column-header ">
+                                            Новые договоренности
                                         </div>
-                                    `).join('')}
-                                    
-                                    ${activeAgreements.map(agreement => `
-                                        <div class="agreement-item agreement-active mb-3">
-                                            <div class="font-medium">${agreement.title}</div>
-                                            ${agreement.description ? `<div class="text-sm text-gray-600 mt-1">${agreement.description}</div>` : ''}
-                                            <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)} • Была активна</div>
+                                        ${createdAgreements.map(agreement => {
+                                            const deadlineInfo = formatDueDate(agreement.due_date);
+                                            return `
+                                            <div class="${getAgreementClasses(agreement)}">
+                                                <div class="agreement-header">
+                                                    <div class="agreement-title-section">
+                                                        <div class="font-medium">${agreement.title}</div>
+                                                        <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)}</div>
+                                                    </div>
+                                                    ${deadlineInfo ? `
+                                                        <div class="agreement-deadline-section">
+                                                            <div class="deadline-info">
+                                                                <i data-feather="calendar" style="width: 10px; height: 10px; margin-right: 4px;"></i>
+                                                                ${deadlineInfo.text}
+                                                                ${deadlineInfo.status === 'overdue' ? '<span class="overdue-badge">Просрочено</span>' : ''}
+                                                            </div>
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+                                                ${agreement.description ? `<div class="text-sm text-gray-600">${agreement.description}</div>` : ''}
+                                            </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                ` : `
+                                    <div class="agreement-section mb-4">
+                                        <div class="column-header ">
+                                            Новые договоренности
                                         </div>
-                                    `).join('')}
-                                    
-                                    ${completedAgreements.map(agreement => `
-                                        <div class="agreement-item agreement-completed mb-3">
-                                            <div class="font-medium">${agreement.title}</div>
-                                            ${agreement.description ? `<div class="text-sm text-gray-600 mt-1">${agreement.description}</div>` : ''}
-                                            <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)} • Закрыта на встрече</div>
+                                        <div class="text-sm text-gray-500">Новые договоренности не создавались</div>
+                                    </div>
+                                `}
+                                
+                                <!-- Активные договоренности -->
+                                ${activeAgreements.length > 0 ? `
+                                    <div class="agreement-section mb-4">
+                                        <div class="column-header ">
+                                            Активные договоренности
                                         </div>
-                                    `).join('')}
-                                </div>
+                                        ${activeAgreements.map(agreement => {
+                                            const deadlineInfo = formatDueDate(agreement.due_date);
+                                            return `
+                                            <div class="${getAgreementClasses(agreement)}">
+                                                <div class="agreement-header">
+                                                    <div class="agreement-title-section">
+                                                        <div class="font-medium">${agreement.title}</div>
+                                                        <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)}</div>
+                                                    </div>
+                                                    ${deadlineInfo ? `
+                                                        <div class="agreement-deadline-section">
+                                                            <div class="deadline-info">
+                                                                <i data-feather="calendar" style="width: 10px; height: 10px; margin-right: 4px;"></i>
+                                                                ${deadlineInfo.text}
+                                                                ${deadlineInfo.status === 'overdue' ? '<span class="overdue-badge">Просрочено</span>' : ''}
+                                                            </div>
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+                                                ${agreement.description ? `<div class="text-sm text-gray-600">${agreement.description}</div>` : ''}
+                                            </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                ` : `
+                                    <div class="agreement-section mb-4">
+                                        <div class="column-header ">
+                                            Активные договоренности
+                                        </div>
+                                        <div class="text-sm text-gray-500">Активные договоренности отсутствуют</div>
+                                    </div>
+                                `}
+                                
+                                <!-- Закрытые договоренности -->
+                                ${completedAgreements.length > 0 ? `
+                                    <div class="agreement-section mb-4">
+                                        <div class="column-header ">
+                                            Закрытые договоренности
+                                        </div>
+                                        ${completedAgreements.map(agreement => {
+                                            const deadlineInfo = formatDueDate(agreement.due_date);
+                                            return `
+                                            <div class="${getAgreementClasses(agreement)}">
+                                                <div class="font-medium">${agreement.title}</div>
+                                                ${agreement.description ? `<div class="text-sm text-gray-600 mt-1">${agreement.description}</div>` : ''}
+                                                <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)}</div>
+                                                ${deadlineInfo ? `
+                                                    <div class="deadline-info deadline-${deadlineInfo.status}">
+                                                        <i data-feather="calendar" style="width: 12px; height: 12px; margin-right: 4px;"></i>
+                                                        ${deadlineInfo.text}
+                                                    </div>
+                                                ` : ''}
+                                            </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                ` : `
+                                    <div class="agreement-section mb-4">
+                                        <div class="column-header ">
+                                            Закрытые договоренности
+                                        </div>
+                                        <div class="text-sm text-gray-500">Закрытые договоренности отсутствуют</div>
+                                    </div>
+                                `}
                             ` : `
+                                <div class="column-header">
+                                    Договоренности
+                                </div>
                                 <div class="text-sm text-gray-500">Договоренности не создавались</div>
                             `}
                         </div>
@@ -733,6 +866,73 @@
                 default:
                     return type || 'employee';
             }
+        }
+
+        // Функции для работы с дедлайнами
+        function formatDueDate(dueDateStr) {
+            if (!dueDateStr) return null;
+            
+            const dueDate = new Date(dueDateStr);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            dueDate.setHours(0, 0, 0, 0);
+            
+            const diffTime = dueDate.getTime() - today.getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            const formattedDate = dueDate.toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'short'
+            });
+            
+            if (diffDays < 0) {
+                const overdueDays = Math.abs(diffDays);
+                return {
+                    text: `${formattedDate} (просрочено на ${overdueDays} ${getDaysWord(overdueDays)})`,
+                    status: 'overdue',
+                    days: diffDays
+                };
+            } else if (diffDays === 0) {
+                return {
+                    text: `${formattedDate} (сегодня)`,
+                    status: 'today',
+                    days: diffDays
+                };
+            } else if (diffDays <= 3) {
+                return {
+                    text: `${formattedDate} (через ${diffDays} ${getDaysWord(diffDays)})`,
+                    status: 'upcoming',
+                    days: diffDays
+                };
+            } else {
+                return {
+                    text: formattedDate,
+                    status: 'normal',
+                    days: diffDays
+                };
+            }
+        }
+
+        function getDaysWord(days) {
+            if (days === 1) return 'день';
+            if (days >= 2 && days <= 4) return 'дня';
+            return 'дней';
+        }
+
+        function getAgreementClasses(agreement) {
+            const baseClass = `agreement-item mb-3`;
+            let statusClass = '';
+            
+            // Определяем класс по статусу встречи
+            if (agreement.meetingStatus === 'created') {
+                statusClass = 'agreement-new';
+            } else if (agreement.meetingStatus === 'active') {
+                statusClass = 'agreement-active';
+            } else if (agreement.meetingStatus === 'completed') {
+                statusClass = 'agreement-completed';
+            }
+            
+            return `${baseClass} ${statusClass}`;
         }
 
         async function enrichMeetingsWithAgreements(meetings) {
