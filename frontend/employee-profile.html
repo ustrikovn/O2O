@@ -148,34 +148,71 @@
             font-size: 14px;
         }
 
-        .agreement-header {
+        .agreement-meta {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 6px;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
         }
 
-        .agreement-title-section {
-            flex: 1;
-            min-width: 0;
+        .agreement-title {
+            font-weight: 500;
+            line-height: 1.5;
+            margin-bottom: 8px;
+            color: #1f2937;
+            transition: max-height 0.3s ease;
         }
 
-        .agreement-deadline-section {
-            flex-shrink: 0;
-            text-align: right;
+        .agreement-title.collapsed {
+            max-height: 3em; /* Примерно 2 строки */
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .agreement-title.collapsed::after {
+            content: '...';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            padding-left: 40px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.9) 20%, rgba(255, 255, 255, 0.9));
+        }
+        
+        .agreement-title:not(.collapsed) {
+            max-height: none;
+        }
+
+        .agreement-type {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .expand-title-btn {
+            color: #2563eb;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 4px;
+            display: inline-block;
+        }
+
+        .expand-title-btn:hover {
+            color: #1d4ed8;
         }
 
         .agreement-item .deadline-info {
             margin-top: 0;
-            justify-content: flex-end;
             font-size: 11px;
         }
 
         .agreement-item .overdue-badge {
-            margin-left: 6px;
+            margin-left: 0;
             font-size: 9px;
-            padding: 1px 4px;
+            padding: 2px 6px;
         }
 
         .agreement-new {
@@ -714,26 +751,40 @@
                                         <div class="column-header ">
                                             Новые договоренности
                                         </div>
-                                        ${createdAgreements.map(agreement => {
+                                        ${createdAgreements.map((agreement, index) => {
                                             const deadlineInfo = formatDueDate(agreement.due_date);
+                                            const needsCollapse = shouldCollapseTitle(agreement.title);
+                                            const uniqueId = `m-${meeting.id}-created-${agreement.id}-${index}`;
                                             return `
                                             <div class="${getAgreementClasses(agreement)}">
-                                                <div class="agreement-header">
-                                                    <div class="agreement-title-section">
-                                                        <div class="font-medium">${agreement.title}</div>
-                                                        <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)}</div>
-                                                    </div>
+                                                <!-- Мета информация сверху: дата и статус -->
+                                                <div class="agreement-meta">
                                                     ${deadlineInfo ? `
-                                                        <div class="agreement-deadline-section">
-                                                            <div class="deadline-info">
-                                                                <i data-feather="calendar" style="width: 10px; height: 10px; margin-right: 4px;"></i>
-                                                                ${deadlineInfo.text}
-                                                                ${deadlineInfo.status === 'overdue' ? '<span class="overdue-badge">Просрочено</span>' : ''}
-                                                            </div>
+                                                        <div class="deadline-info">
+                                                            <i data-feather="calendar" style="width: 10px; height: 10px; margin-right: 4px;"></i>
+                                                            ${deadlineInfo.text}
                                                         </div>
                                                     ` : ''}
+                                                    ${deadlineInfo && deadlineInfo.status === 'overdue' ? '<span class="overdue-badge">Просрочено</span>' : ''}
                                                 </div>
-                                                ${agreement.description ? `<div class="text-sm text-gray-600">${agreement.description}</div>` : ''}
+                                                
+                                                <!-- Название договоренности -->
+                                                <div class="agreement-title ${needsCollapse ? 'collapsed' : ''}" id="title-${uniqueId}">
+                                                    ${agreement.title}
+                                                </div>
+                                                ${needsCollapse ? `
+                                                    <span class="expand-title-btn" id="expand-title-${uniqueId}" onclick="toggleAgreementTitle('${uniqueId}')">
+                                                        показать полностью
+                                                    </span>
+                                                ` : ''}
+                                                
+                                                <!-- Описание (если есть) -->
+                                                ${agreement.description ? `<div class="text-sm text-gray-600" style="margin-top: 8px;">${agreement.description}</div>` : ''}
+                                                
+                                                <!-- Тип задачи внизу -->
+                                                <div class="agreement-type">
+                                                    ${getAgreementTypeLabel(agreement.type)}
+                                                </div>
                                             </div>
                                             `;
                                         }).join('')}
@@ -753,26 +804,40 @@
                                         <div class="column-header ">
                                             Активные договоренности
                                         </div>
-                                        ${activeAgreements.map(agreement => {
+                                        ${activeAgreements.map((agreement, index) => {
                                             const deadlineInfo = formatDueDate(agreement.due_date);
+                                            const needsCollapse = shouldCollapseTitle(agreement.title);
+                                            const uniqueId = `m-${meeting.id}-active-${agreement.id}-${index}`;
                                             return `
                                             <div class="${getAgreementClasses(agreement)}">
-                                                <div class="agreement-header">
-                                                    <div class="agreement-title-section">
-                                                        <div class="font-medium">${agreement.title}</div>
-                                                        <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)}</div>
-                                                    </div>
+                                                <!-- Мета информация сверху: дата и статус -->
+                                                <div class="agreement-meta">
                                                     ${deadlineInfo ? `
-                                                        <div class="agreement-deadline-section">
-                                                            <div class="deadline-info">
-                                                                <i data-feather="calendar" style="width: 10px; height: 10px; margin-right: 4px;"></i>
-                                                                ${deadlineInfo.text}
-                                                                ${deadlineInfo.status === 'overdue' ? '<span class="overdue-badge">Просрочено</span>' : ''}
-                                                            </div>
+                                                        <div class="deadline-info">
+                                                            <i data-feather="calendar" style="width: 10px; height: 10px; margin-right: 4px;"></i>
+                                                            ${deadlineInfo.text}
                                                         </div>
                                                     ` : ''}
+                                                    ${deadlineInfo && deadlineInfo.status === 'overdue' ? '<span class="overdue-badge">Просрочено</span>' : ''}
                                                 </div>
-                                                ${agreement.description ? `<div class="text-sm text-gray-600">${agreement.description}</div>` : ''}
+                                                
+                                                <!-- Название договоренности -->
+                                                <div class="agreement-title ${needsCollapse ? 'collapsed' : ''}" id="title-${uniqueId}">
+                                                    ${agreement.title}
+                                                </div>
+                                                ${needsCollapse ? `
+                                                    <span class="expand-title-btn" id="expand-title-${uniqueId}" onclick="toggleAgreementTitle('${uniqueId}')">
+                                                        показать полностью
+                                                    </span>
+                                                ` : ''}
+                                                
+                                                <!-- Описание (если есть) -->
+                                                ${agreement.description ? `<div class="text-sm text-gray-600" style="margin-top: 8px;">${agreement.description}</div>` : ''}
+                                                
+                                                <!-- Тип задачи внизу -->
+                                                <div class="agreement-type">
+                                                    ${getAgreementTypeLabel(agreement.type)}
+                                                </div>
                                             </div>
                                             `;
                                         }).join('')}
@@ -792,19 +857,40 @@
                                         <div class="column-header ">
                                             Закрытые договоренности
                                         </div>
-                                        ${completedAgreements.map(agreement => {
+                                        ${completedAgreements.map((agreement, index) => {
                                             const deadlineInfo = formatDueDate(agreement.due_date);
+                                            const needsCollapse = shouldCollapseTitle(agreement.title);
+                                            const uniqueId = `m-${meeting.id}-completed-${agreement.id}-${index}`;
                                             return `
                                             <div class="${getAgreementClasses(agreement)}">
-                                                <div class="font-medium">${agreement.title}</div>
-                                                ${agreement.description ? `<div class="text-sm text-gray-600 mt-1">${agreement.description}</div>` : ''}
-                                                <div class="text-xs text-gray-500 mt-1">Тип: ${getAgreementTypeLabel(agreement.type)}</div>
-                                                ${deadlineInfo ? `
-                                                    <div class="deadline-info deadline-${deadlineInfo.status}">
-                                                        <i data-feather="calendar" style="width: 12px; height: 12px; margin-right: 4px;"></i>
-                                                        ${deadlineInfo.text}
-                                                    </div>
+                                                <!-- Мета информация сверху: дата и статус -->
+                                                <div class="agreement-meta">
+                                                    ${deadlineInfo ? `
+                                                        <div class="deadline-info">
+                                                            <i data-feather="calendar" style="width: 10px; height: 10px; margin-right: 4px;"></i>
+                                                            ${deadlineInfo.text}
+                                                        </div>
+                                                    ` : ''}
+                                                    ${deadlineInfo && deadlineInfo.status === 'overdue' ? '<span class="overdue-badge">Просрочено</span>' : ''}
+                                                </div>
+                                                
+                                                <!-- Название договоренности -->
+                                                <div class="agreement-title ${needsCollapse ? 'collapsed' : ''}" id="title-${uniqueId}">
+                                                    ${agreement.title}
+                                                </div>
+                                                ${needsCollapse ? `
+                                                    <span class="expand-title-btn" id="expand-title-${uniqueId}" onclick="toggleAgreementTitle('${uniqueId}')">
+                                                        показать полностью
+                                                    </span>
                                                 ` : ''}
+                                                
+                                                <!-- Описание (если есть) -->
+                                                ${agreement.description ? `<div class="text-sm text-gray-600" style="margin-top: 8px;">${agreement.description}</div>` : ''}
+                                                
+                                                <!-- Тип задачи внизу -->
+                                                <div class="agreement-type">
+                                                    ${getAgreementTypeLabel(agreement.type)}
+                                                </div>
                                             </div>
                                             `;
                                         }).join('')}
@@ -1012,6 +1098,29 @@
                 notesElement.classList.add('collapsed');
                 expandText.textContent = 'Развернуть';
             }
+        }
+
+        // Функция переключения развёрнутого состояния названия договоренности
+        function toggleAgreementTitle(agreementId) {
+            const titleElement = document.getElementById(`title-${agreementId}`);
+            const expandBtn = document.getElementById(`expand-title-${agreementId}`);
+            
+            if (!titleElement || !expandBtn) {
+                return;
+            }
+            
+            if (titleElement.classList.contains('collapsed')) {
+                titleElement.classList.remove('collapsed');
+                expandBtn.textContent = 'свернуть';
+            } else {
+                titleElement.classList.add('collapsed');
+                expandBtn.textContent = 'показать полностью';
+            }
+        }
+
+        // Функция проверки, нужно ли сворачивать название
+        function shouldCollapseTitle(title) {
+            return title && title.length > 120; // Примерно 2 строки по 60 символов
         }
 
         // Функция отображения состояния ошибки для встреч
