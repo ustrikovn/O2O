@@ -37,7 +37,7 @@
                     </div>
 
                     <!-- Выбор сотрудника -->
-                    <div class="glass-card p-6" style="position: relative; z-index: 1000;">
+                    <div class="glass-card p-6">
                         <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                             <i data-feather="user" class="mr-2 w-5 h-5"></i>
                             Выбор сотрудника
@@ -151,12 +151,48 @@
     </div>
 
     <script src="shared/ui/sidebar.js"></script>
+    <script src="shared/ui/modal.js"></script>
+    <script src="shared/ui/employee-selector-modal.js"></script>
+    <script src="shared/ui/meeting-initiator.js"></script>
+    <script src="shared/ui/active-meeting-modal.js"></script>
     <script src="shared/ui/custom-dropdown.js"></script>
     <script>
         // Инициализация sidebar
         if (typeof O2OSidebar !== 'undefined') {
             const sidebar = new O2OSidebar('surveys');
             sidebar.mount('sidebar-container');
+            sidebar.startActiveMeetingCheck();
+        }
+        
+        /**
+         * Глобальная функция для обработки клика на "Встреча" в сайдбаре
+         */
+        async function startMeetingFromSidebar(event) {
+            event.preventDefault();
+            
+            // Если уже на странице встречи, ничего не делаем
+            if (window.location.pathname.includes('conduct-meeting.html')) {
+                return;
+            }
+            
+            try {
+                // Проверяем, есть ли активная встреча
+                const response = await fetch('http://localhost:3001/api/meetings/active');
+                const result = await response.json();
+                
+                if (response.ok && result.success && result.data) {
+                    // Есть активная встреча - перенаправляем на неё
+                    const activeMeeting = result.data;
+                    window.location.href = `conduct-meeting.html?employeeId=${activeMeeting.employeeId}&meetingId=${activeMeeting.id}`;
+                } else {
+                    // Нет активной встречи - используем обычную логику
+                    window.meetingInitiator.initiateMeeting();
+                }
+            } catch (error) {
+                console.error('Ошибка при проверке активной встречи:', error);
+                // В случае ошибки используем обычную логику
+                window.meetingInitiator.initiateMeeting();
+            }
         }
 
         // Инициализация Feather иконок
