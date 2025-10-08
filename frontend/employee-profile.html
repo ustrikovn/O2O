@@ -321,14 +321,17 @@
             border-radius: 12px;
             padding: 16px;
             transition: all 300ms ease;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
         }
 
         .survey-card:hover {
-            transform: translateY(-2px);
             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .survey-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
         }
 
         .survey-status {
@@ -358,6 +361,151 @@
         .survey-status.abandoned {
             background-color: #fee2e2;
             color: #dc2626;
+        }
+
+        /* Стили для раскрывающихся секций опроса */
+        .survey-section {
+            border-top: 1px solid rgba(229, 231, 235, 0.6);
+            padding-top: 12px;
+            margin-top: 12px;
+        }
+
+        .survey-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .survey-section-header:hover {
+            background-color: rgba(37, 99, 235, 0.05);
+        }
+
+        .survey-section-title {
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .survey-section-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            color: #6b7280;
+        }
+
+        .survey-section-toggle {
+            color: #2563eb;
+            transition: transform 0.3s;
+        }
+
+        .survey-section-toggle.expanded {
+            transform: rotate(180deg);
+        }
+
+        .survey-section-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 0 8px;
+        }
+
+        .survey-section-content.expanded {
+            max-height: 3000px;
+            padding: 12px 8px 0;
+            overflow-y: auto;
+        }
+        
+        /* Кастомный скроллбар для секций опросов */
+        .survey-section-content.expanded::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .survey-section-content.expanded::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 3px;
+        }
+        
+        .survey-section-content.expanded::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+        }
+        
+        .survey-section-content.expanded::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Стили для результатов опроса */
+        .survey-answer-item {
+            background: rgba(248, 250, 252, 0.8);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .survey-question {
+            font-weight: 500;
+            font-size: 13px;
+            color: #1f2937;
+            margin-bottom: 6px;
+        }
+
+        .survey-answer {
+            font-size: 13px;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+
+        /* Стили для интерпретации */
+        .survey-interpretation {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(147, 51, 234, 0.05) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 13px;
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        .interpretation-highlight {
+            background-color: rgba(59, 130, 246, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        /* Адаптивность для карточек опросов */
+        @media (max-width: 768px) {
+            .survey-card-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .survey-card-header .flex.items-center.space-x-3 {
+                margin-top: 12px;
+            }
+            
+            .survey-section-title {
+                font-size: 13px;
+            }
+            
+            .survey-answer-item {
+                padding: 10px;
+            }
+            
+            .survey-question {
+                font-size: 12px;
+            }
+            
+            .survey-answer {
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -1329,15 +1477,13 @@
             const result = survey.employeeResult;
             
             // Определяем статус (ПОЛНАЯ синхронизация со страницей опросов)
-            // На странице опросов показывается только два состояния:
-            // 1. "Завершен" - если есть результат со статусом 'completed'
-            // 2. "Ожидает" - если НЕТ завершенного результата (даже если есть started/in_progress/abandoned)
             let statusClass = 'not-started';
             let statusLabel = 'Ожидает';
             let dateInfo = '';
             
-            if (result && result.status === 'completed') {
-                // Опрос завершен
+            const isCompleted = result && result.status === 'completed';
+            
+            if (isCompleted) {
                 statusLabel = 'Завершен';
                 statusClass = 'completed';
                 
@@ -1362,26 +1508,98 @@
                     }
                 }
             } else {
-                // Опрос не завершен (независимо от наличия started/in_progress/abandoned)
                 statusLabel = 'Ожидает';
                 statusClass = 'not-started';
                 dateInfo = 'Сотрудник еще не проходил этот опрос';
             }
             
+            // Реальные данные с бэкенда (пока отсутствуют)
+            const answers = result?.answers || [];
+            const interpretation = result?.interpretation || null;
+            
             return `
-                <div class="survey-card">
-                    <div class="flex-1">
-                        <h4 class="font-medium text-gray-900 mb-1">${survey.title}</h4>
-                        ${survey.description ? `<p class="text-sm text-gray-600 mb-2">${survey.description}</p>` : ''}
-                        ${dateInfo ? `<p class="text-xs text-gray-500">${dateInfo}</p>` : ''}
+                <div class="survey-card" id="survey-${survey.id}">
+                    <!-- Заголовок карточки -->
+                    <div class="survey-card-header">
+                        <div class="flex-1">
+                            <h4 class="font-medium text-gray-900 mb-1">${survey.title}</h4>
+                            ${survey.description ? `<p class="text-sm text-gray-600 mb-2">${survey.description}</p>` : ''}
+                            ${dateInfo ? `<p class="text-xs text-gray-500">${dateInfo}</p>` : ''}
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="survey-status ${statusClass}">
+                                ${statusLabel}
+                            </span>
+                        </div>
                     </div>
-                    <div class="flex items-center space-x-3">
-                        <span class="survey-status ${statusClass}">
-                            ${statusLabel}
-                        </span>
-                    </div>
+                    
+                    ${isCompleted ? `
+                        <!-- Секция результатов опроса -->
+                        <div class="survey-section">
+                            <div class="survey-section-header" onclick="toggleSurveySection('${survey.id}', 'results')">
+                                <div class="survey-section-title">
+                                    <i data-feather="list" class="survey-section-icon"></i>
+                                    Результаты опроса
+                                </div>
+                                <i data-feather="chevron-down" class="survey-section-toggle" id="toggle-${survey.id}-results"></i>
+                            </div>
+                            <div class="survey-section-content" id="content-${survey.id}-results">
+                                ${answers.length > 0 ? answers.map(item => `
+                                    <div class="survey-answer-item">
+                                        <div class="survey-question">${item.question}</div>
+                                        <div class="survey-answer">${item.answer}</div>
+                                    </div>
+                                `).join('') : `
+                                    <div class="text-sm text-gray-500 text-center py-4">
+                                        Данные результатов пока отсутствуют
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                        
+                        <!-- Секция интерпретации -->
+                        <div class="survey-section">
+                            <div class="survey-section-header" onclick="toggleSurveySection('${survey.id}', 'interpretation')">
+                                <div class="survey-section-title">
+                                    <i data-feather="target" class="survey-section-icon"></i>
+                                    Интерпретация результатов
+                                </div>
+                                <i data-feather="chevron-down" class="survey-section-toggle" id="toggle-${survey.id}-interpretation"></i>
+                            </div>
+                            <div class="survey-section-content" id="content-${survey.id}-interpretation">
+                                ${interpretation ? `
+                                    <div class="survey-interpretation">
+                                        ${interpretation}
+                                    </div>
+                                ` : `
+                                    <div class="text-sm text-gray-500 text-center py-4">
+                                        Интерпретация результатов пока отсутствует
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    ` : ''}
                 </div>
             `;
+        }
+        
+        // Функция переключения секций опроса
+        function toggleSurveySection(surveyId, sectionType) {
+            const contentElement = document.getElementById(`content-${surveyId}-${sectionType}`);
+            const toggleIcon = document.getElementById(`toggle-${surveyId}-${sectionType}`);
+            
+            if (!contentElement || !toggleIcon) return;
+            
+            if (contentElement.classList.contains('expanded')) {
+                contentElement.classList.remove('expanded');
+                toggleIcon.classList.remove('expanded');
+            } else {
+                contentElement.classList.add('expanded');
+                toggleIcon.classList.add('expanded');
+            }
+            
+            // Обновляем иконки
+            feather.replace();
         }
 
         // Функция отображения состояния ошибки для опросов
