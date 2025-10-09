@@ -70,6 +70,14 @@ export interface ConditionalLogic {
   };
 }
 
+// Секция/блок опроса
+export interface SurveySection {
+  id: string;
+  title: string;
+  description?: string;
+  icon?: string; // Опциональная иконка для секции
+}
+
 // Базовый интерфейс вопроса
 export interface BaseQuestion {
   id: string;
@@ -77,6 +85,8 @@ export interface BaseQuestion {
   title: string;
   description?: string;
   required?: boolean;
+  section?: string; // ID секции, к которой относится вопрос
+  hints?: string[]; // Подсказки/уточняющие вопросы для помощи в ответе
   nextQuestion?: string; // По умолчанию следующий вопрос
   conditions?: ConditionalLogic[]; // Условная логика
   validation?: ValidationRules;
@@ -148,6 +158,7 @@ export interface SurveyMetadata {
   author?: string;
   tags?: string[];
   version?: string;
+  sections?: SurveySection[]; // Описание секций опроса
   createdAt?: Date;
   updatedAt?: Date;
 }

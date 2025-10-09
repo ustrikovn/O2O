@@ -82,6 +82,14 @@ const conditionalLogicSchema = Joi.object({
   }).required()
 });
 
+// Схема для секции опроса
+const surveySectionSchema = Joi.object({
+  id: Joi.string().required(),
+  title: Joi.string().min(1).max(200).required(),
+  description: Joi.string().max(500).optional(),
+  icon: Joi.string().max(50).optional()
+});
+
 // Базовая схема для вопроса
 const baseQuestionSchema = Joi.object({
   id: Joi.string().required(),
@@ -89,6 +97,8 @@ const baseQuestionSchema = Joi.object({
   title: Joi.string().min(1).max(1000).required(),
   description: Joi.string().max(2000).optional(),
   required: Joi.boolean().optional(),
+  section: Joi.string().optional(), // ID секции
+  hints: Joi.array().items(Joi.string().max(500)).optional(), // Подсказки
   nextQuestion: Joi.string().optional(),
   conditions: Joi.array().items(conditionalLogicSchema).optional(),
   validation: validationRulesSchema.optional()
@@ -151,7 +161,8 @@ const surveyMetadataSchema = Joi.object({
   estimatedDuration: Joi.number().integer().min(1).optional(),
   author: Joi.string().max(255).optional(),
   tags: Joi.array().items(Joi.string().max(50)).optional(),
-  version: Joi.string().pattern(/^\d+\.\d+\.\d+$/).optional()
+  version: Joi.string().pattern(/^\d+\.\d+\.\d+$/).optional(),
+  sections: Joi.array().items(surveySectionSchema).optional()
 });
 
 // Схема для логики опроса

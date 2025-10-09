@@ -9,6 +9,110 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <link rel="stylesheet" href="shared/styles/base.css">
+    <style>
+        /* Стили для карточек вариантов ответа */
+        .option-card {
+            margin-bottom: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .option-label {
+            display: block;
+            cursor: pointer;
+            padding: 18px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            background: white;
+            transition: all 0.2s ease;
+        }
+        
+        .option-label:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+        
+        .option-radio {
+            display: none;
+        }
+        
+        .option-content {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        
+        .option-check {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+            position: relative;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        
+        .option-check::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 12px;
+            height: 12px;
+            background: #3b82f6;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        
+        .option-text {
+            font-size: 15px;
+            line-height: 1.5;
+            color: #374151;
+            font-weight: 500;
+        }
+        
+        /* Стили для выбранной карточки */
+        .option-card.selected .option-label {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        
+        .option-card.selected .option-check {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        
+        .option-card.selected .option-check::after {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .option-card.selected .option-text {
+            color: #1e40af;
+        }
+        
+        /* Анимация для иконки раскрытия подсказок */
+        .rotate-180 {
+            transform: rotate(180deg);
+        }
+        
+        /* Пульсирующая анимация для привлечения внимания к подсказке */
+        @keyframes hint-pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.02);
+            }
+        }
+        
+        .hint-animate {
+            animation: hint-pulse 2s ease-in-out infinite;
+        }
+    </style>
 </head>
 <body>
     <div class="flex min-h-screen">
@@ -105,6 +209,12 @@
                     <div class="w-full bg-gray-200 rounded-full h-2">
                         <div id="progress-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
+                </div>
+                
+                <!-- Блок секции -->
+                <div id="section-indicator" class="mb-6 pl-4 border-l-4 border-blue-500 hidden">
+                    <h4 id="section-title" class="text-base font-semibold text-gray-900 mb-1">Название секции</h4>
+                    <p id="section-description" class="text-sm text-gray-600">Описание секции</p>
                 </div>
                 
                 <!-- Вопрос -->
@@ -216,7 +326,11 @@
         let currentQuestionIndex = 0;
         let surveyQuestions = [];
         let answers = {};
+        let questionHistory = []; // История пройденных вопросов для кнопки "Назад"
         let isTakingSurvey = false;
+        let currentSection = null; // Текущая секция
+        let currentSurvey = null; // Текущий опрос для доступа к метаданным
+        let hintAnimationTimer = null; // Таймер для анимации подсказки
 
         // === ИНИЦИАЛИЗАЦИЯ ===
         document.addEventListener('DOMContentLoaded', function() {
@@ -395,41 +509,147 @@
         function initializeSurveyTaking(survey, employee) {
             isTakingSurvey = true;
             answers = {};
+            questionHistory = []; // Очищаем историю
             currentQuestionIndex = 0;
+            currentSection = null;
+            currentSurvey = survey; // Сохраняем ссылку на опрос
             
             // Показываем интерфейс прохождения опроса
             document.getElementById('survey-taking-interface').classList.remove('hidden');
             document.getElementById('survey-taking-title').textContent = survey.title;
             
-            // Скрываем основной интерфейс
+            // Скрываем основной интерфейс и статусный блок
             document.querySelector('.grid').style.display = 'none';
+            document.getElementById('survey-status-card').style.display = 'none';
             
             feather.replace();
         }
 
+        // Обновление состояния кнопки "Назад"
+        function updateBackButton() {
+            const prevBtn = document.getElementById('prev-btn');
+            if (prevBtn) {
+                prevBtn.disabled = questionHistory.length === 0;
+            }
+        }
 
-        function displayQuestion(question) {
+        // Функция для раскрытия/скрытия подсказок (глобальная)
+        window.toggleHints = function(hintsId) {
+            const hintsElement = document.getElementById(hintsId);
+            const iconElement = document.getElementById(`${hintsId}-icon`);
+            const buttonElement = iconElement.closest('button');
+            
+            if (hintsElement.classList.contains('hidden')) {
+                hintsElement.classList.remove('hidden');
+                iconElement.classList.add('rotate-180');
+            } else {
+                hintsElement.classList.add('hidden');
+                iconElement.classList.remove('rotate-180');
+            }
+            
+            // Убираем анимацию при клике на подсказку
+            if (buttonElement) {
+                buttonElement.classList.remove('hint-animate');
+            }
+            
+            feather.replace();
+        };
+
+        // Обновление индикатора секции
+        function updateSectionIndicator(question) {
+            if (!question || !question.section || !currentSurvey?.metadata?.sections) {
+                // Скрываем индикатор если нет секции
+                document.getElementById('section-indicator').classList.add('hidden');
+                return;
+            }
+
+            // Проверяем, сменилась ли секция
+            if (currentSection === question.section) {
+                // Секция не изменилась, ничего не делаем
+                return;
+            }
+
+            // Находим информацию о секции
+            const section = currentSurvey.metadata.sections.find(s => s.id === question.section);
+            if (!section) {
+                document.getElementById('section-indicator').classList.add('hidden');
+                return;
+            }
+
+            // Обновляем текущую секцию
+            currentSection = question.section;
+
+            // Обновляем UI
+            const indicator = document.getElementById('section-indicator');
+            const titleElement = document.getElementById('section-title');
+            const descriptionElement = document.getElementById('section-description');
+
+            titleElement.textContent = section.title;
+            descriptionElement.textContent = section.description || '';
+
+            // Показываем индикатор
+            indicator.classList.remove('hidden');
+        }
+
+
+        function displayQuestion(question, restorePreviousAnswer = false) {
             const titleElement = document.getElementById('question-title');
             const optionsElement = document.getElementById('question-options');
+            
+            // Очищаем предыдущий таймер анимации подсказки
+            if (hintAnimationTimer) {
+                clearTimeout(hintAnimationTimer);
+                hintAnimationTimer = null;
+            }
+            
+            // Обновляем индикатор секции
+            updateSectionIndicator(question);
             
             titleElement.textContent = question.title;
             optionsElement.innerHTML = '';
             
+            // Обновляем состояние кнопки "Назад"
+            updateBackButton();
+            
             if (question.type === 'single-choice') {
                 question.options.forEach(option => {
                     const optionDiv = document.createElement('div');
-                    optionDiv.className = 'flex items-center';
+                    optionDiv.className = 'option-card';
                     optionDiv.innerHTML = `
-                        <input type="radio" id="option-${option.value}" name="question-answer" value="${option.value}" class="mr-3">
-                        <label for="option-${option.value}" class="cursor-pointer flex-1">${option.label}</label>
+                        <label for="option-${option.value}" class="option-label">
+                            <input type="radio" id="option-${option.value}" name="question-answer" value="${option.value}" class="option-radio">
+                            <div class="option-content">
+                                <div class="option-check"></div>
+                                <span class="option-text">${option.label}</span>
+                            </div>
+                        </label>
                     `;
                     optionsElement.appendChild(optionDiv);
                 });
+                
+                // Восстанавливаем предыдущий ответ если это возврат назад
+                if (restorePreviousAnswer && answers[question.id]) {
+                    const previousAnswer = answers[question.id];
+                    const radioToSelect = document.querySelector(`input[name="question-answer"][value="${previousAnswer}"]`);
+                    if (radioToSelect) {
+                        radioToSelect.checked = true;
+                        radioToSelect.closest('.option-card').classList.add('selected');
+                        document.getElementById('next-btn').disabled = false;
+                    }
+                }
                 
                 // Включаем кнопку "Далее" когда выбран ответ
                 document.querySelectorAll('input[name="question-answer"]').forEach(input => {
                     input.addEventListener('change', () => {
                         document.getElementById('next-btn').disabled = false;
+                        
+                        // Убираем активный класс со всех карточек
+                        document.querySelectorAll('.option-card').forEach(card => {
+                            card.classList.remove('selected');
+                        });
+                        
+                        // Добавляем активный класс к выбранной карточке
+                        input.closest('.option-card').classList.add('selected');
                     });
                 });
             } else if (question.type === 'textarea' || question.type === 'text') {
@@ -440,6 +660,37 @@
                 const rows = question.rows || 5;
                 const placeholder = question.placeholder || 'Введите ваш ответ...';
                 const maxLength = question.maxLength || 1000;
+                
+                // Собираем HTML для подсказок (теперь раскрывающиеся)
+                let hintsHtml = '';
+                let hasHints = false;
+                if (question.hints && question.hints.length > 0) {
+                    hasHints = true;
+                    const hintsId = `hints-${question.id}`;
+                    const hintButtonId = `hint-btn-${question.id}`;
+                    hintsHtml = `
+                        <div class="mt-3">
+                            <button 
+                                id="${hintButtonId}"
+                                type="button"
+                                onclick="toggleHints('${hintsId}')"
+                                class="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                            >
+                                <i data-feather="help-circle" class="w-4 h-4"></i>
+                                <span>Подсказка</span>
+                                <i id="${hintsId}-icon" data-feather="chevron-down" class="w-4 h-4 transition-transform"></i>
+                            </button>
+                            <div id="${hintsId}" class="hidden mt-2 pl-6 space-y-1.5">
+                                ${question.hints.map(hint => `
+                                    <div class="text-sm text-gray-600 flex items-start">
+                                        <span class="mr-2 text-gray-400">•</span>
+                                        <span>${hint}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
                 
                 textareaDiv.innerHTML = `
                     <textarea 
@@ -454,6 +705,7 @@
                         <span>Минимум ${question.validation?.minLength || 20} символов</span>
                         <span id="char-count">0 / ${maxLength}</span>
                     </div>
+                    ${hintsHtml}
                 `;
                 
                 optionsElement.appendChild(textareaDiv);
@@ -463,6 +715,16 @@
                 const charCount = document.getElementById('char-count');
                 const nextBtn = document.getElementById('next-btn');
                 const minLength = question.validation?.minLength || 20;
+                
+                // Восстанавливаем предыдущий ответ если это возврат назад
+                if (restorePreviousAnswer && answers[question.id]) {
+                    textarea.value = answers[question.id];
+                    const length = textarea.value.length;
+                    charCount.textContent = `${length} / ${maxLength}`;
+                    if (length >= minLength) {
+                        nextBtn.disabled = false;
+                    }
+                }
                 
                 textarea.addEventListener('input', () => {
                     const length = textarea.value.length;
@@ -482,6 +744,20 @@
                 
                 // Изначально кнопка выключена
                 nextBtn.disabled = true;
+                
+                // Обновляем иконки feather для подсказок
+                feather.replace();
+                
+                // Запускаем анимацию подсказки через 10 секунд
+                if (hasHints) {
+                    const hintButtonId = `hint-btn-${question.id}`;
+                    hintAnimationTimer = setTimeout(() => {
+                        const hintButton = document.getElementById(hintButtonId);
+                        if (hintButton && !hintButton.classList.contains('rotate-180')) {
+                            hintButton.classList.add('hint-animate');
+                        }
+                    }, 10000); // 10 секунд
+                }
             }
         }
 
@@ -500,6 +776,12 @@
                 if (!selectedOption) return;
                 answer = selectedOption.value;
             }
+            
+            // Сохраняем текущий вопрос в историю перед переходом
+            questionHistory.push({
+                question: currentQuestion,
+                answer: answer
+            });
             
             answers[currentQuestion.id] = answer;
 
@@ -601,8 +883,23 @@
         }
 
         function previousQuestion() {
-            // Функционал "Назад" пока не реализован
-            alert('Функция "Назад" будет добавлена в будущем');
+            // Проверяем, есть ли история
+            if (questionHistory.length === 0) return;
+            
+            // Достаем последний вопрос из истории
+            const previousEntry = questionHistory.pop();
+            
+            // Восстанавливаем предыдущий вопрос
+            currentQuestion = previousEntry.question;
+            
+            // НЕ удаляем ответ из answers, чтобы он восстановился
+            // answers остается с предыдущими ответами
+            
+            // Отображаем предыдущий вопрос с восстановлением ответа
+            displayQuestion(currentQuestion, true);
+            
+            // Сбрасываем кнопку "Далее" (она активируется при выборе/вводе)
+            document.getElementById('next-btn').disabled = false;
         }
 
         function viewSurveyResults() {
@@ -620,17 +917,27 @@
             document.getElementById('survey-taking-interface').classList.add('hidden');
             document.getElementById('question-container').classList.remove('hidden');
             document.getElementById('survey-completion').classList.add('hidden');
+            document.getElementById('section-indicator').classList.add('hidden');
             
             // Показываем основной интерфейс
             document.querySelector('.grid').style.display = 'grid';
+            
+            // Очищаем таймер анимации подсказки
+            if (hintAnimationTimer) {
+                clearTimeout(hintAnimationTimer);
+                hintAnimationTimer = null;
+            }
             
             // Сбрасываем переменные
             isTakingSurvey = false;
             currentSurveyResult = null;
             currentQuestion = null;
+            currentSection = null;
+            currentSurvey = null;
             answers = {};
+            questionHistory = []; // Очищаем историю
             
-            // Обновляем статус
+            // Обновляем статус (блок статуса покажется автоматически в updateSurveyStatus)
             updateSurveyStatus();
         }
 
