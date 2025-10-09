@@ -413,6 +413,7 @@
             overflow: hidden;
             transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             padding: 0 8px;
+            will-change: max-height;
         }
 
         .survey-section-content.expanded {
@@ -1526,8 +1527,25 @@
                 dateInfo = 'Сотрудник еще не проходил этот опрос';
             }
             
-            // Реальные данные с бэкенда (пока отсутствуют)
-            const answers = result?.answers || [];
+            // Ответы с бэкенда (QuestionAnswer[]) и преобразование для отображения
+            const rawAnswers = result?.answers || [];
+            const questionById = new Map((survey.questions || []).map(q => [q.id, q]));
+            const displayAnswers = rawAnswers.map(a => {
+                const question = questionById.get(a.questionId);
+                const questionTitle = question && question.title ? question.title : a.questionId;
+                let answerText = '';
+                if (question && (question.type === 'single-choice' || question.type === 'multiple-choice')) {
+                    const valuesArray = Array.isArray(a.value) ? a.value : [a.value];
+                    const labels = valuesArray.map(v => {
+                        const opt = (question.options || []).find(o => o.value === v);
+                        return opt ? opt.label : String(v);
+                    });
+                    answerText = labels.join(', ');
+                } else {
+                    answerText = Array.isArray(a.value) ? a.value.join(', ') : String(a.value ?? '');
+                }
+                return { question: questionTitle, answer: answerText };
+            });
             const interpretation = result?.interpretation || null;
             
             return `
@@ -1557,7 +1575,7 @@
                                 <i data-feather="chevron-down" class="survey-section-toggle" id="toggle-${survey.id}-results"></i>
                             </div>
                             <div class="survey-section-content" id="content-${survey.id}-results">
-                                ${answers.length > 0 ? answers.map(item => `
+                                ${displayAnswers.length > 0 ? displayAnswers.map(item => `
                                     <div class="survey-answer-item">
                                         <div class="survey-question">${item.question}</div>
                                         <div class="survey-answer">${item.answer}</div>
@@ -1603,16 +1621,37 @@
             
             if (!contentElement || !toggleIcon) return;
             
-            if (contentElement.classList.contains('expanded')) {
+            const isExpanded = contentElement.classList.contains('expanded');
+            
+            if (isExpanded) {
+                // Сворачивание: зафиксировать текущую высоту и анимировать к 0
+                contentElement.style.maxHeight = contentElement.scrollHeight + 'px';
+                // Принудительный reflow для корректной анимации
+                void contentElement.offsetHeight;
+                contentElement.style.maxHeight = '0px';
                 contentElement.classList.remove('expanded');
                 toggleIcon.classList.remove('expanded');
+                const onCollapseEnd = (e) => {
+                    if (e.propertyName === 'max-height') {
+                        contentElement.style.removeProperty('max-height');
+                        contentElement.removeEventListener('transitionend', onCollapseEnd);
+                    }
+                };
+                contentElement.addEventListener('transitionend', onCollapseEnd);
             } else {
+                // Раскрытие: установить целевую высоту контента
                 contentElement.classList.add('expanded');
                 toggleIcon.classList.add('expanded');
+                contentElement.style.maxHeight = contentElement.scrollHeight + 'px';
+                const onExpandEnd = (e) => {
+                    if (e.propertyName === 'max-height') {
+                        // Убираем фиксированную высоту, чтобы контент внутри мог менять размер без дёрганий
+                        contentElement.style.maxHeight = 'none';
+                        contentElement.removeEventListener('transitionend', onExpandEnd);
+                    }
+                };
+                contentElement.addEventListener('transitionend', onExpandEnd);
             }
-            
-            // Обновляем иконки
-            feather.replace();
         }
 
         // Функция отображения состояния ошибки для опросов
