@@ -1424,16 +1424,29 @@
                     const allSurveys = surveysResult.data || [];
                     const employeeResults = resultsResponse.ok && resultsResult.success ? resultsResult.data || [] : [];
                     
-                    // Объединяем данные: для каждого опроса находим последний результат сотрудника
+                    // Объединяем данные: для каждого опроса находим завершённый результат (если есть), иначе самый свежий
                     employeeSurveys = allSurveys.map(survey => {
                         const results = employeeResults.filter(r => r.surveyId === survey.id);
-                        const latestResult = results.length > 0 
-                            ? results.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))[0]
-                            : null;
+                        
+                        if (results.length === 0) {
+                            return { ...survey, employeeResult: null };
+                        }
+                        
+                        // Ищем последний завершённый результат
+                        const latestCompleted = results
+                            .filter(r => r.status === 'completed')
+                            .sort((a, b) => new Date(b.completedAt || b.startedAt) - new Date(a.completedAt || a.startedAt))[0] || null;
+                        
+                        // Если завершённых нет, берём самый свежий по времени старта
+                        const latestAny = results
+                            .slice()
+                            .sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))[0] || null;
+                        
+                        const chosenResult = latestCompleted || latestAny;
                         
                         return {
                             ...survey,
-                            employeeResult: latestResult
+                            employeeResult: chosenResult
                         };
                     });
                     
