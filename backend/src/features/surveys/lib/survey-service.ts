@@ -15,6 +15,7 @@ import {
   QuestionAnswer
 } from '../../../shared/types/survey.js';
 import { SurveyEntity, SurveyResultEntity } from '../../../entities/survey/index.js';
+import { inferDiscLabelFromOpenAnswer, inferDiscLabelForObstacle, inferDiscLabelForDifficultInteraction } from './interpreters/disc-llm.js';
 import { SurveyRepository } from './survey-repository.js';
 import { ApiError } from '../../../shared/api/middleware.js';
 
@@ -191,6 +192,54 @@ export class SurveyService {
 
     // Добавляем ответ
     resultEntity.addAnswer(answer);
+    
+    // Для закрытых вопросов (single-choice, multiple-choice) интерпретируем DISC-буквы
+    const question = surveyEntity.getQuestion(data.questionId);
+    if (question && (question.type === 'single-choice' || question.type === 'multiple-choice')) {
+      const valueStr = String(data.value).trim();
+      const valueUpper = valueStr.toUpperCase();
+      
+      // Маппинг для бинарных вопросов (присваивают 2 буквы)
+      const binaryMapping: Record<string, string[]> = {
+        'people': ['I', 'S'],      // Люди → I + S
+        'tasks': ['D', 'C'],        // Задачи → D + C
+        'initiator': ['D', 'I'],    // Инициатор → D + I
+        'executor': ['S', 'C'],     // Исполнитель → S + C
+        'fast': ['D', 'I'],         // Быстро → D + I
+        'think': ['S', 'C']         // Обдумываю → S + C
+      };
+      
+      let traits: string[] = [];
+      
+      // Проверяем, это прямая DISC-буква?
+      if (valueUpper === 'D' || valueUpper === 'I' || valueUpper === 'S' || valueUpper === 'C') {
+        traits = [valueUpper];
+      }
+      // Проверяем, это бинарный вопрос?
+      else if (binaryMapping[valueStr.toLowerCase()]) {
+        traits = binaryMapping[valueStr.toLowerCase()];
+      }
+      
+      if (traits.length > 0) {
+        // Инициализируем metadata если нужно
+        if (!resultEntity.metadata) {
+          resultEntity.metadata = {};
+        }
+        if (!resultEntity.metadata.disc) {
+          resultEntity.metadata.disc = {};
+        }
+        if (!resultEntity.metadata.disc.byQuestionId) {
+          resultEntity.metadata.disc.byQuestionId = {};
+        }
+        
+        // Сохраняем интерпретацию (для закрытых вопросов)
+        resultEntity.metadata.disc.byQuestionId[data.questionId] = {
+          traits,
+          model: 'rule-based',
+          createdAt: new Date().toISOString()
+        };
+      }
+    }
 
     // Определяем следующий вопрос
     console.log(`🔍 Определяем следующий вопрос после ${data.questionId} с ответом:`, data.value);
@@ -210,11 +259,111 @@ export class SurveyService {
       resultEntity.complete();
     }
 
-    // Сохраняем обновленный результат
+    // Если опрос завершен — пробуем интерпретировать открытые ответы DISC через LLM
+    if (isCompleted) {
+      try {
+        const leadershipQuestion = survey.questions.find(q =>
+          (q.type === 'text' || q.type === 'textarea') &&
+          typeof q.title === 'string' &&
+          (
+            q.title.includes('возглавить проект') ||
+            q.title.includes('возглавить') ||
+            q.title.includes('инициативу')
+          )
+        );
+
+        if (leadershipQuestion) {
+          const leadershipAnswer = resultEntity.getAnswer(leadershipQuestion.id);
+          if (leadershipAnswer && typeof leadershipAnswer.value === 'string' && leadershipAnswer.value.trim().length > 0) {
+            const { label, model } = await inferDiscLabelFromOpenAnswer(leadershipAnswer.value);
+            if (!resultEntity.metadata) resultEntity.metadata = {};
+            resultEntity.metadata.disc = {
+              ...(resultEntity.metadata.disc || {}),
+              ...(label ? { llmLabel: label } : {}),
+              sourceQuestionId: leadershipQuestion.id,
+              model,
+              createdAt: new Date().toISOString()
+            };
+            // фиксируем по questionId
+            resultEntity.metadata.disc.byQuestionId = {
+              ...(resultEntity.metadata.disc.byQuestionId || {}),
+              [leadershipQuestion.id]: {
+                ...(label ? { llmLabel: label } : {}),
+                model,
+                createdAt: new Date().toISOString()
+              }
+            };
+          }
+        }
+
+        // Вопрос про серьёзное препятствие
+        const obstacleQuestion = survey.questions.find(q =>
+          (q.type === 'text' || q.type === 'textarea') &&
+          typeof q.title === 'string' &&
+          (
+            q.title.includes('серьёзным препятствием') ||
+            q.title.includes('серьезным препятствием') ||
+            q.title.includes('препятствием в работе')
+          )
+        );
+        if (obstacleQuestion) {
+          const obstacleAnswer = resultEntity.getAnswer(obstacleQuestion.id);
+          if (obstacleAnswer && typeof obstacleAnswer.value === 'string' && obstacleAnswer.value.trim().length > 0) {
+            const { label, model } = await inferDiscLabelForObstacle(obstacleAnswer.value);
+            if (!resultEntity.metadata) resultEntity.metadata = {};
+            resultEntity.metadata.disc = {
+              ...(resultEntity.metadata.disc || {}),
+              byQuestionId: {
+                ...(resultEntity.metadata.disc?.byQuestionId || {}),
+                [obstacleQuestion.id]: {
+                  ...(label ? { llmLabel: label } : {}),
+                  model,
+                  createdAt: new Date().toISOString()
+                }
+              }
+            };
+          }
+        }
+
+        // Вопрос про трудного коллегу/клиента
+        const difficultQuestion = survey.questions.find(q =>
+          (q.type === 'text' || q.type === 'textarea') &&
+          typeof q.title === 'string' &&
+          (
+            q.title.includes('трудным коллегой') ||
+            q.title.includes('трудным клиентом') ||
+            q.title.includes('как вы строили взаимодействие')
+          )
+        );
+        if (difficultQuestion) {
+          const difficultAnswer = resultEntity.getAnswer(difficultQuestion.id);
+          if (difficultAnswer && typeof difficultAnswer.value === 'string' && difficultAnswer.value.trim().length > 0) {
+            const { label, model } = await inferDiscLabelForDifficultInteraction(difficultAnswer.value);
+            if (!resultEntity.metadata) resultEntity.metadata = {};
+            resultEntity.metadata.disc = {
+              ...(resultEntity.metadata.disc || {}),
+              byQuestionId: {
+                ...(resultEntity.metadata.disc?.byQuestionId || {}),
+                [difficultQuestion.id]: {
+                  ...(label ? { llmLabel: label } : {}),
+                  model,
+                  createdAt: new Date().toISOString()
+                }
+              }
+            };
+          }
+        }
+      } catch (llmError) {
+        console.error('LLM DISC interpretation failed:', llmError);
+      }
+    }
+
+    // Сохраняем обновленный результат (включая возможные metadata)
     await this.surveyRepository.updateResult(data.resultId, {
       answers: resultEntity.answers,
       status: resultEntity.status,
-      completedAt: resultEntity.completedAt || undefined
+      completedAt: resultEntity.completedAt || undefined,
+      metadata: resultEntity.metadata || undefined
     });
 
     const response: NextQuestionResponse = {
@@ -246,10 +395,99 @@ export class SurveyService {
     // Завершаем опрос
     resultEntity.complete();
 
+    // Пробуем интерпретировать открытые ответы DISC через LLM при принудительном завершении
+    try {
+      const leadershipQuestion = survey.questions.find(q =>
+        (q.type === 'text' || q.type === 'textarea') &&
+        typeof q.title === 'string' &&
+        (
+          q.title.includes('возглавить проект') ||
+          q.title.includes('возглавить') ||
+          q.title.includes('инициативу')
+        )
+      );
+
+      if (leadershipQuestion) {
+        const leadershipAnswer = resultEntity.getAnswer(leadershipQuestion.id);
+        if (leadershipAnswer && typeof leadershipAnswer.value === 'string' && leadershipAnswer.value.trim().length > 0) {
+          const { label, model } = await inferDiscLabelFromOpenAnswer(leadershipAnswer.value);
+          if (!resultEntity.metadata) resultEntity.metadata = {};
+          resultEntity.metadata.disc = {
+            ...(resultEntity.metadata.disc || {}),
+            ...(label ? { llmLabel: label } : {}),
+            sourceQuestionId: leadershipQuestion.id,
+            model,
+            createdAt: new Date().toISOString()
+          };
+        }
+      }
+
+      // Вопрос про серьёзное препятствие
+      const obstacleQuestion = survey.questions.find(q =>
+        (q.type === 'text' || q.type === 'textarea') &&
+        typeof q.title === 'string' &&
+        (
+          q.title.includes('серьёзным препятствием') ||
+          q.title.includes('серьезным препятствием') ||
+          q.title.includes('препятствием в работе')
+        )
+      );
+      if (obstacleQuestion) {
+        const obstacleAnswer = resultEntity.getAnswer(obstacleQuestion.id);
+        if (obstacleAnswer && typeof obstacleAnswer.value === 'string' && obstacleAnswer.value.trim().length > 0) {
+          const { label, model } = await inferDiscLabelForObstacle(obstacleAnswer.value);
+          if (!resultEntity.metadata) resultEntity.metadata = {};
+          resultEntity.metadata.disc = {
+            ...(resultEntity.metadata.disc || {}),
+            byQuestionId: {
+              ...(resultEntity.metadata.disc?.byQuestionId || {}),
+              [obstacleQuestion.id]: {
+                ...(label ? { llmLabel: label } : {}),
+                model,
+                createdAt: new Date().toISOString()
+              }
+            }
+          };
+        }
+      }
+
+      // Вопрос про трудного коллегу/клиента
+      const difficultQuestion = survey.questions.find(q =>
+        (q.type === 'text' || q.type === 'textarea') &&
+        typeof q.title === 'string' &&
+        (
+          q.title.includes('трудным коллегой') ||
+          q.title.includes('трудным клиентом') ||
+          q.title.includes('как вы строили взаимодействие')
+        )
+      );
+      if (difficultQuestion) {
+        const difficultAnswer = resultEntity.getAnswer(difficultQuestion.id);
+        if (difficultAnswer && typeof difficultAnswer.value === 'string' && difficultAnswer.value.trim().length > 0) {
+          const { label, model } = await inferDiscLabelForDifficultInteraction(difficultAnswer.value);
+          if (!resultEntity.metadata) resultEntity.metadata = {};
+          resultEntity.metadata.disc = {
+            ...(resultEntity.metadata.disc || {}),
+            byQuestionId: {
+              ...(resultEntity.metadata.disc?.byQuestionId || {}),
+              [difficultQuestion.id]: {
+                ...(label ? { llmLabel: label } : {}),
+                model,
+                createdAt: new Date().toISOString()
+              }
+            }
+          };
+        }
+      }
+    } catch (llmError) {
+      console.error('LLM DISC interpretation failed (complete):', llmError);
+    }
+
     // Сохраняем результат
     await this.surveyRepository.updateResult(resultId, {
       status: resultEntity.status,
-      completedAt: resultEntity.completedAt || undefined
+      completedAt: resultEntity.completedAt || undefined,
+      metadata: resultEntity.metadata || undefined
     });
 
     return {

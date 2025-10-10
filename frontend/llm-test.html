@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Тестирование - O2O</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <link rel="stylesheet" href="shared/styles/base.css">
+    <style>
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .response-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .error-box {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .success-box {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="flex min-h-screen">
+        <!-- Sidebar Container -->
+        <div id="sidebar-container"></div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 ml-64 p-8">
+            <div class="glass-card p-8 max-w-4xl mx-auto">
+                <div class="mb-6 flex items-center">
+                    <i data-feather="cpu" class="mr-3" size="32"></i>
+                    <div>
+                        <h1 class="text-3xl font-bold">LLM Тестирование</h1>
+                        <p class="text-secondary text-sm mt-1">Проверка интеграции с Bothub</p>
+                    </div>
+                </div>
+
+                <!-- Форма тестирования -->
+                <form id="llm-test-form" class="space-y-6">
+                    <!-- Системный промпт -->
+                    <div>
+                        <label for="system-prompt" class="block text-sm font-medium mb-2">
+                            <i data-feather="settings" size="16" class="inline mr-1"></i>
+                            Системный промпт (необязательно)
+                        </label>
+                        <textarea 
+                            id="system-prompt" 
+                            name="system"
+                            rows="3" 
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-accent focus:outline-none transition"
+                            placeholder="Ты помощник HR для проведения one-to-one встреч..."
+                        ></textarea>
+                    </div>
+
+                    <!-- Контекст -->
+                    <div>
+                        <label for="context" class="block text-sm font-medium mb-2">
+                            <i data-feather="align-left" size="16" class="inline mr-1"></i>
+                            Контекст (необязательно)
+                        </label>
+                        <textarea 
+                            id="context" 
+                            name="context"
+                            rows="3" 
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-accent focus:outline-none transition"
+                            placeholder="Менеджер: Анна, Сотрудник: Иван, Команда: Core..."
+                        ></textarea>
+                    </div>
+
+                    <!-- Пользовательский промпт -->
+                    <div>
+                        <label for="user-prompt" class="block text-sm font-medium mb-2">
+                            <i data-feather="message-square" size="16" class="inline mr-1"></i>
+                            Промпт <span class="text-red-400">*</span>
+                        </label>
+                        <textarea 
+                            id="user-prompt" 
+                            name="prompt"
+                            rows="4" 
+                            required
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-accent focus:outline-none transition"
+                            placeholder="Сформируй 5 вопросов для следующей встречи one-to-one..."
+                        ></textarea>
+                    </div>
+
+                    <!-- Выбор модели -->
+                    <div>
+                        <label for="model" class="block text-sm font-medium mb-2">
+                            <i data-feather="zap" size="16" class="inline mr-1"></i>
+                            Модель
+                        </label>
+                        <select 
+                            id="model" 
+                            name="model"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-accent focus:outline-none transition cursor-pointer"
+                        >
+                            <option value="gpt-4o-mini">gpt-4o-mini (рекомендуется)</option>
+                            <option value="gpt-4o">gpt-4o</option>
+                            <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                            <option value="claude-3-5-sonnet-20241022">claude-3-5-sonnet-20241022</option>
+                            <option value="claude-3-5-haiku-20241022">claude-3-5-haiku-20241022</option>
+                        </select>
+                    </div>
+
+                    <!-- Кнопка отправки -->
+                    <div class="flex gap-4">
+                        <button 
+                            type="submit" 
+                            id="submit-btn"
+                            class="flex-1 bg-accent hover:bg-accent-hover text-white px-6 py-3 rounded-lg font-medium transition flex items-center justify-center gap-2"
+                        >
+                            <i data-feather="send" size="18"></i>
+                            <span>Отправить запрос</span>
+                        </button>
+                        <button 
+                            type="button" 
+                            id="clear-btn"
+                            class="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg font-medium transition flex items-center gap-2"
+                        >
+                            <i data-feather="x" size="18"></i>
+                            <span>Очистить</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Результат -->
+                <div id="result-container" class="hidden mt-8">
+                    <h3 class="text-xl font-semibold mb-3 flex items-center gap-2">
+                        <i data-feather="corner-down-right" size="20"></i>
+                        Результат
+                    </h3>
+                    <div id="result-content" class="response-box"></div>
+                    
+                    <!-- Метаданные -->
+                    <div id="result-meta" class="mt-4 text-sm text-secondary space-y-1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared/ui/sidebar.js"></script>
+    <script>
+        // Инициализация компонентов
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = new O2OSidebar('llm');
+            sidebar.mount('sidebar-container');
+            
+            // Инициализация иконок
+            feather.replace();
+
+            // Обработчик формы
+            const form = document.getElementById('llm-test-form');
+            const submitBtn = document.getElementById('submit-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const resultContainer = document.getElementById('result-container');
+            const resultContent = document.getElementById('result-content');
+            const resultMeta = document.getElementById('result-meta');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                // Собираем данные формы
+                const formData = new FormData(form);
+                const data = {
+                    system: formData.get('system') || undefined,
+                    context: formData.get('context') || undefined,
+                    prompt: formData.get('prompt'),
+                    model: formData.get('model')
+                };
+
+                // Показываем индикатор загрузки
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `
+                    <div class="loading-spinner"></div>
+                    <span>Отправка...</span>
+                `;
+
+                try {
+                    const response = await fetch('http://localhost:3001/api/llm/test', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.json();
+
+                    // Показываем результат
+                    resultContainer.classList.remove('hidden');
+
+                    if (result.success) {
+                        resultContent.className = 'response-box success-box';
+                        resultContent.textContent = result.result.text;
+
+                        resultMeta.innerHTML = `
+                            <div class="flex flex-wrap gap-4">
+                                <div><strong>Модель:</strong> ${result.result.model}</div>
+                                <div><strong>Причина завершения:</strong> ${result.result.finishReason || 'N/A'}</div>
+                            </div>
+                        `;
+                    } else {
+                        resultContent.className = 'response-box error-box';
+                        resultContent.textContent = `Ошибка: ${result.error || 'Неизвестная ошибка'}`;
+                        resultMeta.innerHTML = '';
+                    }
+
+                    // Прокручиваем к результату
+                    resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                } catch (error) {
+                    console.error('Ошибка запроса:', error);
+                    resultContainer.classList.remove('hidden');
+                    resultContent.className = 'response-box error-box';
+                    resultContent.textContent = `Ошибка сети: ${error.message}`;
+                    resultMeta.innerHTML = '';
+                } finally {
+                    // Восстанавливаем кнопку
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `
+                        <i data-feather="send" size="18"></i>
+                        <span>Отправить запрос</span>
+                    `;
+                    feather.replace();
+                }
+            });
+
+            // Кнопка очистки
+            clearBtn.addEventListener('click', () => {
+                form.reset();
+                resultContainer.classList.add('hidden');
+            });
+        });
+    </script>
+</body>
+</html>
+

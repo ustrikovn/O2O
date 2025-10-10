@@ -202,6 +202,17 @@ export interface SurveyResult {
     userAgent?: string | undefined;
     ip?: string | undefined;
     duration?: number | undefined; // общее время прохождения в секундах
+    disc?: {
+      llmLabel?: 'D' | 'I' | 'S' | 'C';
+      sourceQuestionId?: string | undefined;
+      model?: string | undefined;
+      createdAt?: string | undefined; // ISO timestamp
+      byQuestionId?: Record<string, {
+        llmLabel?: 'D' | 'I' | 'S' | 'C';
+        model?: string | undefined;
+        createdAt?: string | undefined;
+      } | undefined> | undefined;
+    } | undefined;
   } | undefined;
 }
 

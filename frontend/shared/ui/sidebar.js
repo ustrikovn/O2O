@@ -34,6 +34,10 @@ class O2OSidebar {
                     <i data-feather="clipboard" class="mr-3"></i>
                     <span>Опросы</span>
                 </a>
+            <a href="llm-test.html" class="flex items-center p-3 rounded-lg sidebar-item ${this.currentPage === 'llm' ? 'active' : ''}">
+              <i data-feather="cpu" class="mr-3"></i>
+              <span>LLM</span>
+            </a>
           </div>
         </nav>
         

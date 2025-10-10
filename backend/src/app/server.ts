@@ -18,6 +18,7 @@ import { employeeRoutes } from '@/features/employees/index.js';
 import { meetingsRoutes } from '@/features/meetings/index.js';
 import { surveyRoutes } from '@/features/surveys/index.js';
 import agreementRoutes from '@/features/agreements/api/routes.js';
+import { TextGenerationService } from '@/shared/llm/textService.js';
 
 // Настройка для ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -79,6 +80,18 @@ app.use('/api', agreementRoutes); // Новые API для договоренн�
 app.use('/api/employees', employeeRoutes);
 app.use('/api/meetings', meetingsRoutes);
 app.use('/api/surveys', surveyRoutes);
+
+// Пример тестового маршрута для проверки интеграции Bothub
+app.post('/api/llm/test', async (req, res) => {
+  try {
+    const { prompt, context, system, model } = req.body || {};
+    const service = new TextGenerationService();
+    const result = await service.generateText({ prompt: prompt || 'Скажи привет!', context, system, model });
+    res.json({ success: true, result });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error?.message || 'LLM error' });
+  }
+});
 
 // Базовый маршрут для проверки здоровья сервиса
 app.get('/api/health', (req, res) => {

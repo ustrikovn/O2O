@@ -255,6 +255,22 @@ router.get('/results/:resultId', async (req, res, next) => {
 });
 
 /**
+ * GET /api/surveys/results/:resultId/disc
+ * Получить LLM-интерпретацию DISC по результату опроса
+ */
+router.get('/results/:resultId/disc', async (req, res, next) => {
+  try {
+    const result = await surveyService.getSurveyResult(req.params.resultId);
+    res.json({
+      success: true,
+      data: result.metadata?.disc || null
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * POST /api/surveys/results/:resultId/resume
  * Восстановить незавершенный опрос
  */
