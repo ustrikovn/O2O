@@ -9,6 +9,7 @@ export interface LLMConfig {
   requestTimeoutMs: number;
   maxRetries: number;
   defaultModel?: string | undefined;
+  discModel?: string | undefined;
 }
 
 /**
@@ -30,6 +31,7 @@ export function getLLMConfig(): LLMConfig {
   const requestTimeoutMs = Number(process.env.LLM_REQUEST_TIMEOUT_MS) || 60000; // 60s
   const maxRetries = Number(process.env.LLM_MAX_RETRIES) || 2;
   const defaultModel = process.env.LLM_DEFAULT_MODEL?.trim();
+  const discModel = process.env.LLM_DISC_MODEL?.trim();
 
   if (!bothubApiKey) {
     throw new Error('BOTHUB_API_KEY не задан. Укажите его в переменных окружения.');
@@ -50,7 +52,8 @@ export function getLLMConfig(): LLMConfig {
     chatCompletionsPath,
     requestTimeoutMs,
     maxRetries,
-    defaultModel
+    defaultModel,
+    discModel
   };
 }
 

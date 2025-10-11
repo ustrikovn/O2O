@@ -1486,6 +1486,8 @@
             feather.replace();
         }
 
+
+
         // Функция создания карточки опроса
         function createSurveyCard(survey) {
             const result = survey.employeeResult;
@@ -1556,6 +1558,30 @@
                     // Для открытых вопросов (LLM): llmLabel (строка)
                     else if (discData.llmLabel) {
                         interpretedTrait = discData.llmLabel;
+                    }
+                }
+                // Если metadata отсутствует, берём буквы напрямую из значения ответа (без вычислений/маппинга)
+                if (!interpretedTrait && question && (question.type === 'single-choice' || question.type === 'multiple-choice')) {
+                    const valuesArray = Array.isArray(a.value) ? a.value : [a.value];
+                    const letters = [];
+                    for (const v of valuesArray) {
+                        const s = String(v ?? '').trim().toUpperCase();
+                        if (!s) continue;
+                        if (s.length === 1 && (s === 'D' || s === 'I' || s === 'S' || s === 'C')) {
+                            if (!letters.includes(s)) letters.push(s);
+                            continue;
+                        }
+                        const extracted = s.replace(/[^DISC]/g, '').split('');
+                        for (const ch of extracted) {
+                            if (ch && (ch === 'D' || ch === 'I' || ch === 'S' || ch === 'C') && !letters.includes(ch)) {
+                                letters.push(ch);
+                            }
+                        }
+                    }
+                    if (letters.length === 1) {
+                        interpretedTrait = letters[0];
+                    } else if (letters.length > 1) {
+                        interpretedTrait = letters;
                     }
                 }
                 return { question: questionTitle, answer: answerText, trait: interpretedTrait };

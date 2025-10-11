@@ -14,6 +14,7 @@
     "db:migrate:meetings": "tsx src/shared/database/migrate-meetings.ts",
     "db:migrate:meetings-simple": "tsx src/shared/database/migrate-meetings-simplified.ts",
     "db:migrate:meetings-json": "tsx src/shared/database/migrate-meetings-full-json.ts",
+    "db:migrate:disc-tags": "tsx src/shared/database/migrate-add-disc-tags.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },

@@ -612,12 +612,16 @@
             updateBackButton();
             
             if (question.type === 'single-choice') {
-                question.options.forEach(option => {
+                // Отладка: показываем что пришло от сервера
+                console.log(`📋 Опции вопроса ${question.id}:`, question.options);
+                
+                question.options.forEach((option, idx) => {
+                    const optionId = `option-${question.id}-${idx}`;
                     const optionDiv = document.createElement('div');
                     optionDiv.className = 'option-card';
                     optionDiv.innerHTML = `
-                        <label for="option-${option.value}" class="option-label">
-                            <input type="radio" id="option-${option.value}" name="question-answer" value="${option.value}" class="option-radio">
+                        <label for="${optionId}" class="option-label">
+                            <input type="radio" id="${optionId}" name="question-answer" value="${option.value}" class="option-radio">
                             <div class="option-content">
                                 <div class="option-check"></div>
                                 <span class="option-text">${option.label}</span>
@@ -629,8 +633,9 @@
                 
                 // Восстанавливаем предыдущий ответ если это возврат назад
                 if (restorePreviousAnswer && answers[question.id]) {
-                    const previousAnswer = answers[question.id];
-                    const radioToSelect = document.querySelector(`input[name="question-answer"][value="${previousAnswer}"]`);
+                    const previousAnswer = String(answers[question.id]).toUpperCase();
+                    const radioToSelect = Array.from(document.querySelectorAll(`input[name="question-answer"]`))
+                        .find(inp => String(inp.value).toUpperCase() === previousAnswer);
                     if (radioToSelect) {
                         radioToSelect.checked = true;
                         radioToSelect.closest('.option-card').classList.add('selected');
@@ -786,6 +791,13 @@
             answers[currentQuestion.id] = answer;
 
             try {
+                // Отладка: выводим что отправляем
+                console.log('📤 Отправляем ответ:', {
+                    questionId: currentQuestion.id,
+                    value: answer,
+                    selectedOption: document.querySelector('input[name="question-answer"]:checked')?.value
+                });
+                
                 // Отправляем ответ на сервер
                 const response = await fetch('http://localhost:3001/api/surveys/answer', {
                     method: 'POST',

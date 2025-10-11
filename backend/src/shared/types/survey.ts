@@ -87,6 +87,7 @@ export interface BaseQuestion {
   required?: boolean;
   section?: string; // ID секции, к которой относится вопрос
   hints?: string[]; // Подсказки/уточняющие вопросы для помощи в ответе
+  tags?: string[]; // Теги для маркировки вопросов (например, 'disc:leadership', 'disc:obstacle', 'disc:difficult')
   nextQuestion?: string; // По умолчанию следующий вопрос
   conditions?: ConditionalLogic[]; // Условная логика
   validation?: ValidationRules;
@@ -207,10 +208,13 @@ export interface SurveyResult {
       sourceQuestionId?: string | undefined;
       model?: string | undefined;
       createdAt?: string | undefined; // ISO timestamp
+      rawText?: string | undefined; // Сырой ответ LLM для отладки/аудита
       byQuestionId?: Record<string, {
+        traits?: Array<'D' | 'I' | 'S' | 'C'>;
         llmLabel?: 'D' | 'I' | 'S' | 'C';
         model?: string | undefined;
         createdAt?: string | undefined;
+        rawText?: string | undefined; // Сырой ответ LLM для отладки/аудита
       } | undefined> | undefined;
     } | undefined;
   } | undefined;
