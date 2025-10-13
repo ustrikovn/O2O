@@ -213,24 +213,29 @@ export class SurveyService {
     if (isCompleted) {
       // Завершаем опрос
       resultEntity.complete();
-    }
-
-    // Если опрос завершен — интерпретируем открытые ответы DISC через LLM (общая функция)
-    if (isCompleted) {
-      try {
-        await runDiscLLMForResult({ survey, resultEntity });
-      } catch (llmError) {
-        console.error('LLM DISC interpretation failed:', llmError);
+      
+      // Устанавливаем флаг, что LLM обработка еще не началась
+      if (!resultEntity.metadata) {
+        resultEntity.metadata = {};
       }
+      resultEntity.metadata.llmProcessing = 'pending';
     }
 
-    // Сохраняем обновленный результат (включая возможные metadata)
+    // Сохраняем обновленный результат СРАЗУ (без ожидания LLM)
     await this.surveyRepository.updateResult(data.resultId, {
       answers: resultEntity.answers,
       status: resultEntity.status,
       completedAt: resultEntity.completedAt || undefined,
       metadata: resultEntity.metadata || undefined
     });
+
+    // Если опрос завершен — запускаем LLM обработку АСИНХРОННО (не блокируем ответ клиенту)
+    if (isCompleted) {
+      // Запускаем обработку в фоне без await
+      this.processLLMInBackground(data.resultId, survey, resultEntity).catch(error => {
+        console.error('Background LLM processing failed:', error);
+      });
+    }
 
     const response: NextQuestionResponse = {
       question: nextQuestion || undefined,
@@ -239,6 +244,37 @@ export class SurveyService {
     };
 
     return response;
+  }
+
+  /**
+   * Фоновая обработка LLM для результата опроса
+   */
+  private async processLLMInBackground(resultId: string, survey: Survey, resultEntity: SurveyResultEntity): Promise<void> {
+    try {
+      console.log(`🤖 Начинаем фоновую LLM обработку для результата ${resultId}`);
+      
+      // Обновляем статус на "в процессе"
+      await this.surveyRepository.updateResult(resultId, {
+        metadata: { ...resultEntity.metadata, llmProcessing: 'in_progress' }
+      });
+      
+      // Выполняем LLM обработку
+      await runDiscLLMForResult({ survey, resultEntity });
+      
+      // Обновляем результат с данными LLM и статусом "завершено"
+      await this.surveyRepository.updateResult(resultId, {
+        metadata: { ...resultEntity.metadata, llmProcessing: 'completed' }
+      });
+      
+      console.log(`✅ Фоновая LLM обработка завершена для результата ${resultId}`);
+    } catch (error) {
+      console.error(`❌ Ошибка фоновой LLM обработки для результата ${resultId}:`, error);
+      
+      // Обновляем статус на "ошибка"
+      await this.surveyRepository.updateResult(resultId, {
+        metadata: { ...resultEntity.metadata, llmProcessing: 'failed', llmError: String(error) }
+      });
+    }
   }
 
   /**

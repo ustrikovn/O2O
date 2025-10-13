@@ -203,6 +203,8 @@ export interface SurveyResult {
     userAgent?: string | undefined;
     ip?: string | undefined;
     duration?: number | undefined; // общее время прохождения в секундах
+    llmProcessing?: 'pending' | 'in_progress' | 'completed' | 'failed' | undefined; // Статус LLM обработки
+    llmError?: string | undefined; // Ошибка LLM обработки (если была)
     disc?: {
       llmLabel?: 'D' | 'I' | 'S' | 'C';
       sourceQuestionId?: string | undefined;

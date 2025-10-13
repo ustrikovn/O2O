@@ -240,11 +240,26 @@
                 
                 <!-- Результат опроса -->
                 <div id="survey-completion" class="hidden text-center">
-                    <div class="mb-6">
+                    <!-- Состояние: обработка LLM -->
+                    <div id="llm-processing-state" class="mb-6">
+                        <!-- Анимированный лоадер -->
+                        <div class="mx-auto mb-4 relative" style="width: 64px; height: 64px;">
+                            <svg class="animate-spin" style="width: 64px; height: 64px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Опрос завершен!</h3>
+                        <p class="text-gray-600">Нейросеть обрабатывает ответы на открытые вопросы</p>
+                    </div>
+                    
+                    <!-- Состояние: обработка завершена -->
+                    <div id="llm-completed-state" class="hidden mb-6">
                         <i data-feather="check-circle" class="mx-auto text-green-500 mb-4" style="width: 64px; height: 64px;"></i>
                         <h3 class="text-2xl font-bold text-gray-800 mb-2">Опрос завершен!</h3>
-                        <p class="text-gray-600">Спасибо за участие. Ваши ответы сохранены.</p>
+                        <p class="text-gray-600">Результаты сохранены в профиле сотрудника</p>
                     </div>
+                    
                     <div class="space-y-3">
                         <button onclick="viewSurveyResults()" class="glass-button px-6 py-3 rounded-lg flex items-center mx-auto">
                             <i data-feather="eye" class="mr-2"></i>
@@ -878,7 +893,80 @@
             document.getElementById('question-container').classList.add('hidden');
             document.getElementById('survey-completion').classList.remove('hidden');
             updateProgress({ percentage: 100 });
+            
+            // Показываем состояние обработки LLM
+            document.getElementById('llm-processing-state').classList.remove('hidden');
+            document.getElementById('llm-completed-state').classList.add('hidden');
+            
             feather.replace();
+            
+            // Запускаем проверку статуса LLM обработки
+            checkLLMProcessingStatus();
+        }
+        
+        async function checkLLMProcessingStatus() {
+            if (!currentSurveyResult || !currentSurveyResult.id) {
+                console.warn('Нет ID результата опроса для проверки статуса LLM');
+                return;
+            }
+            
+            const maxAttempts = 60; // Максимум 60 попыток (30 секунд при интервале 500мс)
+            let attempts = 0;
+            
+            const checkStatus = async () => {
+                try {
+                    attempts++;
+                    
+                    // Получаем актуальный результат опроса
+                    const response = await fetch(`http://localhost:3001/api/surveys/results/${currentSurveyResult.id}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    const result = data.data;
+                    
+                    // Проверяем статус LLM обработки
+                    const llmStatus = result.metadata?.llmProcessing;
+                    
+                    console.log(`🔍 Проверка статуса LLM (попытка ${attempts}): ${llmStatus}`);
+                    
+                    if (llmStatus === 'completed' || llmStatus === 'failed') {
+                        // Обработка завершена (успешно или с ошибкой)
+                        document.getElementById('llm-processing-state').classList.add('hidden');
+                        document.getElementById('llm-completed-state').classList.remove('hidden');
+                        feather.replace();
+                        
+                        if (llmStatus === 'failed') {
+                            console.error('LLM обработка завершилась с ошибкой:', result.metadata?.llmError);
+                        }
+                    } else if (attempts < maxAttempts) {
+                        // Продолжаем проверку
+                        setTimeout(checkStatus, 500); // Проверяем каждые 500мс
+                    } else {
+                        // Превышено максимальное количество попыток
+                        console.warn('Превышено время ожидания LLM обработки');
+                        document.getElementById('llm-processing-state').classList.add('hidden');
+                        document.getElementById('llm-completed-state').classList.remove('hidden');
+                        feather.replace();
+                    }
+                } catch (error) {
+                    console.error('Ошибка при проверке статуса LLM:', error);
+                    
+                    if (attempts < maxAttempts) {
+                        // Повторяем попытку
+                        setTimeout(checkStatus, 500);
+                    } else {
+                        // Показываем финальное состояние даже при ошибке
+                        document.getElementById('llm-processing-state').classList.add('hidden');
+                        document.getElementById('llm-completed-state').classList.remove('hidden');
+                        feather.replace();
+                    }
+                }
+            };
+            
+            // Запускаем первую проверку
+            checkStatus();
         }
 
         function updateProgress(progress) {
