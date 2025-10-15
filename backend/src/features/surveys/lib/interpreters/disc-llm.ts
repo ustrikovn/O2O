@@ -90,4 +90,41 @@ export async function inferDiscLabelForDifficultInteraction(answerText: string, 
   return interpretDiscAnswer(answerText, 'difficult', modelOverride);
 }
 
+// Генерация развёрнутого описания DISC-профиля на основе контекста и правил интерпретации
+export async function generateDiscDescription(params: {
+  scores: { D: number; I: number; S: number; C: number; total: number } | undefined;
+  summaryText: string | undefined;
+  profileHint: string | undefined;
+  answersContext: string; // Полный контекст: вопросы, ответы, присвоенные буквы, правила интерпретации
+  employeeTeam?: string | undefined;
+  employeeRole?: string | undefined;
+  modelOverride?: string | undefined;
+}): Promise<{ text: string; model: string }> {
+  const tg = new TextGenerationService();
+  const cfg = getLLMConfig();
+  const model = cfg.discModel || cfg.defaultModel || 'gpt-4o';
+
+  const system = 'Ты - профессиональный hr bp, у тебя профильное образование, дополненное курсами повышения квалификации в сфере психологии. С учетом контекста, сформулируй словестную характеристику сотрудника.';
+  const prompt = 'Характеристика сотрудника должна быть понятной, профессиональной, должна позволять руководителю понять стиль мышления и работы сотрудника, должна дать понять руководителю как лучше выстраивать взаимодействие с сотрудником, какие задачи давать сотруднику, а какие не давать. Что движет сотрудником, что его мотивирует, что демотивирует.';
+
+  const contextParts: string[] = [];
+  if (params.employeeTeam) contextParts.push(`Команда: ${params.employeeTeam}`);
+  if (params.employeeRole) contextParts.push(`Роль: ${params.employeeRole}`);
+  if (params.scores) contextParts.push(`Баллы DISC: D=${params.scores.D}, I=${params.scores.I}, S=${params.scores.S}, C=${params.scores.C} (итого=${params.scores.total})`);
+  if (params.summaryText) contextParts.push(`Сухая интерпретация: ${params.summaryText}`);
+  if (params.profileHint) contextParts.push(`Профиль: ${params.profileHint}`);
+  contextParts.push('Ответы и присвоенные буквы:\n' + params.answersContext);
+
+  const { text, model: usedModel } = await tg.generateText({
+    system,
+    prompt,
+    context: contextParts.join('\n'),
+    model: params.modelOverride || model,
+    maxTokens: 600,
+    temperature: 0.5
+  });
+
+  return { text, model: usedModel };
+}
+
 

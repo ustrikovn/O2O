@@ -1668,15 +1668,43 @@
                                 <i data-feather="chevron-down" class="survey-section-toggle" id="toggle-${survey.id}-interpretation"></i>
                             </div>
                             <div class="survey-section-content" id="content-${survey.id}-interpretation">
-                                ${interpretation ? `
-                                    <div class="survey-interpretation">
-                                        ${interpretation}
-                                    </div>
-                                ` : `
-                                    <div class="text-sm text-gray-500 text-center py-4">
+                                ${(() => {
+                                  const disc = result?.metadata?.disc || null;
+                                  const summaryText = disc?.summaryText || null;
+                                  const llmDescription = disc?.llmDescription || null;
+                                  const scores = disc?.scores || null;
+                                  const profileHint = disc?.profileHint || null;
+                                  if (!summaryText && !llmDescription) {
+                                    return `
+                                      <div class="text-sm text-gray-500 text-center py-4">
                                         Интерпретация результатов пока отсутствует
+                                      </div>
+                                    `;
+                                  }
+                                  const scoreBadges = scores ? `
+                                    <div class="flex flex-wrap gap-2 mb-3">
+                                      ${['D','I','S','C'].map(k => `
+                                        <span class="px-2 py-1 text-xs rounded border border-blue-300 bg-blue-50 text-blue-700">${k}: ${scores[k] || 0}</span>
+                                      `).join('')}
                                     </div>
-                                `}
+                                  ` : '';
+                                  const profileLine = profileHint ? `<div class="text-sm text-gray-600 mb-2">${profileHint}</div>` : '';
+                                  const dryBlock = summaryText ? `
+                                    <div class="survey-interpretation mb-3">
+                                      <div class="font-semibold mb-1">Сухая интерпретация</div>
+                                      ${scoreBadges}
+                                      <div>${summaryText}</div>
+                                    </div>
+                                  ` : '';
+                                  const llmBlock = llmDescription ? `
+                                    <div class="survey-interpretation">
+                                      <div class="font-semibold mb-1">Описание от нейросети</div>
+                                      ${profileLine}
+                                      <div>${llmDescription}</div>
+                                    </div>
+                                  ` : '';
+                                  return dryBlock + llmBlock;
+                                })()}
                             </div>
                         </div>
                     ` : ''}

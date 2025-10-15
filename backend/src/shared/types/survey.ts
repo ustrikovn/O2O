@@ -218,6 +218,20 @@ export interface SurveyResult {
         createdAt?: string | undefined;
         rawText?: string | undefined; // Сырой ответ LLM для отладки/аудита
       } | undefined> | undefined;
+      // Суммарная аналитика по DISC
+      scores?: {
+        D: number;
+        I: number;
+        S: number;
+        C: number;
+        total: number;
+      } | undefined;
+      // Краткая сухая интерпретация по правилам (для UI)
+      summaryText?: string | undefined;
+      // Подсказка по профилю (например: "Классический D" или "Смешанный D/I")
+      profileHint?: string | undefined;
+      // Развёрнутое текстовое описание от LLM
+      llmDescription?: string | undefined;
     } | undefined;
   } | undefined;
 }
