@@ -1615,7 +1615,20 @@
                 const question = questionById.get(a.questionId);
                 const questionTitle = question && question.title ? question.title : a.questionId;
                 let answerText = '';
-                if (question && (question.type === 'single-choice' || question.type === 'multiple-choice')) {
+                if (question && question.type === 'rating') {
+                    // Маппинг чисел 1–5 в текстовые значения
+                    const valueNum = Number(Array.isArray(a.value) ? a.value[0] : a.value);
+                    const ratingTextMap = {
+                        1: 'Не согласен',
+                        2: 'Скорее не согласен',
+                        3: 'Нейтрально',
+                        4: 'Скорее согласен',
+                        5: 'Согласен'
+                    };
+                    answerText = ratingTextMap[valueNum] || String(valueNum);
+                    // Используем правый квадрат (traitHtml) для отображения числа
+                    var interpretedTrait = String(valueNum);
+                } else if (question && (question.type === 'single-choice' || question.type === 'multiple-choice')) {
                     const valuesArray = Array.isArray(a.value) ? a.value : [a.value];
                     const labels = valuesArray.map(v => {
                         const opt = (question.options || []).find(o => o.value === v);
@@ -1627,7 +1640,7 @@
                 }
                 // Достаём интерпретированные DISC-буквы из metadata
                 const discData = discByQuestion[a.questionId];
-                let interpretedTrait = null;
+                var interpretedTrait = typeof interpretedTrait !== 'undefined' ? interpretedTrait : null;
                 if (discData) {
                     // Для закрытых вопросов: массив traits
                     if (discData.traits && Array.isArray(discData.traits)) {
@@ -1694,36 +1707,30 @@
                             </div>
                             <div class="survey-section-content" id="content-${survey.id}-results">
                                 ${displayAnswers.length > 0 ? displayAnswers.map(item => {
-                                    // Рендерим DISC-буквы
+                                    // Рендерим правый индикатор: для rating показываем число, для DISC — буквы
                                     let traitHtml = '';
                                     if (item.trait) {
                                         if (Array.isArray(item.trait)) {
-                                            // Для массива: каждая буква в своём квадратике с + между ними
                                             traitHtml = `
                                                 <div style="flex-shrink: 0; display: flex; align-items: center; gap: 8px;">
                                                     ${item.trait.map((letter, idx) => `
-                                                        ${idx > 0 ? '<span style="color: #9ca3af; font-weight: 600; font-size: 18px;">+</span>' : ''}
-                                                        <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; color: #2563eb;">
-                                                            ${letter}
-                                                        </div>
+                                                        ${idx > 0 ? '<span style=\"color: #9ca3af; font-weight: 600; font-size: 18px;\">+</span>' : ''}
+                                                        <div style=\"background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; color: #2563eb;\">${letter}</div>
                                                     `).join('')}
                                                 </div>
                                             `;
                                         } else {
-                                            // Для строки (LLM): одна буква
                                             traitHtml = `
-                                                <div style="flex-shrink: 0; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; color: #2563eb;">
-                                                    ${item.trait}
-                                                </div>
+                                                <div style=\"flex-shrink: 0; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; color: #2563eb;\">${item.trait}</div>
                                             `;
                                         }
                                     }
-                                    
+
                                     return `
-                                        <div class="survey-answer-item" style="display: flex; align-items: start; gap: 12px;">
-                                            <div style="flex: 1;">
-                                                <div class="survey-question">${item.question}</div>
-                                                <div class="survey-answer">${item.answer}</div>
+                                        <div class=\"survey-answer-item\" style=\"display: flex; align-items: start; gap: 12px;\">
+                                            <div style=\"flex: 1;\">
+                                                <div class=\"survey-question\">${item.question}</div>
+                                                <div class=\"survey-answer\">${item.answer}</div>
                                             </div>
                                             ${traitHtml}
                                         </div>
@@ -1748,11 +1755,33 @@
                             <div class="survey-section-content" id="content-${survey.id}-interpretation">
                                 ${(() => {
                                   const disc = result?.metadata?.disc || null;
+                                  const bigFive = result?.metadata?.bigFive || null;
                                   const summaryText = disc?.summaryText || null;
                                   const llmDescription = disc?.llmDescription || null;
                                   const scores = disc?.scores || null;
                                   const profileHint = disc?.profileHint || null;
-                                  if (!summaryText && !llmDescription) {
+                                  const bigFiveBlock = bigFive && (bigFive.summaryText || bigFive.averages) ? `
+                                    <div class="survey-interpretation mb-3">
+                                      <div class="font-semibold mb-1">Сухая интерпретация (Big Five)</div>
+                                      ${bigFive.averages ? `
+                                      <div class="flex flex-wrap gap-2 mb-2">
+                                        ${['Открытость','Добросовестность','Экстраверсия','Доброжелательность','Нейротизм'].map((label, idx) => {
+                                          const keys = ['openness','conscientiousness','extraversion','agreeableness','neuroticism'];
+                                          const k = keys[idx];
+                                          const v = (bigFive.averages && bigFive.averages[k]) ? bigFive.averages[k].toFixed(1) : '-';
+                                          return `<span class=\"px-2 py-1 text-xs rounded border border-blue-300 bg-blue-50 text-blue-700\">${label}: ${v}</span>`;
+                                        }).join('')}
+                                      </div>` : ''}
+                                      ${bigFive.summaryText ? `<div>${bigFive.summaryText}</div>` : ''}
+                                    </div>
+                                  ` : '';
+                                  const bigFiveLLMBlock = bigFive && bigFive.llmDescription ? `
+                                    <div class="survey-interpretation mb-3">
+                                      <div class="font-semibold mb-1">Описание от нейросети (Big Five)</div>
+                                      <div>${(window.marked && typeof window.marked.parse === 'function') ? window.marked.parse(bigFive.llmDescription) : bigFive.llmDescription}</div>
+                                    </div>
+                                  ` : '';
+                                  if (!summaryText && !llmDescription && !bigFiveBlock) {
                                     return `
                                       <div class="text-sm text-gray-500 text-center py-4">
                                         Интерпретация результатов пока отсутствует
@@ -1781,7 +1810,7 @@
                                       <div>${(window.marked && typeof window.marked.parse === 'function') ? window.marked.parse(llmDescription) : llmDescription}</div>
                                     </div>
                                   ` : '';
-                                  return dryBlock + llmBlock;
+                                  return bigFiveBlock + bigFiveLLMBlock + dryBlock + llmBlock;
                                 })()}
                             </div>
                         </div>

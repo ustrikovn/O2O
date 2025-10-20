@@ -233,6 +233,16 @@ export interface SurveyResult {
       // Развёрнутое текстовое описание от LLM
       llmDescription?: string | undefined;
     } | undefined;
+    bigFive?: {
+      averages?: {
+        openness: number;
+        conscientiousness: number;
+        extraversion: number;
+        agreeableness: number;
+        neuroticism: number;
+      } | undefined;
+      summaryText?: string | undefined;
+    } | undefined;
   } | undefined;
 }
 

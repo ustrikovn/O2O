@@ -672,6 +672,62 @@
                         input.closest('.option-card').classList.add('selected');
                     });
                 });
+            } else if (question.type === 'rating') {
+                // Ползунок 1–5 с подписями и текущим значением
+                const step = (question.scale && question.scale.step) ? question.scale.step : 1;
+                const min = (question.scale && typeof question.scale.min === 'number') ? question.scale.min : 1;
+                const max = (question.scale && typeof question.scale.max === 'number') ? question.scale.max : 5;
+                const minLabel = (question.scale && question.scale.minLabel) ? question.scale.minLabel : 'Совершенно не согласен';
+                const maxLabel = (question.scale && question.scale.maxLabel) ? question.scale.maxLabel : 'Полностью согласен';
+
+                const defaultValue = Math.round((min + max) / 2);
+
+                const sliderDiv = document.createElement('div');
+                sliderDiv.className = 'w-full';
+                sliderDiv.innerHTML = `
+                    <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
+                        <span>${minLabel}</span>
+                        <span>${maxLabel}</span>
+                    </div>
+                    <input 
+                        id="rating-slider"
+                        type="range" 
+                        min="${min}" 
+                        max="${max}" 
+                        step="${step}"
+                        value="${defaultValue}"
+                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div class="flex justify-end mt-2 text-sm text-gray-700">
+                        <span>Текущий выбор: <span id="rating-value" class="font-medium">${defaultValue}</span></span>
+                    </div>
+                `;
+
+                optionsElement.appendChild(sliderDiv);
+
+                const slider = document.getElementById('rating-slider');
+                const valueLabel = document.getElementById('rating-value');
+                const nextBtn = document.getElementById('next-btn');
+
+                // Если возвращаемся назад — восстановим предыдущее значение и активируем кнопку
+                if (restorePreviousAnswer && typeof answers[question.id] !== 'undefined') {
+                    slider.value = String(answers[question.id]);
+                    valueLabel.textContent = String(answers[question.id]);
+                    nextBtn.disabled = false;
+                } else {
+                    // По умолчанию разрешаем переход (дефолтное значение ползунка валидно)
+                    nextBtn.disabled = false;
+                }
+
+                slider.addEventListener('input', () => {
+                    valueLabel.textContent = slider.value;
+                });
+                slider.addEventListener('change', () => {
+                    nextBtn.disabled = false;
+                });
+
+                feather.replace();
+
             } else if (question.type === 'textarea' || question.type === 'text') {
                 // Создаем поле для ввода текста
                 const textareaDiv = document.createElement('div');
@@ -790,6 +846,10 @@
                 const textAnswer = document.getElementById('text-answer');
                 if (!textAnswer || !textAnswer.value.trim()) return;
                 answer = textAnswer.value.trim();
+            } else if (currentQuestion.type === 'rating') {
+                const slider = document.getElementById('rating-slider');
+                if (!slider) return;
+                answer = Number(slider.value);
             } else {
                 // Для вопросов с выбором берем выбранный вариант
                 const selectedOption = document.querySelector('input[name="question-answer"]:checked');
@@ -845,8 +905,18 @@
                     displayQuestion(currentQuestion);
                     updateProgress(data.data.progress);
                     
-                    // Сбрасываем кнопку "Далее"
-                    document.getElementById('next-btn').disabled = true;
+                    // Сбрасываем состояние кнопки "Далее" в зависимости от типа вопроса
+                    const nextBtn = document.getElementById('next-btn');
+                    if (currentQuestion && currentQuestion.type === 'rating') {
+                        // Для rating дефолтное значение валидно — можно сразу идти далее
+                        nextBtn.disabled = false;
+                    } else if (currentQuestion && (currentQuestion.type === 'text' || currentQuestion.type === 'textarea')) {
+                        // Текстовые вопросы требуют ввода — отключаем до валидации
+                        nextBtn.disabled = true;
+                    } else {
+                        // Для single-choice (и прочих) — ждём выбор
+                        nextBtn.disabled = true;
+                    }
                 } else {
                     // Странная ситуация - нет вопроса, но опрос не завершён
                     console.warn('Неожиданное состояние: нет вопроса, но опрос не завершён');

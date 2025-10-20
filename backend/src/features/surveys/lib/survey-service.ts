@@ -16,6 +16,7 @@ import {
 } from '../../../shared/types/survey.js';
 import { SurveyEntity, SurveyResultEntity } from '../../../entities/survey/index.js';
 import { runDiscLLMForResult } from './interpreters/disc-service.js';
+import { runBigFiveSummaryForResult } from './interpreters/bigfive-service.js';
 import { SurveyRepository } from './survey-repository.js';
 import { ApiError } from '../../../shared/api/middleware.js';
 
@@ -229,7 +230,7 @@ export class SurveyService {
       metadata: resultEntity.metadata || undefined
     });
 
-    // Если опрос завершен — запускаем LLM обработку АСИНХРОННО (не блокируем ответ клиенту)
+    // Если опрос завершен — запускаем обработку (Big Five summary) и LLM DISC асинхронно
     if (isCompleted) {
       // Запускаем обработку в фоне без await
       this.processLLMInBackground(data.resultId, survey, resultEntity).catch(error => {
@@ -258,7 +259,19 @@ export class SurveyService {
         metadata: { ...resultEntity.metadata, llmProcessing: 'in_progress' }
       });
       
-      // Выполняем LLM обработку
+      // 1) Считаем Big Five summary (сразу, без ожидания сети)
+      try {
+        await runBigFiveSummaryForResult({ survey, resultEntity });
+      } catch (e) {
+        console.error('Big Five summary failed:', e);
+      }
+
+      // 2) Сохраняем промежуточные метаданные (bigFive)
+      await this.surveyRepository.updateResult(resultId, {
+        metadata: { ...resultEntity.metadata }
+      });
+
+      // 3) Выполняем LLM обработку DISC для открытых ответов
       await runDiscLLMForResult({ survey, resultEntity });
       
       // Обновляем результат с данными LLM и статусом "завершено"
