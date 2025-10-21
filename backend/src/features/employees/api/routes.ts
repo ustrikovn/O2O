@@ -247,6 +247,12 @@ router.put('/:id', validateUUID('id'), uploadPhoto, handleUploadError, validateE
       return;
     }
     
+    // Если изменилась должность, автоматически обновляем характеристику
+    if (position !== existingEmployee.position) {
+      const { autoUpdateCharacteristicAsync } = await import('@/shared/lib/characteristic-auto-update.js');
+      autoUpdateCharacteristicAsync(employeeId);
+    }
+    
     const response: ApiResponse<EmployeeResponse> = {
       success: true,
       message: 'Данные сотрудника успешно обновлены',

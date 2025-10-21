@@ -586,6 +586,61 @@
                 font-size: 12px;
             }
         }
+
+        /* Стили для характеристики сотрудника */
+        .employee-characteristic {
+            background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.15);
+            transition: all 300ms ease;
+        }
+
+        .employee-characteristic:hover {
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .characteristic-paragraph {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #374151;
+            margin-bottom: 16px;
+        }
+
+        .characteristic-paragraph:last-child {
+            margin-bottom: 0;
+        }
+
+        .characteristic-loading,
+        .characteristic-generating,
+        .characteristic-error {
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .changes-summary {
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .richness-bar {
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -661,7 +716,7 @@
                 <div class="mb-6">
                     <div class="flex border-b border-gray-200">
                         <button 
-                            class="tab-button px-6 py-3 font-medium text-sm text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300 transition-colors duration-200" 
+                            class="tab-button px-6 py-3 font-medium text-sm text-blue-600 border-b-2 border-blue-600 transition-colors duration-200" 
                             onclick="switchTab('overview')"
                             id="tab-overview"
                         >
@@ -669,7 +724,7 @@
                             Обзор
                         </button>
                         <button 
-                            class="tab-button px-6 py-3 font-medium text-sm text-blue-600 border-b-2 border-blue-600 transition-colors duration-200" 
+                            class="tab-button px-6 py-3 font-medium text-sm text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300 transition-colors duration-200" 
                             onclick="switchTab('meetings')"
                             id="tab-meetings"
                         >
@@ -700,11 +755,7 @@
                 <div id="tab-content-overview" class="tab-content hidden">
                     <!-- Характеристика -->
                     <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Характеристика</h3>
-                        <div class="text-gray-500 text-center py-8">
-                            <i data-feather="user-check" class="mx-auto mb-4"></i>
-                            <p>Раздел с характеристикой будет реализован позже</p>
-                        </div>
+                        <div id="employee-characteristic-container"></div>
                     </div>
 
                     <!-- Метрики и аналитика (заглушка) -->
@@ -832,11 +883,13 @@
     <script src="shared/ui/employee-selector-modal.js"></script>
     <script src="shared/ui/meeting-initiator.js"></script>
     <script src="shared/ui/active-meeting-modal.js"></script>
+    <script src="shared/ui/employee-characteristic.js"></script>
     <script>
         let currentEmployee = null;
         let employeeMeetings = [];
         let employeeSurveys = [];
-        let currentTab = 'meetings';
+        let currentTab = 'overview';
+        let employeeCharacteristic = null;
 
         // Инициализация компонентов
         document.addEventListener('DOMContentLoaded', function() {
@@ -844,11 +897,17 @@
             sidebar.mount('sidebar-container');
             sidebar.startActiveMeetingCheck();
             
+            // Инициализация компонента характеристики
+            employeeCharacteristic = new EmployeeCharacteristic('employee-characteristic-container', {
+                apiBaseUrl: 'http://localhost:3001/api'
+            });
+            window.employeeCharacteristic = employeeCharacteristic;
+            
             // Загрузка профиля сотрудника
             loadEmployeeProfile();
             
-            // Устанавливаем активную вкладку (по умолчанию "История встреч")
-            switchTab('meetings');
+            // Устанавливаем активную вкладку (по умолчанию "Обзор")
+            switchTab('overview');
             
             // Инициализация иконок
             feather.replace();
@@ -921,6 +980,11 @@
             // Показываем контент профиля и вкладок
             document.getElementById('profile-content').classList.remove('hidden');
             document.getElementById('tabs-container').classList.remove('hidden');
+            
+            // Загружаем характеристику сотрудника
+            if (employeeCharacteristic) {
+                employeeCharacteristic.mount(employee.id);
+            }
             
             // Загружаем данные о встречах
             if (currentTab === 'meetings') {

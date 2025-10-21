@@ -227,6 +227,13 @@ router.post('/complete', validationMiddleware(validateCompleteSurvey, 'body'), a
   try {
     const result = await surveyService.completeSurvey(req.body.resultId);
     
+    // Получаем employee_id из результата опроса для автообновления характеристики
+    const surveyResult = await surveyService.getSurveyResult(req.body.resultId);
+    if (surveyResult && surveyResult.employeeId) {
+      const { autoUpdateCharacteristicAsync } = await import('@/shared/lib/characteristic-auto-update.js');
+      autoUpdateCharacteristicAsync(surveyResult.employeeId);
+    }
+    
     res.json({
       success: true,
       data: result,

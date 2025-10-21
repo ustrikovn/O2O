@@ -18,6 +18,7 @@ import { employeeRoutes } from '@/features/employees/index.js';
 import { meetingsRoutes } from '@/features/meetings/index.js';
 import { surveyRoutes } from '@/features/surveys/index.js';
 import agreementRoutes from '@/features/agreements/api/routes.js';
+import { characteristicsRoutes } from '@/features/characteristics/index.js';
 import { TextGenerationService } from '@/shared/llm/textService.js';
 
 // Настройка для ES modules
@@ -80,6 +81,7 @@ app.use('/api', agreementRoutes); // Новые API для договоренн�
 app.use('/api/employees', employeeRoutes);
 app.use('/api/meetings', meetingsRoutes);
 app.use('/api/surveys', surveyRoutes);
+app.use('/api/characteristics', characteristicsRoutes);
 
 // Пример тестового маршрута для проверки интеграции Bothub
 app.post('/api/llm/test', async (req, res) => {
