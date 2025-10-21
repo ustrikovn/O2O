@@ -139,7 +139,7 @@ class AddEmployeeForm {
                     <button
                         type="submit"
                         id="submit-button"
-                        class="glass-button px-8 py-3 text-base font-medium text-white bg-primary hover:bg-primary-hover transition-colors"
+                        class="px-8 py-3 text-base font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     >
                         Сохранить
                     </button>

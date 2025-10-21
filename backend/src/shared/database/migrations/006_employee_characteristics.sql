@@ -88,3 +88,4 @@ COMMENT ON COLUMN employee_characteristics.metadata IS 'Метаданные: и
 COMMENT ON COLUMN employee_characteristics.created_at IS 'Дата создания первой характеристики';
 COMMENT ON COLUMN employee_characteristics.updated_at IS 'Дата последнего обновления характеристики';
 
+

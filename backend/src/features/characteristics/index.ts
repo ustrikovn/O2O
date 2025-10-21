@@ -4,3 +4,4 @@
 
 export { default as characteristicsRoutes } from './api/routes.js';
 
+

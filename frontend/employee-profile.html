@@ -641,6 +641,80 @@
         .richness-bar {
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
         }
+
+        /* Стили для выпадающего меню действий */
+        .actions-menu {
+            position: relative;
+            display: inline-block;
+            z-index: 1001;
+        }
+        /* Поднимаем карточку профиля выше вкладок, чтобы dropdown не перекрывался */
+        #employee-profile-container {
+            position: relative;
+            z-index: 20;
+        }
+
+        .actions-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 200px;
+            z-index: 1002;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+        }
+
+        .actions-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .actions-dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            color: #374151;
+            text-decoration: none;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: 0.875rem;
+        }
+
+        .actions-dropdown-item:first-child {
+            border-radius: 0.5rem 0.5rem 0 0;
+        }
+
+        .actions-dropdown-item:last-child {
+            border-radius: 0 0 0.5rem 0.5rem;
+        }
+
+        .actions-dropdown-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .actions-dropdown-item.danger:hover {
+            background-color: rgba(220, 38, 38, 0.1);
+            color: #dc2626;
+        }
+
+        .actions-dropdown-item i {
+            width: 16px;
+            height: 16px;
+            margin-right: 0.75rem;
+        }
     </style>
 </head>
 <body>
@@ -697,14 +771,31 @@
                         
                         <!-- Правая часть: Быстрые действия -->
                         <div class="flex space-x-3 flex-shrink-0 ml-6">
-                            <button class="glass-button px-4 py-2 text-sm flex items-center" onclick="startMeetingWithCurrentEmployee()">
+                            <button class="glass-button px-4 py-2 text-sm flex items-center h-10" onclick="startMeetingWithCurrentEmployee()">
                                 <i data-feather="zap" class="mr-2" style="width: 16px; height: 16px;"></i>
                                 Начать one-to-one
                             </button>
-                            <button class="glass-button px-4 py-2 text-sm flex items-center">
+                            <button class="glass-button px-4 py-2 text-sm flex items-center h-10">
                                 <i data-feather="calendar" class="mr-2" style="width: 16px; height: 16px;"></i>
                                 Запланировать встречу
                             </button>
+                            
+                            <!-- Меню дополнительных действий -->
+                            <div class="actions-menu">
+                                <button class="glass-button px-4 py-2 text-sm flex items-center h-10" onclick="toggleActionsMenu(event)" id="actions-menu-button">
+                                    <i data-feather="more-vertical" style="width: 16px; height: 16px;"></i>
+                                </button>
+                                <div class="actions-dropdown" id="actions-dropdown">
+                                    <button class="actions-dropdown-item" onclick="openEditEmployeeModal(); closeActionsMenu()">
+                                        <i data-feather="edit-3"></i>
+                                        Редактировать профиль
+                                    </button>
+                                    <button class="actions-dropdown-item danger" onclick="openDeleteEmployeeModal(); closeActionsMenu()">
+                                        <i data-feather="trash-2"></i>
+                                        Удалить сотрудника
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -884,6 +975,7 @@
     <script src="shared/ui/meeting-initiator.js"></script>
     <script src="shared/ui/active-meeting-modal.js"></script>
     <script src="shared/ui/employee-characteristic.js"></script>
+    <script src="shared/ui/add-employee-form.js"></script>
     <script>
         let currentEmployee = null;
         let employeeMeetings = [];
@@ -2036,6 +2128,204 @@
                 // В случае ошибки используем обычную логику
                 window.meetingInitiator.initiateMeeting();
             }
+        }
+
+        // Модальное подтверждение и удаление сотрудника (soft delete)
+        function openDeleteEmployeeModal() {
+            if (!currentEmployee) {
+                alert('Ошибка: профиль сотрудника не загружен');
+                return;
+            }
+
+            const modal = new Modal({
+                title: 'Удаление сотрудника',
+                width: 'max-w-lg',
+                content: `
+                    <div class="space-y-3">
+                        <div class="text-sm text-black">
+                            Вы собираетесь безвозвратно удалить профиль сотрудника <span class="font-semibold">${currentEmployee.first_name} ${currentEmployee.last_name}</span>.
+                        </div>
+                        <div class="text-sm text-black font-semibold">
+                            ⚠️ Внимание: это действие необратимо!
+                        </div>
+                        <div class="text-sm text-black">
+                            После удаления будут потеряны все данные о сотруднике:
+                        </div>
+                        <ul class="text-sm text-black list-disc list-inside space-y-1 ml-2">
+                            <li>История встреч и обратная связь</li>
+                            <li>Все договоренности и задачи</li>
+                            <li>Результаты опросов и характеристики</li>
+                            <li>Личная информация и контакты</li>
+                        </ul>
+                        <div class="text-sm text-black font-medium">
+                            Восстановить данные будет невозможно.
+                        </div>
+                        <div id="delete-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2"></div>
+                        <div class="flex justify-end gap-2 pt-2">
+                            <button class="glass-button px-4 py-2 text-sm" data-delete-cancel>
+                                Отмена
+                            </button>
+                            <button class="glass-button px-4 py-2 text-sm text-white" style="background-color:#dc2626; border-color: rgba(220,38,38,0.4);" data-delete-confirm>
+                                <span data-delete-confirm-text>Удалить безвозвратно</span>
+                            </button>
+                        </div>
+                    </div>
+                `,
+                onOpen: () => {
+                    const cancelBtn = modal.element.querySelector('[data-delete-cancel]');
+                    const confirmBtn = modal.element.querySelector('[data-delete-confirm]');
+                    const confirmText = modal.element.querySelector('[data-delete-confirm-text]');
+                    const errorBox = modal.element.querySelector('#delete-error');
+
+                    if (cancelBtn) {
+                        cancelBtn.addEventListener('click', () => modal.close());
+                    }
+                    if (confirmBtn) {
+                        confirmBtn.addEventListener('click', async () => {
+                            // UI: disable while deleting
+                            confirmBtn.disabled = true;
+                            cancelBtn.disabled = true;
+                            if (confirmText) confirmText.textContent = 'Удаление...';
+                            if (errorBox) {
+                                errorBox.classList.add('hidden');
+                                errorBox.textContent = '';
+                            }
+                            try {
+                                const ok = await deleteEmployee(currentEmployee.id);
+                                if (ok) {
+                                    modal.close();
+                                    window.location.href = 'employees.html';
+                                } else {
+                                    throw new Error('Не удалось удалить сотрудника');
+                                }
+                            } catch (e) {
+                                if (errorBox) {
+                                    errorBox.textContent = e?.message || 'Ошибка удаления сотрудника';
+                                    errorBox.classList.remove('hidden');
+                                }
+                                confirmBtn.disabled = false;
+                                cancelBtn.disabled = false;
+                                if (confirmText) confirmText.textContent = 'Удалить';
+                            }
+                        });
+                    }
+                }
+            });
+
+            modal.open();
+        }
+
+        async function deleteEmployee(employeeId) {
+            try {
+                const response = await fetch(`http://localhost:3001/api/employees/${employeeId}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    const message = result?.message || 'Не удалось выполнить удаление';
+                    throw new Error(message);
+                }
+                return true;
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        // Управление выпадающим меню действий
+        function toggleActionsMenu(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('actions-dropdown');
+            dropdown.classList.toggle('show');
+            
+            // Обновляем иконки после открытия меню
+            setTimeout(() => feather.replace(), 0);
+        }
+
+        function closeActionsMenu() {
+            const dropdown = document.getElementById('actions-dropdown');
+            dropdown.classList.remove('show');
+        }
+
+        // Закрываем меню при клике вне его
+        document.addEventListener('click', function(event) {
+            const actionsMenu = document.querySelector('.actions-menu');
+            const dropdown = document.getElementById('actions-dropdown');
+            
+            if (actionsMenu && !actionsMenu.contains(event.target)) {
+                if (dropdown) {
+                    dropdown.classList.remove('show');
+                }
+            }
+        });
+
+        // Открыть модальное окно редактирования сотрудника
+        function openEditEmployeeModal() {
+            if (!currentEmployee) {
+                alert('Ошибка: профиль сотрудника не загружен');
+                return;
+            }
+
+            const form = new AddEmployeeForm({
+                title: 'Редактировать сотрудника',
+                onSubmit: async (data) => {
+                    try {
+                        await updateEmployee(currentEmployee.id, data);
+                        await loadEmployeeProfile();
+                    } catch (e) {
+                        alert(e?.message || 'Не удалось сохранить изменения');
+                    }
+                },
+                onCancel: () => {}
+            });
+
+            form.show();
+
+            // Проставляем текущие значения после отрисовки формы
+            setTimeout(() => {
+                const firstNameInput = document.getElementById('firstName');
+                const lastNameInput = document.getElementById('lastName');
+                const positionInput = document.getElementById('position');
+                const teamInput = document.getElementById('team');
+                const emailInput = document.getElementById('email');
+                const uploadContent = document.getElementById('photo-upload-content');
+                const preview = document.getElementById('photo-preview');
+                const previewImg = document.getElementById('photo-preview-img');
+
+                if (firstNameInput) firstNameInput.value = currentEmployee.first_name || '';
+                if (lastNameInput) lastNameInput.value = currentEmployee.last_name || '';
+                if (positionInput) positionInput.value = currentEmployee.position || '';
+                if (teamInput) teamInput.value = currentEmployee.team || '';
+                if (emailInput) emailInput.value = currentEmployee.email || '';
+
+                if (currentEmployee.photoUrl && previewImg && uploadContent && preview) {
+                    previewImg.src = currentEmployee.photoUrl;
+                    uploadContent.classList.add('hidden');
+                    preview.classList.remove('hidden');
+                }
+            }, 0);
+        }
+
+        // Отправка PUT /api/employees/:id (multipart)
+        async function updateEmployee(employeeId, data) {
+            const formData = new FormData();
+            formData.append('firstName', data.firstName || '');
+            formData.append('lastName', data.lastName || '');
+            formData.append('email', data.email || '');
+            formData.append('position', data.position || '');
+            formData.append('team', data.team || '');
+            if (data.photo) {
+                formData.append('photo', data.photo);
+            }
+
+            const response = await fetch(`http://localhost:3001/api/employees/${employeeId}`, {
+                method: 'PUT',
+                body: formData
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || !result?.success) {
+                throw new Error(result?.message || 'Не удалось обновить данные сотрудника');
+            }
+            return result?.data;
         }
     </script>
 </body>
