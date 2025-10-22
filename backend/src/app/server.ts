@@ -4,6 +4,7 @@
  */
 
 import express from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -20,6 +21,7 @@ import { surveyRoutes } from '@/features/surveys/index.js';
 import agreementRoutes from '@/features/agreements/api/routes.js';
 import { characteristicsRoutes } from '@/features/characteristics/index.js';
 import { TextGenerationService } from '@/shared/llm/textService.js';
+import { attachAssistantWsServer } from '@/features/assistant/ws.js';
 
 // Настройка для ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -131,10 +133,13 @@ async function startServer(): Promise<void> {
     await connectDatabase();
     console.log('✅ Подключение к базе данных установлено');
     
-    // Запуск HTTP сервера
-    app.listen(config.port, () => {
+    // Запуск HTTP сервера + WebSocket ассистента
+    const httpServer = createServer(app);
+    attachAssistantWsServer(httpServer, '/ws/assistant');
+    httpServer.listen(config.port, () => {
       console.log(`🚀 Сервер запущен на порту ${config.port}`);
       console.log(`📊 Health check: http://localhost:${config.port}/api/health`);
+      console.log(`🛰️  WS ассистент: ws://localhost:${config.port}/ws/assistant`);
       console.log(`🔧 Environment: ${config.nodeEnv}`);
     });
   } catch (error) {

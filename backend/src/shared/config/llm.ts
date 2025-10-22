@@ -11,6 +11,7 @@ export interface LLMConfig {
   defaultModel?: string | undefined;
   discModel?: string | undefined;
   bigFiveModel?: string | undefined;
+  assistantModel?: string | undefined;
 }
 
 /**
@@ -34,6 +35,7 @@ export function getLLMConfig(): LLMConfig {
   const defaultModel = process.env.LLM_DEFAULT_MODEL?.trim();
   const discModel = process.env.LLM_DISC_MODEL?.trim();
   const bigFiveModel = process.env.LLM_BIGFIVE_MODEL?.trim();
+  const assistantModel = process.env.LLM_ASSISTANT_MODEL?.trim() || discModel || defaultModel;
 
   if (!bothubApiKey) {
     throw new Error('BOTHUB_API_KEY не задан. Укажите его в переменных окружения.');
@@ -56,7 +58,8 @@ export function getLLMConfig(): LLMConfig {
     maxRetries,
     defaultModel,
     discModel,
-    bigFiveModel
+    bigFiveModel,
+    assistantModel
   };
 }
 

@@ -423,6 +423,7 @@
     <script src="shared/ui/sidebar.js"></script>
     <script src="shared/ui/modal.js"></script>
     <script src="shared/ui/employee-selector-modal.js"></script>
+    <script src="shared/ui/meeting-assistant-ws.js"></script>
     
     <script>
         // Agreements functionality
@@ -619,6 +620,31 @@
         });
         
         // Chat functionality
+        let assistantWS = null;
+
+        function initAssistantWSIfNeeded() {
+            if (!assistantWS && currentMeetingId && currentEmployee) {
+                assistantWS = new MeetingAssistantWS({
+                    baseUrl: 'ws://localhost:3001/ws/assistant',
+                    meetingId: currentMeetingId,
+                    employeeId: currentEmployee.id,
+                    onEvent: handleAssistantEvent
+                });
+                assistantWS.connect();
+            }
+        }
+
+        function handleAssistantEvent(evt) {
+            if (evt.type === 'assistant_message') {
+                addAIMessage(evt.text);
+            } else if (evt.type === 'action_card') {
+                const text = `${evt.card.title}${evt.card.subtitle ? ' — ' + evt.card.subtitle : ''}`;
+                addAIMessage(text);
+            } else if (evt.type === 'error') {
+                addAIMessage(`(Ошибка ассистента) ${evt.message}`);
+            }
+        }
+
         function sendMessage() {
             const input = document.getElementById('chat-input');
             const message = input.value.trim();
@@ -631,30 +657,15 @@
             // Очищаем поле ввода
             input.value = '';
             
-            // Симулируем ответ AI через короткую задержку
-            setTimeout(() => {
-                const aiResponse = generateAIResponse(message);
-                addAIMessage(aiResponse);
-            }, 1000);
+            initAssistantWSIfNeeded();
+            if (assistantWS) assistantWS.sendUserMessage(message);
         }
         
         function sendSuggestion(suggestion) {
             addUserMessage(suggestion);
             
-            // Симулируем ответ AI
-            setTimeout(() => {
-                let response = '';
-                if (suggestion.includes('трудности')) {
-                    response = 'Отличный вопрос! Это поможет выявить препятствия в работе. Рекомендую также спросить: "Какая поддержка от команды или руководства поможет вам справиться с этими трудностями?"';
-                } else if (suggestion.includes('карьерные планы')) {
-                    response = 'Важная тема для развития! После этого можно обсудить: "Какие навыки вы хотели бы развить в ближайшие 6 месяцев?" и "Как я могу помочь вам в достижении ваших целей?"';
-                } else if (suggestion.includes('отчет')) {
-                    response = 'Готовлю отчет о встрече на основе введенных заметок и договоренностей. Отчет будет содержать основные темы, выводы и план действий.';
-                } else {
-                    response = 'Понял ваш запрос. Могу предложить дополнительные вопросы или рекомендации для эффективного проведения встречи.';
-                }
-                addAIMessage(response);
-            }, 1000);
+            initAssistantWSIfNeeded();
+            if (assistantWS) assistantWS.sendUserMessage(suggestion);
         }
         
         function handleChatKeypress(event) {
@@ -796,6 +807,9 @@
                             updateTimer(); // Сразу обновляем
                             
                             console.log('Встреча успешно начата');
+
+                            // Инициализируем WS ассистента
+                            initAssistantWSIfNeeded();
                         }
                     }
                     
@@ -866,6 +880,12 @@
                     
                     // Сбрасываем ID встречи
                     currentMeetingId = null;
+
+                    // Отключаем WS ассистента
+                    if (assistantWS && assistantWS.ws) {
+                        try { assistantWS.ws.close(); } catch {}
+                    }
+                    assistantWS = null;
                     
                 } catch (error) {
                     console.error('Ошибка при завершении встречи:', error);
@@ -1859,6 +1879,9 @@
                     await loadOpenAgreements(currentEmployee.id);
                     
                     console.log('Активная встреча инициализирована. isRunning:', isRunning, 'currentMeetingId:', currentMeetingId);
+
+                    // Инициализируем WS ассистента после восстановления
+                    initAssistantWSIfNeeded();
                 }
                 
             } catch (error) {
@@ -1922,7 +1945,7 @@
                 satisfactionSlider.addEventListener('input', function() {
                     satisfactionValue.textContent = this.value;
                     
-                    // Изменение цвета в зависимости от значения
+            // Изменение цвета в зависимости от значения
                     if (this.value <= 3) {
                         satisfactionValue.className = 'text-lg font-bold w-8 text-center text-error';
                     } else if (this.value <= 6) {
@@ -1942,9 +1965,11 @@
                     clearTimeout(timeout);
                     // Дебаунс для быстрого сохранения при активной печати
                     timeout = setTimeout(() => {
-                        if (isRunning && currentMeetingId) {
-                            saveNotesToServer(this.value);
-                        }
+                if (isRunning && currentMeetingId) {
+                    saveNotesToServer(this.value);
+                    initAssistantWSIfNeeded();
+                    if (assistantWS) assistantWS.sendNotesUpdate(this.value);
+                }
                     }, 3000); // 3 секунды после остановки печати
                 });
             }
