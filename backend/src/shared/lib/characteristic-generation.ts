@@ -25,7 +25,8 @@ export class CharacteristicGenerationService {
    */
   async generateCharacteristic(
     employeeId: string,
-    previousCharacteristic?: string | null
+    previousCharacteristic?: string | null,
+    options?: { excludeBigFive?: boolean }
   ): Promise<GenerateCharacteristicResult> {
     const startTime = Date.now();
 
@@ -55,7 +56,9 @@ export class CharacteristicGenerationService {
     }
 
     // 4. Формируем промпт для LLM
-    const prompt = this.buildPrompt(context, dataRichness);
+    const excludeBigFiveAuto = !this.contextHasBigFiveData(context);
+    const excludeBigFiveFinal = options?.excludeBigFive === true || excludeBigFiveAuto;
+    const prompt = this.buildPrompt(context, dataRichness, excludeBigFiveFinal);
 
     // 5. Генерируем характеристику через LLM
     const llmResult = await this.textService.generateText({
@@ -257,7 +260,7 @@ export class CharacteristicGenerationService {
     return `Ты - AI-ассистент руководителя в системе управления one-to-one встречами. Твоя роль - быть аналитиком и советником, который помогает руководителю лучше понимать своих сотрудников.
 
 ## Контекст твоей работы:
-Руководитель регулярно проводит встречи с сотрудниками, фиксирует обратную связь, наблюдения, договоренности. Сотрудники проходят психометрические опросы (DISC, Big Five). Вся эта информация накапливается, и руководителю нужна твоя помощь, чтобы синтезировать разрозненные данные в целостное понимание человека.
+Руководитель регулярно проводит встречи с сотрудниками, фиксирует обратную связь, наблюдения, договоренности. Сотрудники могут проходить психометрические опросы (например, DISC, Big Five). Используй строго только те опросы, которые присутствуют в переданных данных; если какого‑то опроса нет (например, Big Five), не упоминай его в тексте. Вся эта информация накапливается, и руководителю нужна твоя помощь, чтобы синтезировать разрозненные данные в целостное понимание человека.
 
 ## От чьего лица ты пишешь:
 Ты пишешь как объективный аналитик, который смотрит на данные со стороны. НЕ пиши от первого лица ("я думаю", "мне кажется"). НЕ обращайся напрямую к руководителю ("вам следует"). Пиши описательно и аналитически, как если бы ты составлял профессиональную характеристику для HR-досье.
@@ -297,6 +300,7 @@ export class CharacteristicGenerationService {
 - НЕ пиши оценочные суждения без опоры на факты
 - НЕ используй маркированные списки
 - НЕ пиши слишком формально или сухо - пиши так, чтобы за текстом чувствовался живой человек
+- НЕ упоминай опросы, по которым нет данных (например, Big Five)
 
 Помни: твоя задача - дать руководителю глубокое, практичное понимание сотрудника как человека, а не просто перечислить факты.`;
   }
@@ -306,7 +310,8 @@ export class CharacteristicGenerationService {
    */
   private buildPrompt(
     context: CharacteristicGenerationContext,
-    dataRichness: DataRichnessLevel
+    dataRichness: DataRichnessLevel,
+    excludeBigFive: boolean = false
   ): string {
     const { employee, meetings, surveys, previous_characteristic } = context;
 
@@ -320,6 +325,12 @@ export class CharacteristicGenerationService {
 **Уровень наполненности данных:** ${dataRichness.description}
 
 `;
+
+    // Уточняем какие опросы доступны в данных
+    const hasDiscData = surveys.some(s => Boolean(s.metadata?.disc?.llmDescription) || Boolean(s.metadata?.disc?.profileHint));
+    const hasBigFiveData = surveys.some(s => Boolean(s.metadata?.bigFive?.llmDescription) || (s.metadata?.bigFive?.averages && Object.keys(s.metadata.bigFive.averages).length > 0));
+    const availableSurveys = [hasDiscData ? 'DISC' : null, hasBigFiveData ? 'Big Five' : null].filter(Boolean).join(', ');
+    prompt += `**Доступные опросы в данных:** ${availableSurveys || 'нет'}\n\n`;
 
     // Добавляем информацию о встречах
     if (meetings.length > 0) {
@@ -362,9 +373,11 @@ export class CharacteristicGenerationService {
           prompt += `DISC: ${survey.metadata.disc.profileHint}\n`;
         }
 
-        // Big Five
-        if (survey.metadata?.bigFive?.llmDescription) {
-          prompt += `Big Five: ${survey.metadata.bigFive.llmDescription}\n`;
+        // Big Five — по запросу может быть исключён из общей характеристики
+        if (!excludeBigFive) {
+          if (survey.metadata?.bigFive?.llmDescription) {
+            prompt += `Big Five: ${survey.metadata.bigFive.llmDescription}\n`;
+          }
         }
       });
     }
@@ -380,9 +393,21 @@ export class CharacteristicGenerationService {
 ВАЖНО:
 - Объем: 200-250 слов (2-3 абзаца)
 - Используй РАВНОМЕРНО данные из опросов (тип личности) и из встреч (текущее состояние)
-- Синтезируй информацию в целостный портрет человека`;
+- Синтезируй информацию в целостный портрет человека
+- Не упоминай опросы, которых нет в данных${excludeBigFive ? ' (данных Big Five нет — не упоминай Big Five)' : ''}`;
 
     return prompt;
+  }
+
+  /**
+   * Проверка наличия данных Big Five в контексте
+   */
+  private contextHasBigFiveData(context: CharacteristicGenerationContext): boolean {
+    return context.surveys.some(s => {
+      const hasLLM = Boolean(s.metadata?.bigFive?.llmDescription);
+      const hasAverages = Boolean(s.metadata?.bigFive?.averages && Object.keys(s.metadata.bigFive.averages).length > 0);
+      return hasLLM || hasAverages;
+    });
   }
 
   /**

@@ -54,7 +54,7 @@ router.get('/:employeeId', validateUUID('employeeId'), async (req: Request, res:
 router.post('/:employeeId/generate', validateUUID('employeeId'), async (req: Request, res: Response): Promise<void> => {
   try {
     const employeeId = req.params.employeeId!;
-    const { force } = req.query; // force=true для принудительной регенерации
+    const { force, excludeBigFive } = req.query; // force=true для принудительной регенерации, excludeBigFive=true чтобы не учитывать Big Five в общей характеристике
     
     // Проверяем, существует ли характеристика
     const existing = await CharacteristicEntity.findByEmployeeId(employeeId);
@@ -108,7 +108,8 @@ router.post('/:employeeId/generate', validateUUID('employeeId'), async (req: Req
     console.log(`Генерация характеристики для сотрудника ${employeeId}...`);
     const result = await generationService.generateCharacteristic(
       employeeId,
-      existing?.content
+      existing?.content,
+      { excludeBigFive: String(excludeBigFive || '').toLowerCase() === 'true' }
     );
     
     // Сохраняем в БД (upsert)

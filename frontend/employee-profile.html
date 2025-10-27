@@ -1912,11 +1912,14 @@
                                 ${(() => {
                                   const disc = result?.metadata?.disc || null;
                                   const bigFive = result?.metadata?.bigFive || null;
+                                  const isBigFiveSurvey = (
+                                    Array.isArray(survey?.metadata?.tags) && survey.metadata.tags.includes('big-five')
+                                  ) || (typeof survey?.title === 'string' && /большая пятёрка|big five/i.test(survey.title));
                                   const summaryText = disc?.summaryText || null;
                                   const llmDescription = disc?.llmDescription || null;
                                   const scores = disc?.scores || null;
                                   const profileHint = disc?.profileHint || null;
-                                  const bigFiveBlock = bigFive && (bigFive.summaryText || bigFive.averages) ? `
+                                  const bigFiveBlock = isBigFiveSurvey && bigFive && (bigFive.summaryText || bigFive.averages) ? `
                                     <div class="survey-interpretation mb-3">
                                       <div class="font-semibold mb-1">Сухая интерпретация (Big Five)</div>
                                       ${bigFive.averages ? `
@@ -1931,7 +1934,7 @@
                                       ${bigFive.summaryText ? `<div>${bigFive.summaryText}</div>` : ''}
                                     </div>
                                   ` : '';
-                                  const bigFiveLLMBlock = bigFive && bigFive.llmDescription ? `
+                                  const bigFiveLLMBlock = isBigFiveSurvey && bigFive && bigFive.llmDescription ? `
                                     <div class="survey-interpretation mb-3">
                                       <div class="font-semibold mb-1">Описание от нейросети (Big Five)</div>
                                       <div>${(window.marked && typeof window.marked.parse === 'function') ? window.marked.parse(bigFive.llmDescription) : bigFive.llmDescription}</div>

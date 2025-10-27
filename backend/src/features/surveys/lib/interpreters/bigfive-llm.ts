@@ -50,7 +50,7 @@ export async function generateBigFiveDescription(params: {
     prompt,
     model: params.modelOverride || BIGFIVE_MODEL,
     temperature: 0.5,
-    maxTokens: 1200,
+    maxTokens: 2000,
     topP: 0.9,
     presencePenalty: 0.2
   });

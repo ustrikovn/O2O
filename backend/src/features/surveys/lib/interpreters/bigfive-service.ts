@@ -70,6 +70,19 @@ export async function runBigFiveSummaryForResult(params: {
     return Math.round(v * 10) / 10; // до 1 знака
   }
 
+  const hasAnyBigFiveValues = (
+    valuesByTrait.openness.length +
+    valuesByTrait.conscientiousness.length +
+    valuesByTrait.extraversion.length +
+    valuesByTrait.agreeableness.length +
+    valuesByTrait.neuroticism.length
+  ) > 0;
+
+  if (!hasAnyBigFiveValues) {
+    // Нет ответов Big Five — ничего не записываем в metadata
+    return;
+  }
+
   const averages = {
     openness: avgOf(valuesByTrait.openness),
     conscientiousness: avgOf(valuesByTrait.conscientiousness),

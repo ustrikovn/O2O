@@ -259,11 +259,19 @@ export class SurveyService {
         metadata: { ...resultEntity.metadata, llmProcessing: 'in_progress' }
       });
       
-      // 1) Считаем Big Five summary (сразу, без ожидания сети)
-      try {
-        await runBigFiveSummaryForResult({ survey, resultEntity });
-      } catch (e) {
-        console.error('Big Five summary failed:', e);
+      // Определяем типы опросов по тэгам/ID вопросов
+      const isBigFiveSurvey = (
+        Array.isArray(survey?.metadata?.tags) && survey.metadata!.tags!.includes('big-five')
+      ) || survey.questions.some(q => ['op','co','ex','ag','ne'].some(prefix => String(q.id || '').startsWith(prefix)));
+      const isDiscSurvey = survey.questions.some(q => Array.isArray(q.tags) && q.tags!.some(t => String(t).startsWith('disc:')));
+
+      // 1) Считаем Big Five summary ТОЛЬКО для Big Five опросов
+      if (isBigFiveSurvey) {
+        try {
+          await runBigFiveSummaryForResult({ survey, resultEntity });
+        } catch (e) {
+          console.error('Big Five summary failed:', e);
+        }
       }
 
       // 2) Сохраняем промежуточные метаданные (bigFive)
@@ -271,8 +279,10 @@ export class SurveyService {
         metadata: { ...resultEntity.metadata }
       });
 
-      // 3) Выполняем LLM обработку DISC для открытых ответов
-      await runDiscLLMForResult({ survey, resultEntity });
+      // 3) Выполняем LLM обработку DISC ТОЛЬКО для DISC-опросов
+      if (isDiscSurvey) {
+        await runDiscLLMForResult({ survey, resultEntity });
+      }
       
       // Обновляем результат с данными LLM и статусом "завершено"
       await this.surveyRepository.updateResult(resultId, {
@@ -312,7 +322,10 @@ export class SurveyService {
 
     // Пробуем интерпретировать открытые ответы DISC через LLM при принудительном завершении
     try {
-      await runDiscLLMForResult({ survey, resultEntity });
+      const isDiscSurvey = survey.questions.some(q => Array.isArray(q.tags) && q.tags!.some(t => String(t).startsWith('disc:')));
+      if (isDiscSurvey) {
+        await runDiscLLMForResult({ survey, resultEntity });
+      }
     } catch (llmError) {
       console.error('LLM DISC interpretation failed (complete):', llmError);
     }

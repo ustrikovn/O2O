@@ -160,7 +160,7 @@ export async function generateDiscDescription(params: {
     prompt,
     context: contextParts.join('\n'),
     model: params.modelOverride || model,
-    maxTokens: 600,
+    maxTokens: 1800,
     temperature: 0.5
   });
 
