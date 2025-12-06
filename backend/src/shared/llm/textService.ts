@@ -46,10 +46,17 @@ export interface GenerateTextInput {
   model?: string | undefined;
   temperature?: number | undefined;
   maxTokens?: number | undefined;
+  topP?: number | undefined;
+  presencePenalty?: number | undefined;
+  frequencyPenalty?: number | undefined;
   // Перекрытия провайдера (для использования альтернативных путей/базового URL через Bothub)
   baseUrlOverride?: string | undefined;
   pathOverride?: string | undefined; // по умолчанию chatCompletionsPath
   extraBody?: Record<string, unknown> | undefined; // для нестандартных параметров модели
+  /** AbortSignal для отмены запроса */
+  signal?: AbortSignal | undefined;
+  /** Таймаут для запроса (переопределяет глобальный) */
+  timeoutMs?: number | undefined;
 }
 
 export interface GenerateTextResult {
@@ -57,6 +64,11 @@ export interface GenerateTextResult {
   model: string;
   finishReason?: string | null | undefined;
   raw: ChatCompletionResponse;
+}
+
+export interface StreamGenerateTextInput extends GenerateTextInput {
+  onChunk: (chunk: string) => void;
+  onDone?: (fullText: string) => void;
 }
 
 /**
@@ -88,7 +100,8 @@ export class TextGenerationService {
       messages,
       temperature: input.temperature ?? 0.7,
       max_tokens: input.maxTokens ?? 512,
-      stream: false
+      stream: false,
+      ...(input.topP !== undefined ? { top_p: input.topP } : {})
     };
 
     // Подмешиваем extraBody для специальных провайдеров/настроек
@@ -101,7 +114,9 @@ export class TextGenerationService {
       path: input.pathOverride || cfg.chatCompletionsPath,
       method: 'POST',
       body: bodyWithExtras,
-      baseUrlOverride: input.baseUrlOverride
+      baseUrlOverride: input.baseUrlOverride,
+      signal: input.signal,
+      timeoutMs: input.timeoutMs
     });
 
     const choice = data.choices?.[0];
@@ -112,6 +127,58 @@ export class TextGenerationService {
       finishReason: choice?.finish_reason ?? null,
       raw: data
     };
+  }
+
+  /**
+   * Генерация текста со стримингом
+   */
+  async generateTextStream(input: StreamGenerateTextInput): Promise<void> {
+    const cfg = getLLMConfig();
+
+    const messages: ChatMessage[] = [];
+    if (input.system) {
+      messages.push({ role: 'system', content: input.system });
+    }
+
+    if (input.context) {
+      messages.push({ role: 'system', content: `Контекст: ${input.context}` });
+    }
+
+    messages.push({ role: 'user', content: input.prompt });
+
+    const requestBody: ChatCompletionRequest = {
+      model: input.model || cfg.defaultModel || 'gpt-4o-mini',
+      messages,
+      temperature: input.temperature ?? 0.7,
+      max_tokens: input.maxTokens ?? 512,
+      stream: true
+    };
+
+    const bodyWithExtras = {
+      ...requestBody,
+      ...(input.extraBody || {})
+    };
+
+    const streamParams: {
+      path: string;
+      body: unknown;
+      onChunk: (chunk: string) => void;
+      onDone?: (fullText: string) => void;
+      baseUrlOverride?: string;
+    } = {
+      path: input.pathOverride || cfg.chatCompletionsPath,
+      body: bodyWithExtras,
+      onChunk: input.onChunk
+    };
+    
+    if (input.onDone) {
+      streamParams.onDone = input.onDone;
+    }
+    if (input.baseUrlOverride) {
+      streamParams.baseUrlOverride = input.baseUrlOverride;
+    }
+    
+    await this.client.requestStream(streamParams);
   }
 }
 

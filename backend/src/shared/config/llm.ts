@@ -12,6 +12,7 @@ export interface LLMConfig {
   discModel?: string | undefined;
   bigFiveModel?: string | undefined;
   assistantModel?: string | undefined;
+  pipelineModel?: string | undefined; // Модель для LLM Pipeline (Analyst, Decision, Composer)
 }
 
 /**
@@ -30,12 +31,13 @@ export function getLLMConfig(): LLMConfig {
   const bothubBaseUrlRaw = stripInlineComment(process.env.BOTHUB_BASE_URL);
   const bothubBaseUrl = bothubBaseUrlRaw ? bothubBaseUrlRaw.replace(/\/$/, '') : '';
   const chatCompletionsPath = stripInlineComment(process.env.BOTHUB_CHAT_COMPLETIONS_PATH) || '/v1/chat/completions';
-  const requestTimeoutMs = Number(process.env.LLM_REQUEST_TIMEOUT_MS) || 60000; // 60s
-  const maxRetries = Number(process.env.LLM_MAX_RETRIES) || 2;
+  const requestTimeoutMs = Number(process.env.LLM_REQUEST_TIMEOUT_MS) || 20000; // 20s для быстрого отклика
+  const maxRetries = Number(process.env.LLM_MAX_RETRIES) || 1; // Только 1 ретрай для интерактивности
   const defaultModel = process.env.LLM_DEFAULT_MODEL?.trim();
   const discModel = process.env.LLM_DISC_MODEL?.trim();
   const bigFiveModel = process.env.LLM_BIGFIVE_MODEL?.trim();
   const assistantModel = process.env.LLM_ASSISTANT_MODEL?.trim() || discModel || defaultModel;
+  const pipelineModel = process.env.LLM_PIPELINE_MODEL?.trim() || 'gpt-4o';
 
   if (!bothubApiKey) {
     throw new Error('BOTHUB_API_KEY не задан. Укажите его в переменных окружения.');
@@ -59,7 +61,8 @@ export function getLLMConfig(): LLMConfig {
     defaultModel,
     discModel,
     bigFiveModel,
-    assistantModel
+    assistantModel,
+    pipelineModel
   };
 }
 

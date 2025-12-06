@@ -2,12 +2,50 @@ import type { Server as HttpServer } from 'http';
 import { WebSocketServer } from 'ws';
 import WebSocket from 'ws';
 import { AssistantOrchestrator } from './orchestrator.js';
-import type { ClientEvent, ServerEvent } from './types.js';
+import type { ClientEvent, ServerEvent, StatusPayload, PipelineLogPayload } from './types.js';
+
+/** Максимальное время ожидания ответа от pipeline (20 секунд) */
+const PIPELINE_TIMEOUT_MS = 20_000;
 
 interface ConnectionState {
   meetingId: string;
   employeeId: string;
   lastNotes?: string;
+}
+
+/** Отправка статуса ассистента */
+function sendStatus(ws: WebSocket, status: StatusPayload['status']) {
+  send(ws, { type: 'status', status });
+}
+
+/** 
+ * Обёртка для вызова pipeline с timeout
+ * Гарантирует что клиент получит ответ даже если LLM зависнет
+ */
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  fallback: T,
+  onTimeout?: () => void
+): Promise<T> {
+  let timeoutId: NodeJS.Timeout;
+  
+  const timeoutPromise = new Promise<T>((resolve) => {
+    timeoutId = setTimeout(() => {
+      console.warn(`[WS] Pipeline timeout после ${timeoutMs}ms`);
+      onTimeout?.();
+      resolve(fallback);
+    }, timeoutMs);
+  });
+  
+  try {
+    const result = await Promise.race([promise, timeoutPromise]);
+    clearTimeout(timeoutId!);
+    return result;
+  } catch (err) {
+    clearTimeout(timeoutId!);
+    throw err;
+  }
 }
 
 export function attachAssistantWsServer(httpServer: HttpServer, path = '/ws/assistant') {
@@ -24,14 +62,13 @@ export function attachAssistantWsServer(httpServer: HttpServer, path = '/ws/assi
           state.meetingId = evt.meetingId;
           state.employeeId = evt.employeeId;
           send(ws, { type: 'joined', meetingId: evt.meetingId, employeeId: evt.employeeId });
-          // Отправляем стартовую подсказку сразу после подключения
-          try {
-            const msgs = await orchestrator.handleUserEvent({
-              meetingId: state.meetingId,
-              employeeId: state.employeeId
-            });
-            msgs.forEach(m => send(ws, m));
-          } catch {}
+          
+          // Статичное приветствие без LLM
+          // (предиктивное саммари будет реализовано отдельно)
+          send(ws, {
+            type: 'assistant_message',
+            text: '👋 Привет! Это твой ассистент. Буду рад помочь тебе сегодня провести эффективную встречу.'
+          });
           return;
         }
 
@@ -41,23 +78,80 @@ export function attachAssistantWsServer(httpServer: HttpServer, path = '/ws/assi
         }
 
         if (evt.type === 'user_message') {
-          const messages = await orchestrator.handleUserEvent({
-            meetingId: state.meetingId!,
-            employeeId: state.employeeId!,
-            ...(evt.text !== undefined ? { lastUserText: evt.text } : {}),
-            ...(state.lastNotes !== undefined ? { lastNotes: state.lastNotes } : {})
-          });
+          // Отправляем статус "thinking"
+          sendStatus(ws, 'thinking');
+          
+          // Callback для отправки логов клиенту
+          const onLog = (log: PipelineLogPayload) => send(ws, log);
+          
+          // Гарантируем отправку idle через finally
+          let messages: Awaited<ReturnType<typeof orchestrator.handleUserEvent>> = [];
+          try {
+            // Используем timeout для защиты от зависания LLM
+            messages = await withTimeout(
+              orchestrator.handleUserEvent({
+                meetingId: state.meetingId!,
+                employeeId: state.employeeId!,
+                ...(evt.text !== undefined ? { lastUserText: evt.text } : {}),
+                ...(state.lastNotes !== undefined ? { lastNotes: state.lastNotes } : {}),
+                onLog
+              }),
+              PIPELINE_TIMEOUT_MS,
+              [], // fallback: пустой массив (молчим)
+              () => {
+                console.warn(`[WS] user_message timeout для ${state.employeeId}`);
+                onLog({ type: 'pipeline_log', level: 'error', stage: 'timeout', message: '⏱️ Timeout! Pipeline не успел завершиться' });
+              }
+            );
+          } catch (err) {
+            console.error('[WS] Ошибка handleUserEvent:', err);
+            onLog({ type: 'pipeline_log', level: 'error', stage: 'error', message: `❌ Ошибка: ${err instanceof Error ? err.message : 'Unknown'}` });
+          } finally {
+            // ВСЕГДА отправляем статус "idle"
+            sendStatus(ws, 'idle');
+          }
+          
+          // Отправляем сообщения если есть
           messages.forEach(m => send(ws, m));
           return;
         }
 
         if (evt.type === 'notes_update') {
           state.lastNotes = evt.text;
-          const tips = await orchestrator.handleNotesEvent({
-            meetingId: state.meetingId,
-            employeeId: state.employeeId,
-            notes: evt.text
-          });
+          
+          // Отправляем статус "thinking"
+          sendStatus(ws, 'thinking');
+          
+          // Callback для отправки логов клиенту
+          const onLog = (log: PipelineLogPayload) => send(ws, log);
+          
+          // Гарантируем отправку idle через finally
+          let tips: Awaited<ReturnType<typeof orchestrator.handleNotesEvent>> = [];
+          try {
+            // Используем timeout для защиты от зависания LLM
+            tips = await withTimeout(
+              orchestrator.handleNotesEvent({
+                meetingId: state.meetingId,
+                employeeId: state.employeeId,
+                notes: evt.text,
+                onLog
+              }),
+              PIPELINE_TIMEOUT_MS,
+              [], // fallback: пустой массив (молчим)
+              () => {
+                console.warn(`[WS] notes_update timeout для ${state.employeeId}`);
+                onLog({ type: 'pipeline_log', level: 'error', stage: 'timeout', message: '⏱️ Timeout! Pipeline не успел завершиться' });
+              }
+            );
+          } catch (err) {
+            console.error('[WS] Ошибка handleNotesEvent:', err);
+            onLog({ type: 'pipeline_log', level: 'error', stage: 'error', message: `❌ Ошибка: ${err instanceof Error ? err.message : 'Unknown'}` });
+          } finally {
+            // ВСЕГДА отправляем статус "idle"
+            sendStatus(ws, 'idle');
+          }
+          
+          // Отправляем сообщения если есть
           tips.forEach(m => send(ws, m));
           return;
         }

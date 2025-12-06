@@ -1,5 +1,5 @@
-const notesDebounceMs = 1500;
-const minIntervalMs = 2500; // между ответами ассистента
+const notesDebounceMs = 300;  // Быстрая реакция на изменения
+const minIntervalMs = 800;    // Минимальный интервал между ответами
 
 type SessionKey = string; // meetingId:employeeId
 

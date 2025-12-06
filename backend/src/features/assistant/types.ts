@@ -11,7 +11,11 @@ export type WsClientEventType =
 export type WsServerEventType =
   | 'joined'
   | 'assistant_message'
+  | 'assistant_message_chunk'  // Стриминг: часть сообщения
+  | 'assistant_message_end'    // Стриминг: конец сообщения
+  | 'status'                   // Статус ассистента (thinking, composing)
   | 'action_card'
+  | 'pipeline_log'             // Логи pipeline для отладки
   | 'error'
   | 'pong';
 
@@ -70,9 +74,47 @@ export interface PongPayload {
   ts?: number;
 }
 
+/** Статус ассистента */
+export type AssistantStatus = 'thinking' | 'composing' | 'idle';
+
+export interface StatusPayload {
+  type: 'status';
+  status: AssistantStatus;
+}
+
+/** Chunk стриминга */
+export interface AssistantMessageChunkPayload {
+  type: 'assistant_message_chunk';
+  chunk: string;
+  messageId: string;
+}
+
+/** Конец стриминга */
+export interface AssistantMessageEndPayload {
+  type: 'assistant_message_end';
+  messageId: string;
+  fullText: string;
+}
+
+/** Лог pipeline для отладки */
+export type PipelineLogLevel = 'info' | 'warn' | 'error' | 'success';
+
+export interface PipelineLogPayload {
+  type: 'pipeline_log';
+  level: PipelineLogLevel;
+  stage: string;       // 'analyst' | 'decision' | 'composer' | 'start' | 'end'
+  message: string;
+  durationMs?: number;
+  details?: Record<string, unknown>;
+}
+
 export type ServerEvent =
   | AssistantMessagePayload
+  | AssistantMessageChunkPayload
+  | AssistantMessageEndPayload
+  | StatusPayload
   | ActionCardPayload
+  | PipelineLogPayload
   | ErrorPayload
   | PongPayload
   | { type: 'joined'; meetingId: string; employeeId: string };
