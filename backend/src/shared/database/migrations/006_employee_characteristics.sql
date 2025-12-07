@@ -25,9 +25,7 @@ CREATE TABLE employee_characteristics (
     Структура metadata:
     {
       "sources": {
-        "meetings_count": 5,
         "surveys_count": 2,
-        "last_meeting_date": "2024-01-15T10:00:00Z",
         "last_survey_date": "2024-01-10T15:30:00Z"
       },
       "data_richness_score": 75,  // 0-100, индикатор наполненности
@@ -78,7 +76,7 @@ CREATE TRIGGER save_previous_characteristic_trigger
     EXECUTE FUNCTION save_previous_characteristic();
 
 -- Комментарии к таблице и столбцам
-COMMENT ON TABLE employee_characteristics IS 'Характеристики сотрудников, сгенерированные LLM на основе встреч, опросов и роли';
+COMMENT ON TABLE employee_characteristics IS 'Характеристики сотрудников, сгенерированные LLM на основе опросов DISC и Big Five';
 COMMENT ON COLUMN employee_characteristics.id IS 'Уникальный идентификатор характеристики';
 COMMENT ON COLUMN employee_characteristics.employee_id IS 'ID сотрудника (уникальная связь)';
 COMMENT ON COLUMN employee_characteristics.content IS 'Текст характеристики сотрудника';

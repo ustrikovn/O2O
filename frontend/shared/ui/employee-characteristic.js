@@ -161,7 +161,7 @@ class EmployeeCharacteristic {
       <div class="characteristic-generating" style="text-align: center; padding: 40px 0;">
         <i data-feather="cpu" class="animate-pulse mx-auto mb-4" style="width: 32px; height: 32px; color: #3b82f6;"></i>
         <p class="text-blue-600 font-medium">Генерация характеристики...</p>
-        <p class="text-sm text-gray-500 mt-2">Анализируем встречи, опросы и роль сотрудника</p>
+        <p class="text-sm text-gray-500 mt-2">Анализируем результаты опросов DISC и Big Five</p>
       </div>
     `;
 
@@ -255,10 +255,6 @@ class EmployeeCharacteristic {
         <div class="characteristic-meta mt-4 pt-4 border-t border-gray-200">
           <div class="flex items-center justify-between text-xs text-gray-500">
             <div class="flex items-center gap-4">
-              <span>
-                <i data-feather="calendar" style="width: 12px; height: 12px; display: inline; margin-right: 4px;"></i>
-                Встреч: ${metadata.sources.meetings_count}
-              </span>
               <span>
                 <i data-feather="clipboard" style="width: 12px; height: 12px; display: inline; margin-right: 4px;"></i>
                 Опросов: ${metadata.sources.surveys_count}

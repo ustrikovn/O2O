@@ -72,17 +72,10 @@ router.post('/:employeeId/generate', validateUUID('employeeId'), async (req: Req
         return;
       }
 
-      // Доп. проверка для старых характеристик без отпечатка: были ли события после updated_at
+      // Доп. проверка для старых характеристик без отпечатка: были ли новые опросы после updated_at
+      // Характеристика строится только на основе опросов DISC/BigFive
       if (existing && !prevFingerprint) {
         const since = existing.updated_at;
-        // Проверяем завершённые встречи
-        const meetingsNewer = await query(
-          `SELECT 1 FROM meetings 
-           WHERE employee_id = $1 AND status = 'completed' 
-             AND COALESCE(ended_at, started_at, created_at) > $2 
-           LIMIT 1`,
-          [employeeId, since]
-        );
         // Проверяем завершённые опросы
         const surveysNewer = await query(
           `SELECT 1 FROM survey_results 
@@ -92,7 +85,7 @@ router.post('/:employeeId/generate', validateUUID('employeeId'), async (req: Req
           [employeeId, since]
         );
 
-        const noChanges = meetingsNewer.rows.length === 0 && surveysNewer.rows.length === 0;
+        const noChanges = surveysNewer.rows.length === 0;
         if (noChanges) {
           res.status(200).json({
             success: true,

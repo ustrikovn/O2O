@@ -62,9 +62,9 @@ export class ComposerAgent {
         prompt: userPrompt,
         model: cfg.pipelineModel || 'claude-sonnet-4-20250514',
         temperature: 0.6, // Чуть выше для креативности
-        maxTokens: 200,
+        maxTokens: 800,   // Увеличено для полных ответов
         signal,
-        timeoutMs: 5000   // Жёсткий таймаут 5 секунд на Composer
+        timeoutMs: 8000   // Увеличен таймаут
       });
       
       const durationMs = Date.now() - startTime;
@@ -107,14 +107,10 @@ export class ComposerAgent {
       format = 'question';
     }
     
-    // Обрезаем до 280 символов
-    const finalText = trimmedText.length > 280 
-      ? trimmedText.slice(0, 277) + '...'
-      : trimmedText;
-    
+    // НЕ обрезаем текст — показываем полный ответ
     return {
       message: {
-        text: finalText,
+        text: trimmedText,
         format
       }
     };

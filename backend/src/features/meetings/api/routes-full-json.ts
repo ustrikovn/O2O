@@ -20,7 +20,9 @@ import {
   MeetingResponse,
   MeetingFilterParams
 } from '@/shared/types/meeting.js';
-import { autoUpdateCharacteristicAsync } from '@/shared/lib/characteristic-auto-update.js';
+// TODO: Временно отключено - характеристика теперь строится только на опросах DISC/BigFive
+// В будущем триггер будет использоваться с другим контекстом
+// import { autoUpdateCharacteristicAsync } from '@/shared/lib/characteristic-auto-update.js';
 
 const router = express.Router();
 
@@ -294,8 +296,9 @@ router.post('/:id/end', validateUUID('id'), async (req: Request, res: Response):
       return;
     }
     
-    // Автоматически обновляем характеристику сотрудника после завершения встречи
-    autoUpdateCharacteristicAsync(endedMeeting.employee_id);
+    // TODO: Временно отключено - характеристика теперь строится только на опросах DISC/BigFive
+    // В будущем триггер будет использоваться с другим контекстом
+    // autoUpdateCharacteristicAsync(endedMeeting.employee_id);
     
     const response: ApiResponse<MeetingResponse> = {
       success: true,

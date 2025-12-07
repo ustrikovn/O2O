@@ -3,7 +3,6 @@
  */
 
 import { TextGenerationService } from '@/shared/llm/textService.js';
-import { MeetingEntity } from '@/entities/meeting/index.js';
 import { EmployeeEntity } from '@/entities/employee/index.js';
 import { 
   CharacteristicGenerationContext,
@@ -40,10 +39,9 @@ export class CharacteristicGenerationService {
     // 3. Если данных совсем нет, возвращаем заглушку
     if (dataRichness.score === 0) {
       return {
-        content: 'Недостаточно данных для формирования характеристики. Проведите встречу или попросите сотрудника пройти опрос.',
+        content: 'Недостаточно данных для формирования характеристики. Попросите сотрудника пройти опросы DISC и/или Big Five.',
         metadata: {
           sources: {
-            meetings_count: 0,
             surveys_count: 0
           },
           data_richness_score: 0,
@@ -83,9 +81,7 @@ export class CharacteristicGenerationService {
     // 7. Формируем метаданные
     const metadata: CharacteristicMetadata = {
       sources: {
-        meetings_count: context.meetings.length,
         surveys_count: context.surveys.length,
-        last_meeting_date: context.meetings[0]?.started_at,
         last_survey_date: context.surveys[0]?.completed_at
       },
       data_richness_score: dataRichness.score,
@@ -119,6 +115,7 @@ export class CharacteristicGenerationService {
 
   /**
    * Сбор контекста о сотруднике для генерации
+   * Характеристика строится только на основе опросов DISC и BigFive
    */
   private async gatherContext(
     employeeId: string,
@@ -130,23 +127,7 @@ export class CharacteristicGenerationService {
       throw new Error(`Сотрудник с ID ${employeeId} не найден`);
     }
 
-    // Получаем завершенные встречи
-    const meetingsResult = await query(
-      `SELECT * FROM meetings 
-       WHERE employee_id = $1 AND status = 'completed'
-       ORDER BY ended_at DESC NULLS LAST, started_at DESC NULLS LAST
-       LIMIT 50`,
-      [employeeId]
-    );
-    const meetings = meetingsResult.rows.map(row => ({
-      id: row.id,
-      status: row.status,
-      started_at: row.started_at,
-      ended_at: row.ended_at,
-      content: row.content
-    }));
-
-    // Получаем завершенные опросы с результатами
+    // Получаем завершенные опросы с результатами (DISC, BigFive)
     const surveysResult = await query(
       `SELECT 
         sr.id,
@@ -182,7 +163,6 @@ export class CharacteristicGenerationService {
         position: employee.position,
         team: employee.team
       },
-      meetings,
       surveys,
       previous_characteristic: previousCharacteristic
     };
@@ -190,59 +170,46 @@ export class CharacteristicGenerationService {
 
   /**
    * Вычисление показателя наполненности данных
+   * Учитываются только результаты опросов DISC и BigFive
    */
   private calculateDataRichness(context: CharacteristicGenerationContext): DataRichnessLevel {
-    const meetingsCount = context.meetings.length;
     const surveysCount = context.surveys.length;
 
-    // Подсчет общего количества "ценных" данных
+    // Подсчет баллов только за опросы
     let score = 0;
 
-    // Встречи дают больше баллов, если есть заметки и договоренности
-    context.meetings.forEach(meeting => {
-      const hasNotes = meeting.content?.notes && meeting.content.notes.length > 50;
-      const agreementsCount = meeting.content?.agreements?.length || 0;
-
-      if (hasNotes && agreementsCount > 0) {
-        score += 15; // Полноценная встреча
-      } else if (hasNotes || agreementsCount > 0) {
-        score += 8; // Частично заполненная встреча
-      } else {
-        score += 3; // Встреча без контента
-      }
-    });
-
-    // Опросы дают баллы
+    // Опросы дают баллы в зависимости от наличия интерпретации
     context.surveys.forEach(survey => {
-      const hasInterpretation = survey.metadata?.disc?.llmDescription || survey.metadata?.bigFive?.llmDescription;
+      const hasDiscInterpretation = survey.metadata?.disc?.llmDescription || survey.metadata?.disc?.profileHint;
+      const hasBigFiveInterpretation = survey.metadata?.bigFive?.llmDescription;
       const answersCount = survey.answers?.length || 0;
 
-      if (hasInterpretation && answersCount > 5) {
-        score += 20; // Полный опрос с интерпретацией
+      if ((hasDiscInterpretation || hasBigFiveInterpretation) && answersCount > 5) {
+        score += 50; // Полный опрос с интерпретацией (DISC или BigFive)
       } else if (answersCount > 3) {
-        score += 10; // Опрос без интерпретации
+        score += 25; // Опрос без интерпретации
       } else {
-        score += 5; // Минимальный опрос
+        score += 10; // Минимальный опрос
       }
     });
 
     // Нормализуем до 100
     score = Math.min(score, 100);
 
-    // Определяем уровень
+    // Определяем уровень (пороги пересмотрены для работы только с опросами)
     let level: DataRichnessLevel['level'];
     let description: string;
 
     if (score === 0) {
       level = 'none';
       description = 'Нет данных для характеристики';
-    } else if (score < 20) {
+    } else if (score < 25) {
       level = 'minimal';
-      description = 'Минимальные данные, требуется больше встреч и опросов';
-    } else if (score < 40) {
+      description = 'Минимальные данные, рекомендуется пройти дополнительные опросы';
+    } else if (score < 50) {
       level = 'moderate';
       description = 'Умеренная наполненность, характеристика будет базовой';
-    } else if (score < 70) {
+    } else if (score < 80) {
       level = 'good';
       description = 'Хорошая наполненность данных';
     } else {
@@ -257,10 +224,10 @@ export class CharacteristicGenerationService {
    * Системный промпт для LLM
    */
   private getSystemPrompt(): string {
-    return `Ты - AI-ассистент руководителя в системе управления one-to-one встречами. Твоя роль - быть аналитиком и советником, который помогает руководителю лучше понимать своих сотрудников.
+    return `Ты - AI-ассистент руководителя в системе управления one-to-one встречами. Твоя роль - быть аналитиком и советником, который помогает руководителю лучше понимать своих сотрудников на основе психометрических профилей.
 
 ## Контекст твоей работы:
-Руководитель регулярно проводит встречи с сотрудниками, фиксирует обратную связь, наблюдения, договоренности. Сотрудники могут проходить психометрические опросы (например, DISC, Big Five). Используй строго только те опросы, которые присутствуют в переданных данных; если какого‑то опроса нет (например, Big Five), не упоминай его в тексте. Вся эта информация накапливается, и руководителю нужна твоя помощь, чтобы синтезировать разрозненные данные в целостное понимание человека.
+Сотрудники проходят психометрические опросы DISC и Big Five. Эти опросы дают глубокое понимание типа личности, мотивации, стиля работы и коммуникации человека. Используй строго только те опросы, которые присутствуют в переданных данных; если какого‑то опроса нет (например, Big Five), не упоминай его в тексте.
 
 ## От чьего лица ты пишешь:
 Ты пишешь как объективный аналитик, который смотрит на данные со стороны. НЕ пиши от первого лица ("я думаю", "мне кажется"). НЕ обращайся напрямую к руководителю ("вам следует"). Пиши описательно и аналитически, как если бы ты составлял профессиональную характеристику для HR-досье.
@@ -268,8 +235,8 @@ export class CharacteristicGenerationService {
 ## Цель характеристики:
 Помочь руководителю:
 - Быстро вспомнить ключевое о сотруднике перед встречей
-- Понять текущее состояние человека (настроение, мотивация, проблемы)
-- Увидеть паттерны и динамику изменений
+- Понять тип личности и особенности коммуникации
+- Увидеть сильные стороны и потенциальные зоны роста
 - Получить подсказки, как лучше взаимодействовать с этим конкретным человеком
 
 ## Формат и стиль:
@@ -278,17 +245,11 @@ export class CharacteristicGenerationService {
 - **Тон:** профессиональный, уважительный, эмпатичный, но деловой
 - **Язык:** русский, избегай канцелярщины и HR-жаргона
 - **Опирайся ТОЛЬКО на факты** из предоставленных данных, не додумывай
-- **БАЛАНС:** Используй данные из встреч И из опросов РАВНОМЕРНО. Опросы показывают тип личности, встречи - текущее состояние. Оба источника одинаково важны
-
-## Приоритет недавних изменений:
-- Делай упор на события последних 60 дней: изменения настроения, мотивации, запросов и договоренностей
-- Старые данные используй как фон (контекст), но не как главный тезис
-- Если новых событий нет, подчеркни стабильность и неизменность ключевых паттернов
 
 ## Что обязательно включить:
-1. **Профиль личности** (из опросов): характер, стиль работы, сильные стороны
-2. **Текущее состояние** (из встреч): настроение, запросы, проблемы
-3. **Динамика** (если есть): как меняется со временем
+1. **Тип личности и поведенческий профиль** (из DISC): доминирующий стиль поведения, как проявляется в работе
+2. **Личностные черты** (из Big Five, если есть): ключевые особенности характера
+3. **Рекомендации по взаимодействию**: как лучше строить коммуникацию с этим человеком
 
 ## Что НЕ включать или минимизировать:
 - Общие фразы без конкретики
@@ -302,18 +263,19 @@ export class CharacteristicGenerationService {
 - НЕ пиши слишком формально или сухо - пиши так, чтобы за текстом чувствовался живой человек
 - НЕ упоминай опросы, по которым нет данных (например, Big Five)
 
-Помни: твоя задача - дать руководителю глубокое, практичное понимание сотрудника как человека, а не просто перечислить факты.`;
+Помни: твоя задача - дать руководителю глубокое, практичное понимание сотрудника как человека на основе психометрических данных.`;
   }
 
   /**
    * Построение промпта для генерации характеристики
+   * Характеристика строится только на основе опросов DISC и BigFive
    */
   private buildPrompt(
     context: CharacteristicGenerationContext,
     dataRichness: DataRichnessLevel,
     excludeBigFive: boolean = false
   ): string {
-    const { employee, meetings, surveys, previous_characteristic } = context;
+    const { employee, surveys, previous_characteristic } = context;
 
     let prompt = `Создай характеристику для сотрудника:
 
@@ -332,36 +294,11 @@ export class CharacteristicGenerationService {
     const availableSurveys = [hasDiscData ? 'DISC' : null, hasBigFiveData ? 'Big Five' : null].filter(Boolean).join(', ');
     prompt += `**Доступные опросы в данных:** ${availableSurveys || 'нет'}\n\n`;
 
-    // Добавляем информацию о встречах
-    if (meetings.length > 0) {
-      const recentMeetings = meetings.slice(0, 10);
-      prompt += `**Проведено встреч:** ${meetings.length}\n\n`;
-      prompt += `**Информация из встреч (последние встречи):**\n`;
-
-      recentMeetings.forEach((meeting, idx) => {
-        const date = meeting.ended_at || meeting.started_at;
-        const dateStr = date ? new Date(date).toLocaleDateString('ru-RU') : 'Дата неизвестна';
-        
-        prompt += `\nВстреча ${idx + 1} (${dateStr}):\n`;
-
-        if (meeting.content?.notes) {
-          prompt += `Заметки: ${meeting.content.notes}\n`;
-        }
-
-        if (meeting.content?.agreements && meeting.content.agreements.length > 0) {
-          prompt += `Договоренности:\n`;
-          meeting.content.agreements.slice(0, 5).forEach((agreement: any) => {
-            prompt += `- ${agreement.title}\n`;
-          });
-        }
-      });
-    }
-
     // Добавляем информацию из опросов
     if (surveys.length > 0) {
       const recentSurveys = surveys.slice(0, 5);
-      prompt += `\n\n**Пройдено опросов:** ${surveys.length}\n\n`;
-      prompt += `**Результаты опросов:**\n`;
+      prompt += `**Пройдено опросов:** ${surveys.length}\n\n`;
+      prompt += `**Результаты психометрических опросов:**\n`;
 
       recentSurveys.forEach((survey, idx) => {
         prompt += `\nОпрос ${idx + 1}: ${survey.title}\n`;
@@ -382,18 +319,19 @@ export class CharacteristicGenerationService {
       });
     }
 
-    // Добавляем предыдущую характеристику для контекста и акцента на динамику
+    // Добавляем предыдущую характеристику для контекста
     if (previous_characteristic) {
-      prompt += `\n\n**Предыдущая характеристика (для понимания динамики):**\n${previous_characteristic}\n`;
-      prompt += `\nСконцентрируйся на том, что изменилось недавно (если изменилось): настроение, мотивация, запросы, договоренности. Если изменений нет — отрази устойчивость и стабильность.\n`;
+      prompt += `\n\n**Предыдущая характеристика (для сравнения):**\n${previous_characteristic}\n`;
+      prompt += `\nЕсли появились новые данные из опросов — обнови характеристику. Если данные не изменились — сохрани основные тезисы.\n`;
     }
 
-    prompt += `\n\nТеперь создай новую сбалансированную интегральную характеристику этого сотрудника.
+    prompt += `\n\nТеперь создай характеристику этого сотрудника на основе психометрических профилей.
 
 ВАЖНО:
 - Объем: 200-250 слов (2-3 абзаца)
-- Используй РАВНОМЕРНО данные из опросов (тип личности) и из встреч (текущее состояние)
+- Опирайся на данные опросов DISC и Big Five
 - Синтезируй информацию в целостный портрет человека
+- Дай практичные рекомендации по взаимодействию
 - Не упоминай опросы, которых нет в данных${excludeBigFive ? ' (данных Big Five нет — не упоминай Big Five)' : ''}`;
 
     return prompt;
@@ -412,14 +350,13 @@ export class CharacteristicGenerationService {
 
   /**
    * Сборка отпечатка контекста (для детекции изменений)
+   * Учитывает только опросы, т.к. характеристика строится на их основе
    */
   private buildContextFingerprint(context: CharacteristicGenerationContext): string {
     const position = context.employee.position || '';
-    const meetingsCount = context.meetings.length;
     const surveysCount = context.surveys.length;
-    const lastMeeting = context.meetings[0]?.ended_at || context.meetings[0]?.started_at || '';
     const lastSurvey = context.surveys[0]?.completed_at || '';
-    return [position, String(meetingsCount), String(surveysCount), String(lastMeeting), String(lastSurvey)].join('|');
+    return [position, String(surveysCount), String(lastSurvey)].join('|');
   }
 
   /**

@@ -290,6 +290,12 @@ export class SurveyService {
       });
       
       console.log(`✅ Фоновая LLM обработка завершена для результата ${resultId}`);
+      
+      // Автоматически обновляем характеристику сотрудника после завершения обработки опроса
+      if (resultEntity.employeeId) {
+        const { autoUpdateCharacteristicAsync } = await import('@/shared/lib/characteristic-auto-update.js');
+        autoUpdateCharacteristicAsync(resultEntity.employeeId);
+      }
     } catch (error) {
       console.error(`❌ Ошибка фоновой LLM обработки для результата ${resultId}:`, error);
       

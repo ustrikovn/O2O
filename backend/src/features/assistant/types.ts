@@ -45,13 +45,15 @@ export type ClientEvent = JoinEvent | UserMessageEvent | NotesUpdateEvent | Ping
 export interface AssistantMessagePayload {
   type: 'assistant_message';
   text: string; // компактный ответ (≤ 420 символов)
+  debugUrl?: string; // ссылка на debug-лог для отладки
 }
 
 export type ActionCardType =
   | 'start_survey'
   | 'add_agreement'
   | 'ask_followup'
-  | 'clarify_goal';
+  | 'clarify_goal'
+  | 'profile_deviation';  // Сигнал об отклонении от профиля/истории
 
 export interface ActionCardPayload {
   type: 'action_card';
@@ -60,6 +62,20 @@ export interface ActionCardPayload {
     kind: ActionCardType;
     title: string;
     subtitle?: string;
+    cta?: { label: string; action: string; params?: Record<string, unknown> };
+  };
+}
+
+/** Карточка для сигнала об отклонении профиля/поведения */
+export interface DeviationCardPayload {
+  type: 'action_card';
+  card: {
+    id: string;
+    kind: 'profile_deviation';
+    title: string;
+    subtitle: string;
+    severity: 'critical' | 'significant' | 'minor';
+    deviation_type: 'profile_mismatch' | 'history_anomaly' | 'both';
     cta?: { label: string; action: string; params?: Record<string, unknown> };
   };
 }
@@ -114,6 +130,7 @@ export type ServerEvent =
   | AssistantMessageEndPayload
   | StatusPayload
   | ActionCardPayload
+  | DeviationCardPayload
   | PipelineLogPayload
   | ErrorPayload
   | PongPayload

@@ -22,6 +22,7 @@ import agreementRoutes from '@/features/agreements/api/routes.js';
 import { characteristicsRoutes } from '@/features/characteristics/index.js';
 import { TextGenerationService } from '@/shared/llm/textService.js';
 import { attachAssistantWsServer } from '@/features/assistant/ws.js';
+import { assistantRoutes } from '@/features/assistant/api/routes.js';
 
 // Настройка для ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -84,6 +85,7 @@ app.use('/api/employees', employeeRoutes);
 app.use('/api/meetings', meetingsRoutes);
 app.use('/api/surveys', surveyRoutes);
 app.use('/api/characteristics', characteristicsRoutes);
+app.use('/api/assistant', assistantRoutes);
 
 // Пример тестового маршрута для проверки интеграции Bothub
 app.post('/api/llm/test', async (req, res) => {

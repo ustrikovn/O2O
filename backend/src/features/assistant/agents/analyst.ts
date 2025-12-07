@@ -254,8 +254,8 @@ export class AnalystAgent {
     
     // Тип инсайта (новые + legacy типы)
     const validTypes: InsightType[] = [
-      'behavioral_tactic', 'psychological_state', 'hidden_need', 'relationship_dynamic', 'risk',
-      'pattern', 'opportunity', 'contradiction', 'trend' // legacy
+      'behavioral_tactic', 'psychological_state', 'hidden_need', 'relationship_dynamic', 
+      'risk', 'positive_shift', 'pattern', 'opportunity', 'contradiction', 'trend' // legacy
     ];
     const type = validTypes.includes(raw.type) ? raw.type : 'pattern';
     

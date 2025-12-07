@@ -5,6 +5,17 @@
  */
 
 // ============================================
+// DEBUG ИНФОРМАЦИЯ
+// ============================================
+
+/** Debug-информация о вызове агента */
+export interface AgentDebugInfo {
+  systemPrompt: string;
+  userPrompt: string;
+  rawResponse: string;
+}
+
+// ============================================
 // ОБЩИЕ ТИПЫ
 // ============================================
 
@@ -23,6 +34,7 @@ export type InsightType =
   | 'hidden_need'          // Скрытая потребность
   | 'relationship_dynamic' // Динамика отношений
   | 'risk'                 // Риск (выгорание, конфликт)
+  | 'positive_shift'       // Позитивное изменение (улучшение, восстановление)
   | 'pattern'              // Повторяющийся паттерн (legacy)
   | 'opportunity'          // Возможность для развития (legacy)
   | 'contradiction'        // Противоречие в словах/поведении (legacy)
@@ -236,6 +248,111 @@ export interface ComposerOutput {
   
   /** Action card (опционально) */
   action_card?: ComposerActionCard;
+}
+
+// ============================================
+// IMMEDIATE ANALYST AGENT (быстрый анализ "здесь и сейчас")
+// ============================================
+
+/** Входные данные для ImmediateAnalyst */
+export interface ImmediateAnalystInput {
+  /** Текущие заметки руководителя */
+  notes: string;
+  
+  /** Информация о сотруднике */
+  employee: {
+    id: string;
+    name: string;
+    position?: string;
+    team?: string;
+  };
+  
+  /** Характеристика/профиль сотрудника (если есть) */
+  characteristic: string | null;
+}
+
+/** Выходные данные ImmediateAnalyst */
+export interface ImmediateAnalystOutput {
+  /** Есть ли конкретный совет "здесь и сейчас" */
+  has_actionable_advice: boolean;
+  
+  /** Причина решения (для логов) */
+  reason: string;
+  
+  /** Инсайт (если has_actionable_advice = true) */
+  insight?: AnalystInsight;
+  
+  /** Краткое резюме текущей ситуации */
+  situation_summary: string;
+  
+  /** Требуется ли глубокий анализ с историей */
+  needs_deep_analysis: boolean;
+}
+
+// ============================================
+// PROFILE DEVIATION AGENT (обнаружение отклонений)
+// ============================================
+
+/** Тип отклонения */
+export type DeviationType = 
+  | 'profile_mismatch'   // Поведение не соответствует профилю
+  | 'history_anomaly'    // Резкое отличие от истории
+  | 'both';              // Оба типа
+
+/** Уровень серьёзности отклонения */
+export type DeviationSeverity = 'critical' | 'significant' | 'minor';
+
+/** Входные данные для ProfileDeviationAgent */
+export interface ProfileDeviationInput {
+  /** Текущее описание поведения/состояния сотрудника */
+  current_behavior: string;
+  
+  /** Ключевые темы текущей встречи */
+  current_topics: string[];
+  
+  /** Настроение на текущей встрече */
+  current_sentiment: SentimentType;
+  
+  /** Режим взаимодействия */
+  current_interaction_mode?: InteractionMode;
+  
+  /** Профиль сотрудника */
+  profile: string | null;
+  
+  /** Информация о сотруднике */
+  employee: {
+    id: string;
+    name: string;
+    position?: string;
+  };
+  
+  /** История предыдущих встреч (для сравнения) */
+  previousMeetings: Array<{
+    date: string;
+    notes?: string;
+    satisfaction?: number;
+  }>;
+}
+
+/** Выходные данные ProfileDeviationAgent */
+export interface ProfileDeviationOutput {
+  /** Обнаружено ли отклонение */
+  has_deviation: boolean;
+  
+  /** Тип отклонения (если обнаружено) */
+  deviation_type?: DeviationType;
+  
+  /** Серьёзность отклонения */
+  severity?: DeviationSeverity;
+  
+  /** Описание отклонения для пользователя */
+  message?: string;
+  
+  /** Подробное объяснение (для логов) */
+  explanation: string;
+  
+  /** Рекомендованное действие */
+  recommended_action?: string;
 }
 
 // ============================================

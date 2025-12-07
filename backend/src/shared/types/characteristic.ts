@@ -4,9 +4,7 @@
 
 export interface CharacteristicMetadata {
   sources: {
-    meetings_count: number;
     surveys_count: number;
-    last_meeting_date?: string | undefined;
     last_survey_date?: string | undefined;
   };
   data_richness_score: number; // 0-100
@@ -14,7 +12,7 @@ export interface CharacteristicMetadata {
     model: string;
     tokens_used?: number | undefined;
     generation_time_ms?: number | undefined;
-    /** Отпечаток текущего контекста (кол-во и последние даты встреч/опросов, позиция) */
+    /** Отпечаток текущего контекста (кол-во опросов, последняя дата опроса, позиция) */
     context_fingerprint?: string | undefined;
   };
 }
@@ -58,21 +56,6 @@ export interface CharacteristicGenerationContext {
     position: string;
     team: string;
   };
-  meetings: Array<{
-    id: string;
-    status: string;
-    started_at?: string;
-    ended_at?: string;
-    content?: {
-      notes?: string;
-      agreements?: Array<{
-        title: string;
-        description?: string;
-        type: string;
-        status?: string;
-      }>;
-    };
-  }>;
   surveys: Array<{
     id: string;
     title: string;

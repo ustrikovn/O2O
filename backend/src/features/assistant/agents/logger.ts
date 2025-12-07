@@ -8,6 +8,7 @@
  */
 
 import type { AnalystOutput, DecisionOutput, ComposerOutput } from './types.js';
+import type { PipelineLogPayload } from '../types.js';
 
 // ============================================
 // МЕТРИКИ
@@ -90,6 +91,12 @@ function truncate(text: string, maxLen: number): string {
   return text.slice(0, maxLen - 3) + '...';
 }
 
+/** Тип результата pipeline */
+type PipelineResult = 'silence' | 'message' | 'error' | 'deviation_only';
+
+/** Callback для отправки логов клиенту */
+type OnLogCallback = (log: PipelineLogPayload) => void;
+
 /** Класс для логирования одного вызова pipeline */
 export class PipelineLogger {
   private meetingId: string;
@@ -98,12 +105,28 @@ export class PipelineLogger {
   private analystTime?: number;
   private decisionTime?: number;
   private composerTime?: number;
+  private onLog?: OnLogCallback;
   
-  constructor(meetingId: string, employeeId: string) {
+  constructor(meetingId: string, employeeId: string, onLog?: OnLogCallback) {
     this.meetingId = meetingId;
     this.employeeId = employeeId;
     this.startTime = Date.now();
+    this.onLog = onLog;
     metrics.total_calls++;
+  }
+  
+  /** Отправка лога клиенту (если callback задан) */
+  private sendLog(level: PipelineLogPayload['level'], stage: string, message: string, durationMs?: number, details?: Record<string, unknown>): void {
+    if (this.onLog) {
+      this.onLog({
+        type: 'pipeline_log',
+        level,
+        stage,
+        message,
+        durationMs,
+        details
+      });
+    }
   }
   
   /** Логирование начала pipeline */
@@ -116,6 +139,8 @@ export class PipelineLogger {
     if (notes) {
       console.log(`${c.DIM}${SYMBOLS.LINE} notes: "${truncate(notes, 50)}"${c.RESET}`);
     }
+    
+    this.sendLog('info', 'start', '🚀 Pipeline started');
   }
   
   /** Логирование результата Analyst */
@@ -131,6 +156,8 @@ export class PipelineLogger {
       const text = insight.interpretation || insight.description || '';
       console.log(`${c.DIM}${SYMBOLS.LINE} [${i}] ${insight.type}: "${truncate(text, 40)}" (conf: ${insight.confidence.toFixed(1)})${c.RESET}`);
     });
+    
+    this.sendLog('info', 'analyst', `📊 Analyst: ${output.insights.length} insights, ${output.employee_state.sentiment}`, durationMs);
   }
   
   /** Логирование результата Decision */
@@ -159,6 +186,14 @@ export class PipelineLogger {
     if (output.should_intervene && output.intervention_type) {
       console.log(`${c.DIM}${SYMBOLS.LINE} type: ${output.intervention_type}, priority: ${output.priority || 'medium'}${c.RESET}`);
     }
+    
+    const statusEmoji = output.should_intervene ? '✅' : '🤫';
+    this.sendLog(
+      output.should_intervene ? 'success' : 'info', 
+      'decision', 
+      `${statusEmoji} Decision: ${output.should_intervene ? 'говорим' : 'молчим'}`, 
+      durationMs
+    );
   }
   
   /** Логирование результата Composer */
@@ -175,19 +210,39 @@ export class PipelineLogger {
     if (output.action_card) {
       console.log(`${c.DIM}${SYMBOLS.LINE} action_card: ${output.action_card.kind}${c.RESET}`);
     }
+    
+    this.sendLog('success', 'composer', `✍️ Composer: сообщение готово`, durationMs);
+  }
+  
+  /** Логирование кастомного события (для новых агентов) */
+  logCustom(stage: string, details: Record<string, unknown>, durationMs?: number): void {
+    const c = COLORS;
+    console.log(`${c.CYAN}${SYMBOLS.MID} ${stage.toUpperCase()} (${durationMs ? formatTime(durationMs) : 'n/a'}) ──────────────────${c.RESET}`);
+    
+    for (const [key, value] of Object.entries(details)) {
+      console.log(`${c.DIM}${SYMBOLS.LINE} ${key}: ${JSON.stringify(value)}${c.RESET}`);
+    }
+    
+    this.sendLog('info', stage, `📋 ${stage}: ${JSON.stringify(details)}`, durationMs, details);
   }
   
   /** Логирование завершения pipeline */
-  logEnd(result: 'silence' | 'message' | 'error', errorMsg?: string): void {
+  logEnd(result: PipelineResult, errorMsg?: string): void {
     const totalTime = Date.now() - this.startTime;
     const c = COLORS;
     
     if (result === 'silence') {
       console.log(`${c.RED}${SYMBOLS.BOT} RESULT: молчим (${formatTime(totalTime)}) ────────────────${c.RESET}`);
+      this.sendLog('info', 'end', `🤫 Молчим`, totalTime);
     } else if (result === 'message') {
       console.log(`${c.GREEN}${SYMBOLS.BOT} RESULT: отправляем сообщение (${formatTime(totalTime)}) ──${c.RESET}`);
+      this.sendLog('success', 'end', `✅ Сообщение отправлено`, totalTime);
+    } else if (result === 'deviation_only') {
+      console.log(`${c.YELLOW}${SYMBOLS.BOT} RESULT: только отклонение (${formatTime(totalTime)}) ──${c.RESET}`);
+      this.sendLog('warn', 'end', `⚠️ Отправлено предупреждение об отклонении`, totalTime);
     } else {
       console.log(`${c.RED}${SYMBOLS.BOT} RESULT: ошибка - ${errorMsg} (${formatTime(totalTime)}) ──${c.RESET}`);
+      this.sendLog('error', 'end', `❌ Ошибка: ${errorMsg}`, totalTime);
     }
     console.log('');
   }
@@ -198,6 +253,8 @@ export class PipelineLogger {
     console.log(`${c.DIM}[PIPELINE] ${SYMBOLS.CROSS} ${reason}${c.RESET}`);
     metrics.total_calls++;
     metrics.silence_count++;
+    
+    this.sendLog('info', 'quick_silence', `🤫 ${reason}`);
   }
 }
 
@@ -259,5 +316,3 @@ export function resetMetrics(): void {
   metrics.composer_time_sum_ms = 0;
   metrics.intervention_types = {};
 }
-
-
