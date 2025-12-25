@@ -314,6 +314,223 @@
             }
         }
 
+        /* ═══════════════════════════════════════════════════════════════
+           BOS (Behavioral Observation Scale) секция
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .bos-section {
+            margin-top: 16px;
+            border-top: 1px solid rgba(226, 232, 240, 0.7);
+            padding-top: 16px;
+        }
+        
+        .bos-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 10px 14px;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #0369a1;
+            transition: all 200ms ease;
+        }
+        
+        .bos-toggle:hover {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            transform: translateY(-1px);
+        }
+        
+        .bos-toggle.expanded {
+            border-radius: 8px 8px 0 0;
+            border-bottom: none;
+        }
+        
+        .bos-toggle-icon {
+            margin-left: auto;
+            transition: transform 200ms ease;
+        }
+        
+        .bos-toggle.expanded .bos-toggle-icon {
+            transform: rotate(180deg);
+        }
+        
+        .bos-status-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .bos-status-badge.pending,
+        .bos-status-badge.processing {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .bos-status-badge.completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .bos-status-badge.failed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .bos-content {
+            background: #f8fafc;
+            border: 1px solid #bae6fd;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            padding: 16px;
+            animation: fadeIn 0.2s ease-out;
+        }
+        
+        .bos-content.hidden {
+            display: none;
+        }
+        
+        .bos-scores-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+        
+        .bos-score-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .bos-score-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .bos-behavior-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .bos-score-value {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .bos-score-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e2e8f0;
+        }
+        
+        .bos-score-dot.filled {
+            background: #3b82f6;
+        }
+        
+        .bos-score-dot.filled.high {
+            background: #10b981;
+        }
+        
+        .bos-score-dot.filled.low {
+            background: #f59e0b;
+        }
+        
+        .bos-score-number {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-left: 6px;
+        }
+        
+        .bos-score-null {
+            font-size: 12px;
+            color: #9ca3af;
+            font-style: italic;
+        }
+        
+        .bos-evidence {
+            font-size: 12px;
+            color: #6b7280;
+            font-style: italic;
+            line-height: 1.4;
+            padding-left: 8px;
+            border-left: 2px solid #e2e8f0;
+        }
+        
+        .bos-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 20px;
+            color: #6b7280;
+        }
+        
+        .bos-loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e2e8f0;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .bos-error {
+            padding: 12px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            color: #991b1b;
+            font-size: 13px;
+        }
+        
+        .bos-empty {
+            padding: 16px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 13px;
+        }
+        
+        .bos-retry-btn {
+            margin-top: 8px;
+            padding: 6px 12px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 200ms;
+        }
+        
+        .bos-retry-btn:hover {
+            background: #2563eb;
+        }
+        
+        @media (max-width: 640px) {
+            .bos-scores-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* Стили для карточек опросов */
         .survey-card {
             background: rgba(255, 255, 255, 0.8);
@@ -1179,9 +1396,12 @@
             // Отображаем список встреч
             const meetingsList = document.getElementById('meetings-list');
             meetingsList.innerHTML = sortedMeetings.map(meeting => createMeetingCard(meeting)).join('');
-            
+
             // Обновляем иконки
             feather.replace();
+            
+            // Инициализируем BOS статусы для завершённых встреч
+            setTimeout(() => initBOSStatuses(), 100);
         }
 
         // Функция создания карточки встречи
@@ -1410,6 +1630,25 @@
                             `}
                         </div>
                     </div>
+                    
+                    ${meeting.status === 'completed' ? `
+                    <!-- BOS секция (Behavioral Observation Scale) -->
+                    <div class="bos-section" id="bos-section-${meeting.id}">
+                        <button class="bos-toggle" id="bos-toggle-${meeting.id}" onclick="toggleBOS('${meeting.id}')">
+                            <i data-feather="activity" style="width: 16px; height: 16px;"></i>
+                            <span>Поведенческий анализ (BOS)</span>
+                            <span class="bos-status-badge" id="bos-status-${meeting.id}">загрузка...</span>
+                            <i data-feather="chevron-down" class="bos-toggle-icon" style="width: 16px; height: 16px;"></i>
+                        </button>
+                        <div class="bos-content hidden" id="bos-content-${meeting.id}">
+                            <div class="bos-loading" id="bos-loading-${meeting.id}">
+                                <div class="bos-loading-spinner"></div>
+                                <span>Загрузка результатов анализа...</span>
+                            </div>
+                            <div id="bos-scores-${meeting.id}"></div>
+                        </div>
+                    </div>
+                    ` : ''}
                 </div>
             `;
         }
@@ -1620,6 +1859,349 @@
         // Функция проверки, нужно ли сворачивать название
         function shouldCollapseTitle(title) {
             return title && title.length > 120; // Примерно 2 строки по 60 символов
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // BOS (Behavioral Observation Scale) функции
+        // ═══════════════════════════════════════════════════════════════
+        
+        // Кэш загруженных BOS данных
+        const bosDataCache = new Map();
+        
+        // Названия поведений на русском
+        const BOS_BEHAVIOR_NAMES = {
+            problem_articulation: 'Выражение проблем',
+            interest_articulation: 'Выражение интересов',
+            proactive_communication: 'Инициативная коммуникация',
+            collaborative_behavior: 'Сотрудничество',
+            feedback_receptivity: 'Восприимчивость к ОС',
+            task_ownership: 'Ответственность',
+            goal_alignment: 'Согласованность целей',
+            learning_agility: 'Готовность к обучению',
+            decision_quality: 'Качество решений',
+            emotional_intelligence: 'Эмоц. интеллект',
+            commitment_to_agreements: 'Соблюдение договорённостей',
+            strategic_thinking: 'Стратегическое мышление'
+        };
+        
+        // Переключение BOS секции
+        async function toggleBOS(meetingId) {
+            const toggle = document.getElementById(`bos-toggle-${meetingId}`);
+            const content = document.getElementById(`bos-content-${meetingId}`);
+            
+            if (!toggle || !content) return;
+            
+            const isExpanded = toggle.classList.contains('expanded');
+            
+            if (isExpanded) {
+                // Сворачиваем
+                toggle.classList.remove('expanded');
+                content.classList.add('hidden');
+            } else {
+                // Разворачиваем и загружаем данные
+                toggle.classList.add('expanded');
+                content.classList.remove('hidden');
+                
+                // Загружаем данные если ещё не загружены
+                if (!bosDataCache.has(meetingId)) {
+                    await loadBOSData(meetingId);
+                }
+            }
+            
+            // Обновляем иконки
+            feather.replace();
+        }
+        
+        // Загрузка BOS данных
+        async function loadBOSData(meetingId) {
+            const loadingEl = document.getElementById(`bos-loading-${meetingId}`);
+            const scoresEl = document.getElementById(`bos-scores-${meetingId}`);
+            const statusBadge = document.getElementById(`bos-status-${meetingId}`);
+            
+            try {
+                const response = await fetch(`/api/meetings/${meetingId}/bos`);
+                
+                // Проверяем статус ответа перед парсингом JSON
+                if (!response.ok) {
+                    // Показываем заглушку вместо ошибки
+                    if (loadingEl) loadingEl.classList.add('hidden');
+                    scoresEl.innerHTML = `
+                        <div class="bos-empty">
+                            <div>Данные BOS-анализа не найдены</div>
+                        </div>
+                    `;
+                    if (statusBadge) {
+                        statusBadge.textContent = 'нет данных';
+                        statusBadge.className = 'bos-status-badge';
+                    }
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.message || 'Ошибка загрузки');
+                }
+                
+                const observation = result.data;
+                
+                // Обновляем статус
+                updateBOSStatus(meetingId, observation);
+                
+                // Скрываем загрузку
+                if (loadingEl) loadingEl.classList.add('hidden');
+                
+                // Отображаем результаты
+                if (observation && observation.status === 'completed') {
+                    bosDataCache.set(meetingId, observation);
+                    renderBOSScores(meetingId, observation.scores);
+                } else if (observation && observation.status === 'processing') {
+                    scoresEl.innerHTML = `
+                        <div class="bos-loading">
+                            <div class="bos-loading-spinner"></div>
+                            <span>Анализ в процессе... Обновите страницу через минуту</span>
+                        </div>
+                    `;
+                    // Запускаем polling
+                    setTimeout(() => pollBOSStatus(meetingId), 5000);
+                } else if (observation && observation.status === 'failed') {
+                    scoresEl.innerHTML = `
+                        <div class="bos-error">
+                            <div>Ошибка анализа: ${observation.error_message || 'Неизвестная ошибка'}</div>
+                            <button class="bos-retry-btn" onclick="retryBOSAnalysis('${meetingId}')">
+                                Повторить анализ
+                            </button>
+                        </div>
+                    `;
+                } else if (!observation) {
+                    scoresEl.innerHTML = `
+                        <div class="bos-empty">
+                            <div>Данные BOS-анализа не найдены</div>
+                        </div>
+                    `;
+                    if (statusBadge) {
+                        statusBadge.textContent = 'нет данных';
+                        statusBadge.className = 'bos-status-badge';
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Ошибка загрузки BOS:', error);
+                if (loadingEl) loadingEl.classList.add('hidden');
+                // Показываем заглушку вместо технической ошибки
+                scoresEl.innerHTML = `
+                    <div class="bos-empty">
+                        <div>Данные BOS-анализа не найдены</div>
+                    </div>
+                `;
+                if (statusBadge) {
+                    statusBadge.textContent = 'нет данных';
+                    statusBadge.className = 'bos-status-badge';
+                }
+            }
+        }
+        
+        // Обновление статуса BOS
+        function updateBOSStatus(meetingId, observation) {
+            const statusBadge = document.getElementById(`bos-status-${meetingId}`);
+            if (!statusBadge) return;
+            
+            if (!observation) {
+                statusBadge.textContent = 'нет данных';
+                statusBadge.className = 'bos-status-badge';
+                return;
+            }
+            
+            const statusLabels = {
+                pending: 'ожидание',
+                processing: 'в процессе',
+                completed: 'готово',
+                failed: 'ошибка'
+            };
+            
+            statusBadge.textContent = statusLabels[observation.status] || observation.status;
+            statusBadge.className = `bos-status-badge ${observation.status}`;
+        }
+        
+        // Polling статуса BOS
+        async function pollBOSStatus(meetingId) {
+            try {
+                const response = await fetch(`/api/meetings/${meetingId}/bos`);
+                
+                // Проверяем статус ответа
+                if (!response.ok) {
+                    console.error('Ошибка polling BOS: сервер вернул', response.status);
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const observation = result.data;
+                    updateBOSStatus(meetingId, observation);
+                    
+                    if (observation.status === 'completed') {
+                        bosDataCache.set(meetingId, observation);
+                        const loadingEl = document.getElementById(`bos-loading-${meetingId}`);
+                        if (loadingEl) loadingEl.classList.add('hidden');
+                        renderBOSScores(meetingId, observation.scores);
+                    } else if (observation.status === 'processing') {
+                        // Продолжаем polling
+                        setTimeout(() => pollBOSStatus(meetingId), 5000);
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка polling BOS:', error);
+            }
+        }
+        
+        // Перезапуск BOS анализа
+        async function retryBOSAnalysis(meetingId) {
+            const scoresEl = document.getElementById(`bos-scores-${meetingId}`);
+            const statusBadge = document.getElementById(`bos-status-${meetingId}`);
+            
+            scoresEl.innerHTML = `
+                <div class="bos-loading">
+                    <div class="bos-loading-spinner"></div>
+                    <span>Запуск анализа...</span>
+                </div>
+            `;
+            statusBadge.textContent = 'запуск...';
+            statusBadge.className = 'bos-status-badge processing';
+            
+            try {
+                const response = await fetch(`/api/meetings/${meetingId}/bos/retry`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Не удалось запустить анализ');
+                }
+                
+                // Запускаем polling
+                setTimeout(() => pollBOSStatus(meetingId), 3000);
+                
+            } catch (error) {
+                console.error('Ошибка перезапуска BOS:', error);
+                scoresEl.innerHTML = `
+                    <div class="bos-error">
+                        <div>Не удалось запустить анализ: ${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Отрисовка BOS оценок
+        function renderBOSScores(meetingId, scores) {
+            const scoresEl = document.getElementById(`bos-scores-${meetingId}`);
+            if (!scoresEl || !scores) return;
+            
+            const behaviorKeys = Object.keys(BOS_BEHAVIOR_NAMES);
+            
+            // Фильтруем только те, у которых есть оценка
+            const scoredBehaviors = behaviorKeys.filter(key => 
+                scores[key] && scores[key].score !== null
+            );
+            
+            // Отсутствующие оценки
+            const missingBehaviors = behaviorKeys.filter(key => 
+                !scores[key] || scores[key].score === null
+            );
+            
+            if (scoredBehaviors.length === 0) {
+                scoresEl.innerHTML = `
+                    <div class="bos-empty">
+                        Недостаточно данных для оценки поведения на этой встрече
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div class="bos-scores-grid">';
+            
+            for (const key of scoredBehaviors) {
+                const score = scores[key];
+                const name = BOS_BEHAVIOR_NAMES[key];
+                
+                html += renderBOSScoreItem(key, name, score);
+            }
+            
+            html += '</div>';
+            
+            // Добавляем информацию об отсутствующих оценках
+            if (missingBehaviors.length > 0) {
+                html += `
+                    <div class="mt-4 text-xs text-gray-500">
+                        <span class="font-medium">Не наблюдалось на встрече:</span>
+                        ${missingBehaviors.map(k => BOS_BEHAVIOR_NAMES[k]).join(', ')}
+                    </div>
+                `;
+            }
+            
+            scoresEl.innerHTML = html;
+            feather.replace();
+        }
+        
+        // Отрисовка одной BOS оценки
+        function renderBOSScoreItem(key, name, scoreData) {
+            const score = scoreData.score;
+            const evidence = scoreData.evidence;
+            
+            // Определяем цвет: низкий (1-2), средний (3), высокий (4-5)
+            const scoreClass = score <= 2 ? 'low' : score >= 4 ? 'high' : '';
+            
+            // Генерируем точки
+            let dots = '';
+            for (let i = 1; i <= 5; i++) {
+                const filled = i <= score ? 'filled' : '';
+                const colorClass = filled && scoreClass ? scoreClass : '';
+                dots += `<div class="bos-score-dot ${filled} ${colorClass}"></div>`;
+            }
+            
+            return `
+                <div class="bos-score-item">
+                    <div class="bos-score-header">
+                        <span class="bos-behavior-name">${name}</span>
+                        <div class="bos-score-value">
+                            ${dots}
+                            <span class="bos-score-number">${score}/5</span>
+                        </div>
+                    </div>
+                    ${evidence ? `<div class="bos-evidence">"${evidence}"</div>` : ''}
+                </div>
+            `;
+        }
+        
+        // Инициализация BOS статусов при загрузке страницы
+        async function initBOSStatuses() {
+            const bosToggles = document.querySelectorAll('[id^="bos-toggle-"]');
+            
+            for (const toggle of bosToggles) {
+                const meetingId = toggle.id.replace('bos-toggle-', '');
+                
+                try {
+                    const response = await fetch(`/api/meetings/${meetingId}/bos`);
+                    
+                    // Проверяем статус ответа
+                    if (!response.ok) {
+                        // При ошибке показываем "нет данных"
+                        updateBOSStatus(meetingId, null);
+                        continue;
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        updateBOSStatus(meetingId, result.data);
+                    } else {
+                        updateBOSStatus(meetingId, null);
+                    }
+                } catch (error) {
+                    console.error(`Ошибка загрузки BOS статуса для ${meetingId}:`, error);
+                    // При любой ошибке показываем "нет данных" вместо "загрузка..."
+                    updateBOSStatus(meetingId, null);
+                }
+            }
         }
 
         // Функция отображения состояния ошибки для встреч

@@ -4,6 +4,8 @@
 
 import express, { Request, Response } from 'express';
 import { MeetingEntity } from '@/entities/meeting/index.js';
+import { BOSObservationEntity } from '@/entities/bos-observation/index.js';
+import { BOSService } from '../lib/bos-service.js';
 import { 
   validateCreateMeeting,
   validateUpdateNotes,
@@ -263,6 +265,9 @@ router.post('/:id/end', validateUUID('id'), async (req: Request, res: Response):
       return;
     }
     
+    // Запускаем BOS-анализ асинхронно (не блокируем ответ)
+    BOSService.triggerAnalysis(meetingId);
+    
     const response: ApiResponse<MeetingResponse> = {
       success: true,
       message: 'Встреча успешно завершена',
@@ -425,6 +430,110 @@ router.get('/employees/:employeeId/last-agreements', validateUUID('employeeId'),
     res.status(500).json({
       error: 'Ошибка сервера',
       message: 'Не удалось получить договоренности с последней встречи'
+    });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// BOS (Behavioral Observation Scale) Endpoints
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/meetings/:id/bos
+ * Получение BOS-наблюдения для встречи
+ */
+router.get('/:id/bos', validateUUID('id'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const meetingId = req.params.id!;
+    
+    const observation = await BOSObservationEntity.findByMeetingId(meetingId);
+    
+    const response: ApiResponse = {
+      success: true,
+      data: observation
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('Ошибка получения BOS-наблюдения:', error);
+    res.status(500).json({
+      error: 'Ошибка сервера',
+      message: 'Не удалось получить BOS-наблюдение'
+    });
+  }
+});
+
+/**
+ * POST /api/meetings/:id/bos/retry
+ * Перезапуск BOS-анализа для встречи
+ */
+router.post('/:id/bos/retry', validateUUID('id'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const meetingId = req.params.id!;
+    
+    // Проверяем, что встреча существует и завершена
+    const meeting = await MeetingEntity.findById(meetingId);
+    if (!meeting) {
+      res.status(404).json({
+        error: 'Встреча не найдена',
+        message: 'Встреча с указанным ID не существует'
+      });
+      return;
+    }
+    
+    if (meeting.status !== 'completed') {
+      res.status(400).json({
+        error: 'Неверный статус',
+        message: 'BOS-анализ возможен только для завершённых встреч'
+      });
+      return;
+    }
+    
+    // Запускаем перезапуск анализа
+    BOSService.retryAnalysis(meetingId);
+    
+    const response: ApiResponse = {
+      success: true,
+      message: 'BOS-анализ перезапущен'
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('Ошибка перезапуска BOS-анализа:', error);
+    res.status(500).json({
+      error: 'Ошибка сервера',
+      message: 'Не удалось перезапустить BOS-анализ'
+    });
+  }
+});
+
+/**
+ * GET /api/meetings/employees/:employeeId/bos-history
+ * Получение истории BOS-наблюдений для сотрудника
+ */
+router.get('/employees/:employeeId/bos-history', validateUUID('employeeId'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const employeeId = req.params.employeeId!;
+    const { limit = 20, offset = 0 } = req.query;
+    
+    const observations = await BOSObservationEntity.findByEmployeeId(employeeId, {
+      limit: Number(limit),
+      offset: Number(offset),
+      status: 'completed' // Только завершённые
+    });
+    
+    const response: ApiResponse = {
+      success: true,
+      data: observations,
+      count: observations.length
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('Ошибка получения истории BOS:', error);
+    res.status(500).json({
+      error: 'Ошибка сервера',
+      message: 'Не удалось получить историю BOS-наблюдений'
     });
   }
 });
