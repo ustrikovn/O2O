@@ -531,6 +531,112 @@
             }
         }
 
+        /* Стили для интегрального BOS-анализа (дашборд) */
+        .bos-aggregate-dashboard {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            .bos-aggregate-dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .bos-cluster {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .bos-cluster-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .bos-cluster-icon {
+            width: 20px;
+            height: 20px;
+            color: #6b7280;
+        }
+        
+        .bos-cluster-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #374151;
+        }
+        
+        .bos-cluster-behaviors {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .bos-aggregate-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .bos-aggregate-name {
+            font-size: 13px;
+            color: #4b5563;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding-right: 8px;
+        }
+        
+        .bos-aggregate-score {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        
+        .bos-aggregate-score .bos-score-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #e2e8f0;
+        }
+        
+        .bos-aggregate-score .bos-score-dot.filled {
+            background: #3b82f6;
+        }
+        
+        .bos-aggregate-score .bos-score-dot.filled.high {
+            background: #10b981;
+        }
+        
+        .bos-aggregate-score .bos-score-dot.filled.low {
+            background: #f59e0b;
+        }
+        
+        .bos-aggregate-number {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-left: 6px;
+            min-width: 28px;
+            text-align: right;
+        }
+        
+        .bos-aggregate-null {
+            font-size: 12px;
+            color: #9ca3af;
+            font-style: italic;
+        }
+
         /* Стили для карточек опросов */
         .survey-card {
             background: rgba(255, 255, 255, 0.8);
@@ -1066,12 +1172,29 @@
                         <div id="employee-characteristic-container"></div>
                     </div>
 
-                    <!-- Метрики и аналитика (заглушка) -->
-                    <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Ключевые метрики</h3>
-                        <div class="text-gray-500 text-center py-8">
-                            <i data-feather="bar-chart-2" class="mx-auto mb-4"></i>
-                            <p>Раздел с метриками будет реализован позже</p>
+                    <!-- Интегральный BOS-анализ -->
+                    <div class="mb-6" id="bos-aggregate-section">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Интегральный BOS-анализ</h3>
+                            <span id="bos-aggregate-updated" class="text-xs text-gray-500"></span>
+                        </div>
+                        
+                        <!-- Загрузочное состояние -->
+                        <div id="bos-aggregate-loading" class="text-center py-8">
+                            <div class="bos-loading-spinner mx-auto mb-2"></div>
+                            <p class="text-sm text-gray-500">Загрузка BOS-показателей...</p>
+                        </div>
+                        
+                        <!-- Пустое состояние -->
+                        <div id="bos-aggregate-empty" class="hidden text-center py-8">
+                            <i data-feather="activity" class="mx-auto mb-3 text-gray-400"></i>
+                            <p class="text-gray-500">Данные BOS-анализа пока отсутствуют</p>
+                            <p class="text-xs text-gray-400 mt-1">Проведите встречу с сотрудником для получения аналитики</p>
+                        </div>
+                        
+                        <!-- Контент дашборда -->
+                        <div id="bos-aggregate-content" class="bos-aggregate-dashboard hidden">
+                            <!-- 4 кластера будут добавлены динамически -->
                         </div>
                     </div>
                 </div>
@@ -1294,6 +1417,9 @@
             if (employeeCharacteristic) {
                 employeeCharacteristic.mount(employee.id);
             }
+            
+            // Загружаем интегральные BOS-показатели
+            loadBOSAggregate(employee.id);
             
             // Загружаем данные о встречах
             if (currentTab === 'meetings') {
@@ -1883,6 +2009,159 @@
             commitment_to_agreements: 'Соблюдение договорённостей',
             strategic_thinking: 'Стратегическое мышление'
         };
+
+        // ═══════════════════════════════════════════════════════════════
+        // Интегральный BOS-анализ (дашборд)
+        // ═══════════════════════════════════════════════════════════════
+        
+        // Кластеры BOS-поведений
+        const BOS_CLUSTERS = {
+            communication: {
+                title: 'Коммуникация',
+                icon: 'message-circle',
+                behaviors: ['problem_articulation', 'interest_articulation', 'proactive_communication']
+            },
+            interaction: {
+                title: 'Взаимодействие',
+                icon: 'users',
+                behaviors: ['collaborative_behavior', 'feedback_receptivity', 'emotional_intelligence']
+            },
+            responsibility: {
+                title: 'Ответственность',
+                icon: 'check-square',
+                behaviors: ['task_ownership', 'commitment_to_agreements', 'decision_quality']
+            },
+            development: {
+                title: 'Развитие',
+                icon: 'trending-up',
+                behaviors: ['goal_alignment', 'learning_agility', 'strategic_thinking']
+            }
+        };
+
+        // Загрузка интегральных BOS-показателей
+        async function loadBOSAggregate(employeeId) {
+            const loadingEl = document.getElementById('bos-aggregate-loading');
+            const emptyEl = document.getElementById('bos-aggregate-empty');
+            const contentEl = document.getElementById('bos-aggregate-content');
+            const updatedEl = document.getElementById('bos-aggregate-updated');
+
+            try {
+                const response = await fetch(`/api/meetings/employees/${employeeId}/bos-aggregate`);
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки');
+                }
+
+                const result = await response.json();
+
+                // Скрываем загрузку
+                if (loadingEl) loadingEl.classList.add('hidden');
+
+                if (!result.success || !result.data) {
+                    // Показываем пустое состояние
+                    if (emptyEl) emptyEl.classList.remove('hidden');
+                    if (contentEl) contentEl.classList.add('hidden');
+                    return;
+                }
+
+                const aggregate = result.data;
+
+                // Обновляем дату
+                if (updatedEl && aggregate.updated_at) {
+                    const date = new Date(aggregate.updated_at);
+                    updatedEl.textContent = `Обновлено: ${date.toLocaleDateString('ru-RU')} в ${date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
+                }
+
+                // Проверяем, есть ли хоть одна оценка
+                const hasScores = Object.values(aggregate.scores || {}).some(v => v !== null);
+                
+                if (!hasScores) {
+                    if (emptyEl) emptyEl.classList.remove('hidden');
+                    if (contentEl) contentEl.classList.add('hidden');
+                    return;
+                }
+
+                // Рендерим дашборд
+                renderBOSAggregateDashboard(aggregate.scores);
+                
+                // Показываем контент
+                if (emptyEl) emptyEl.classList.add('hidden');
+                if (contentEl) contentEl.classList.remove('hidden');
+                
+                // Обновляем иконки
+                feather.replace();
+
+            } catch (error) {
+                console.error('Ошибка загрузки BOS-агрегата:', error);
+                if (loadingEl) loadingEl.classList.add('hidden');
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                if (contentEl) contentEl.classList.add('hidden');
+            }
+        }
+
+        // Рендеринг дашборда с 4 кластерами
+        function renderBOSAggregateDashboard(scores) {
+            const contentEl = document.getElementById('bos-aggregate-content');
+            if (!contentEl) return;
+
+            let html = '';
+
+            for (const [clusterKey, cluster] of Object.entries(BOS_CLUSTERS)) {
+                html += `
+                    <div class="bos-cluster">
+                        <div class="bos-cluster-header">
+                            <i data-feather="${cluster.icon}" class="bos-cluster-icon"></i>
+                            <span class="bos-cluster-title">${cluster.title}</span>
+                        </div>
+                        <div class="bos-cluster-behaviors">
+                            ${cluster.behaviors.map(behaviorKey => 
+                                renderBOSAggregateItem(behaviorKey, scores[behaviorKey])
+                            ).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            contentEl.innerHTML = html;
+        }
+
+        // Рендеринг одного BOS-показателя
+        function renderBOSAggregateItem(behaviorKey, score) {
+            const name = BOS_BEHAVIOR_NAMES[behaviorKey] || behaviorKey;
+            
+            if (score === null || score === undefined) {
+                return `
+                    <div class="bos-aggregate-item">
+                        <span class="bos-aggregate-name">${name}</span>
+                        <span class="bos-aggregate-null">нет данных</span>
+                    </div>
+                `;
+            }
+
+            // Округляем до целого для отображения точек
+            const roundedScore = Math.round(score);
+            
+            // Определяем цвет: низкий (1-2), средний (3), высокий (4-5)
+            const scoreClass = roundedScore <= 2 ? 'low' : roundedScore >= 4 ? 'high' : '';
+
+            // Генерируем 5 точек
+            let dots = '';
+            for (let i = 1; i <= 5; i++) {
+                const filled = i <= roundedScore ? 'filled' : '';
+                const colorClass = filled && scoreClass ? scoreClass : '';
+                dots += `<div class="bos-score-dot ${filled} ${colorClass}"></div>`;
+            }
+
+            return `
+                <div class="bos-aggregate-item">
+                    <span class="bos-aggregate-name">${name}</span>
+                    <div class="bos-aggregate-score">
+                        ${dots}
+                        <span class="bos-aggregate-number">${score.toFixed(1)}</span>
+                    </div>
+                </div>
+            `;
+        }
         
         // Переключение BOS секции
         async function toggleBOS(meetingId) {

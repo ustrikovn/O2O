@@ -10,6 +10,7 @@ import { BOSObservationEntity } from '@/entities/bos-observation/index.js';
 import { MeetingEntity } from '@/entities/meeting/index.js';
 import { AgreementEntity } from '@/entities/agreement/model/agreement.js';
 import { query } from '@/shared/database/connection.js';
+import { BOSAggregateService } from './bos-aggregate-service.js';
 import type { BOSAnalysisInput, BOSAgreementInput, BOSMetadata } from '@/features/assistant/agents/bos-types.js';
 
 /**
@@ -134,6 +135,9 @@ export class BOSService {
       await BOSObservationEntity.complete(meetingId, output.scores, metadata);
 
       console.log(`[BOSService] BOS-анализ завершён для встречи ${meetingId} за ${durationMs}ms`);
+
+      // 13. Обновляем интегральный BOS-агрегат сотрудника
+      await BOSAggregateService.updateAggregate(meeting.employee_id);
 
     } catch (error) {
       console.error(`[BOSService] Ошибка BOS-анализа для встречи ${meetingId}:`, error);

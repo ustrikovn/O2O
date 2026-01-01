@@ -6,6 +6,7 @@ import express, { Request, Response } from 'express';
 import { MeetingEntity } from '@/entities/meeting/index.js';
 import { BOSObservationEntity } from '@/entities/bos-observation/index.js';
 import { BOSService } from '../lib/bos-service.js';
+import { BOSAggregateService } from '../lib/bos-aggregate-service.js';
 import { 
   validateCreateMeeting,
   validateUpdateNotes,
@@ -534,6 +535,49 @@ router.get('/employees/:employeeId/bos-history', validateUUID('employeeId'), asy
     res.status(500).json({
       error: 'Ошибка сервера',
       message: 'Не удалось получить историю BOS-наблюдений'
+    });
+  }
+});
+
+/**
+ * GET /api/meetings/employees/:employeeId/bos-aggregate
+ * Получение интегральных BOS-показателей для сотрудника
+ * 
+ * Возвращает агрегированные оценки по 12 BOS-поведениям
+ * с использованием exponential decay по последним 6 встречам.
+ */
+router.get('/employees/:employeeId/bos-aggregate', validateUUID('employeeId'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const employeeId = req.params.employeeId!;
+    
+    const aggregate = await BOSAggregateService.getAggregate(employeeId);
+    
+    if (!aggregate) {
+      // Нет агрегата - возвращаем пустой объект
+      const response: ApiResponse = {
+        success: true,
+        data: null,
+        message: 'Интегральные BOS-показатели ещё не рассчитаны'
+      };
+      res.json(response);
+      return;
+    }
+    
+    const response: ApiResponse = {
+      success: true,
+      data: {
+        scores: aggregate.scores,
+        meetings_count: aggregate.meetings_count,
+        updated_at: aggregate.updated_at
+      }
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('Ошибка получения BOS-агрегата:', error);
+    res.status(500).json({
+      error: 'Ошибка сервера',
+      message: 'Не удалось получить интегральные BOS-показатели'
     });
   }
 });
