@@ -440,3 +440,4 @@ GET /api/meetings/employees/:employeeId/bos-history
 - [BOS-анализ](../features/bos-analysis.md)
 - [BOS API](bos-api.md)
 - [Схема базы данных](../DATABASE.md)
+

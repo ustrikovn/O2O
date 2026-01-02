@@ -296,3 +296,4 @@ graph LR
 - [Схема базы данных](DATABASE.md)
 - [LLM Pipeline спецификация](llm-pipeline-spec.md)
 - [API документация](api/)
+

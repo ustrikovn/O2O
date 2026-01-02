@@ -156,3 +156,4 @@ export class BOSAggregateService {
     await this.updateAggregate(employeeId);
   }
 }
+

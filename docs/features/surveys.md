@@ -204,3 +204,4 @@ stateDiagram-v2
 - [AI-характеристики](characteristics.md)
 - [API опросов](../api/surveys-api.md)
 - [Схема базы данных](../DATABASE.md)
+

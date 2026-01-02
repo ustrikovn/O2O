@@ -3,3 +3,4 @@
  */
 
 export { BOSObservationEntity } from './model/bos-observation.js';
+

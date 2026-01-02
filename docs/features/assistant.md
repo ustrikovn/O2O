@@ -251,3 +251,4 @@ export const ASSISTANT_CONFIG = {
 - [LLM Pipeline спецификация](../llm-pipeline-spec.md)
 - [WebSocket API](../api/websocket-api.md)
 - [Архитектура](../ARCHITECTURE.md)
+

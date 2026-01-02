@@ -260,3 +260,4 @@ POST /api/meetings/:id/end  →  BOSService.triggerAnalysis()
 - [Бизнес-описание BOS](../features/bos-analysis.md)
 - [API встреч](meetings-api.md)
 - [Схема базы данных](../DATABASE.md)
+

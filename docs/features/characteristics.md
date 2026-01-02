@@ -207,3 +207,4 @@ DELETE /api/characteristics/:employeeId
 - [Встречи one-to-one](meetings.md)
 - [API характеристик](../api/characteristics-api.md)
 - [Схема базы данных](../DATABASE.md)
+

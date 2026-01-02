@@ -192,3 +192,4 @@ GET /api/agreements/employees/:id/agreements/stats
 - [Бизнес-описание встреч](../features/meetings.md)
 - [API встреч](meetings-api.md)
 - [Схема базы данных](../DATABASE.md)
+

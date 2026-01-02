@@ -167,3 +167,4 @@ stateDiagram-v2
 - [AI-ассистент](assistant.md)
 - [API встреч](../api/meetings-api.md)
 - [Схема базы данных](../DATABASE.md)
+

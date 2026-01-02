@@ -53,3 +53,4 @@ COMMENT ON COLUMN employee_bos_aggregate.updated_at IS 'Время послед�
 11. learning_agility - Готовность к обучению
 12. strategic_thinking - Стратегическое мышление
 */
+

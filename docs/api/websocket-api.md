@@ -322,3 +322,4 @@ function connect() {
 - [Бизнес-описание ассистента](../features/assistant.md)
 - [LLM Pipeline](../llm-pipeline-spec.md)
 - [Архитектура](../ARCHITECTURE.md)
+

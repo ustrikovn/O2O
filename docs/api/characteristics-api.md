@@ -204,3 +204,4 @@ GET /api/characteristics
 - [Бизнес-описание характеристик](../features/characteristics.md)
 - [API опросов](surveys-api.md)
 - [Схема базы данных](../DATABASE.md)
+

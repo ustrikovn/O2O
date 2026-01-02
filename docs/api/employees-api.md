@@ -296,3 +296,4 @@ fetch('/api/employees', {
 - [API встреч](meetings-api.md)
 - [API характеристик](characteristics-api.md)
 - [Схема базы данных](../DATABASE.md)
+

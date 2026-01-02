@@ -63,3 +63,4 @@ async function recalculateAllBOSAggregates() {
 
 // Запуск
 recalculateAllBOSAggregates();
+

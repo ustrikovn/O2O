@@ -461,3 +461,4 @@ POST /api/surveys/maintenance/cleanup-abandoned
 - [Бизнес-описание опросов](../features/surveys.md)
 - [API характеристик](characteristics-api.md)
 - [Схема базы данных](../DATABASE.md)
+
