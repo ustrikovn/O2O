@@ -2,6 +2,7 @@ import type { Server as HttpServer } from 'http';
 import { WebSocketServer } from 'ws';
 import WebSocket from 'ws';
 import { AssistantOrchestrator } from './orchestrator.js';
+import { onTyping, sessionKey, clearTypingSession } from './typing-detector.js';
 import type { ClientEvent, ServerEvent, StatusPayload, PipelineLogPayload } from './types.js';
 
 /** Максимальное время ожидания ответа от pipeline (20 секунд) */
@@ -54,6 +55,15 @@ export function attachAssistantWsServer(httpServer: HttpServer, path = '/ws/assi
 
   wss.on('connection', (ws: WebSocket) => {
     const state: Partial<ConnectionState> = {};
+
+    // Очистка таймера при закрытии соединения
+    ws.on('close', () => {
+      if (state.meetingId && state.employeeId) {
+        const key = sessionKey(state.meetingId, state.employeeId);
+        clearTypingSession(key);
+        console.log(`[WS] Соединение закрыто, таймер очищен для ${key}`);
+      }
+    });
 
     ws.on('message', async (raw: WebSocket.RawData) => {
       try {
@@ -119,40 +129,46 @@ export function attachAssistantWsServer(httpServer: HttpServer, path = '/ws/assi
         if (evt.type === 'notes_update') {
           state.lastNotes = evt.text;
           
-          // Отправляем статус "thinking"
-          sendStatus(ws, 'thinking');
-          
           // Callback для отправки логов клиенту
           const onLog = (log: PipelineLogPayload) => send(ws, log);
           
-          // Гарантируем отправку idle через finally
-          let tips: Awaited<ReturnType<typeof orchestrator.handleNotesEvent>> = [];
-          try {
-            // Используем timeout для защиты от зависания LLM
-            tips = await withTimeout(
-              orchestrator.handleNotesEvent({
-                meetingId: state.meetingId,
-                employeeId: state.employeeId,
-                notes: evt.text,
-                onLog
-              }),
-              PIPELINE_TIMEOUT_MS,
-              [], // fallback: пустой массив (молчим)
-              () => {
-                console.warn(`[WS] notes_update timeout для ${state.employeeId}`);
-                onLog({ type: 'pipeline_log', level: 'error', stage: 'timeout', message: '⏱️ Timeout! Pipeline не успел завершиться' });
-              }
-            );
-          } catch (err) {
-            console.error('[WS] Ошибка handleNotesEvent:', err);
-            onLog({ type: 'pipeline_log', level: 'error', stage: 'error', message: `❌ Ошибка: ${err instanceof Error ? err.message : 'Unknown'}` });
-          } finally {
-            // ВСЕГДА отправляем статус "idle"
-            sendStatus(ws, 'idle');
-          }
+          // Формируем ключ сессии
+          const key = sessionKey(state.meetingId!, state.employeeId!);
           
-          // Отправляем сообщения если есть
-          tips.forEach(m => send(ws, m));
+          // Регистрируем событие ввода — запускаем/сбрасываем таймер
+          // Callback onPause вызовется когда:
+          // 1. Пауза 5 сек обнаружена
+          // 2. Проверка контента прошла (удаление или достаточно новых слов)
+          onTyping(key, evt.text, async (notes, contentCheck) => {
+            // Проверка контента прошла — запускаем анализ
+            sendStatus(ws, 'thinking');
+            
+            try {
+              const tips = await withTimeout(
+                orchestrator.handleUserEvent({
+                  meetingId: state.meetingId!,
+                  employeeId: state.employeeId!,
+                  lastNotes: notes,
+                  onLog
+                }),
+                PIPELINE_TIMEOUT_MS,
+                [], // fallback: пустой массив (молчим)
+                () => {
+                  console.warn(`[WS] notes_update timeout для ${state.employeeId}`);
+                  onLog({ type: 'pipeline_log', level: 'error', stage: 'timeout', message: '⏱️ Timeout! Pipeline не успел завершиться' });
+                }
+              );
+              
+              // Отправляем сообщения если есть
+              tips.forEach(m => send(ws, m));
+            } catch (err) {
+              console.error('[WS] Ошибка при анализе заметок:', err);
+              onLog({ type: 'pipeline_log', level: 'error', stage: 'error', message: `❌ Ошибка: ${err instanceof Error ? err.message : 'Unknown'}` });
+            } finally {
+              sendStatus(ws, 'idle');
+            }
+          }, onLog);
+          
           return;
         }
 

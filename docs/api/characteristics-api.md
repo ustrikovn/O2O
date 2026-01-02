@@ -205,3 +205,4 @@ GET /api/characteristics
 - [API опросов](surveys-api.md)
 - [Схема базы данных](../DATABASE.md)
 
+

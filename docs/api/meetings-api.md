@@ -441,3 +441,4 @@ GET /api/meetings/employees/:employeeId/bos-history
 - [BOS API](bos-api.md)
 - [Схема базы данных](../DATABASE.md)
 
+

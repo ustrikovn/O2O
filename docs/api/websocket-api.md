@@ -323,3 +323,4 @@ function connect() {
 - [LLM Pipeline](../llm-pipeline-spec.md)
 - [Архитектура](../ARCHITECTURE.md)
 
+

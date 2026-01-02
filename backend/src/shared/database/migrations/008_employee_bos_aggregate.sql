@@ -54,3 +54,4 @@ COMMENT ON COLUMN employee_bos_aggregate.updated_at IS 'Время послед�
 12. strategic_thinking - Стратегическое мышление
 */
 
+

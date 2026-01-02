@@ -297,3 +297,4 @@ fetch('/api/employees', {
 - [API характеристик](characteristics-api.md)
 - [Схема базы данных](../DATABASE.md)
 
+

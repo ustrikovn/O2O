@@ -26,9 +26,7 @@ import { ASSISTANT_CONFIG } from './config.js';
 import { 
   sessionKey, 
   canRespondNow, 
-  shouldAnalyze,
-  hasEnoughNewWords,
-  markTextAtRecommendation,
+  saveBaseline,
   wasSurveyOffered, 
   markSurveyOffered 
 } from './policies.js';
@@ -477,8 +475,8 @@ export class AssistantOrchestrator {
         messages.push(messagePayload);
         this.trackMessage(key, text);
         
-        // Сохраняем текст заметок на момент рекомендации
-        markTextAtRecommendation(key, combinedNotes);
+        // Сохраняем baseline (Set слов) на момент рекомендации
+        saveBaseline(key, combinedNotes);
       }
       
       if (composed.action_card) {
@@ -545,34 +543,6 @@ export class AssistantOrchestrator {
       clearTimeout(timeoutId);
       activeControllers.delete(key);
     }
-  }
-
-  /**
-   * Обработка обновления заметок (notes_update)
-   */
-  async handleNotesEvent(params: { 
-    meetingId: string; 
-    employeeId: string; 
-    notes: string;
-    onLog?: (log: any) => void;
-  }): Promise<AssistantMessagePayload[]> {
-    const key = sessionKey(params.meetingId, params.employeeId);
-    
-    // Проверяем ВСЕ условия: debounce + минимум новых слов
-    const analyzeCheck = shouldAnalyze(key, params.notes);
-    if (!analyzeCheck.should) {
-      console.log(`[Orchestrator] Пропускаем анализ: ${analyzeCheck.reason}`);
-      return [];
-    }
-    
-    const result = await this.handleUserEvent({
-      meetingId: params.meetingId,
-      employeeId: params.employeeId,
-      lastNotes: params.notes,
-      ...(params.onLog ? { onLog: params.onLog } : {})
-    });
-    
-    return result.filter((m): m is AssistantMessagePayload => m.type === 'assistant_message');
   }
 
   /**

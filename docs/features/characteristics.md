@@ -208,3 +208,4 @@ DELETE /api/characteristics/:employeeId
 - [API характеристик](../api/characteristics-api.md)
 - [Схема базы данных](../DATABASE.md)
 
+

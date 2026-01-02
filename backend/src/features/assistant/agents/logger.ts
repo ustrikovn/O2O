@@ -97,6 +97,13 @@ type PipelineResult = 'silence' | 'message' | 'error' | 'deviation_only';
 /** Callback для отправки логов клиенту */
 type OnLogCallback = (log: PipelineLogPayload) => void;
 
+/**
+ * Фильтр логов для отправки клиенту.
+ * ВРЕМЕННО: показываем только логи о детекции печатания и проверке контента.
+ * Для включения всех логов — закомментируйте проверку stage в sendLog.
+ */
+const ENABLED_LOG_STAGES = ['typing_detection', 'content_check'];
+
 /** Класс для логирования одного вызова pipeline */
 export class PipelineLogger {
   private meetingId: string;
@@ -117,15 +124,21 @@ export class PipelineLogger {
   
   /** Отправка лога клиенту (если callback задан) */
   private sendLog(level: PipelineLogPayload['level'], stage: string, message: string, durationMs?: number, details?: Record<string, unknown>): void {
+    // ВРЕМЕННО: фильтруем логи — показываем только typing_detection
+    if (!ENABLED_LOG_STAGES.includes(stage)) {
+      return;
+    }
+    
     if (this.onLog) {
-      this.onLog({
+      const payload: PipelineLogPayload = {
         type: 'pipeline_log',
         level,
         stage,
-        message,
-        durationMs,
-        details
-      });
+        message
+      };
+      if (durationMs !== undefined) payload.durationMs = durationMs;
+      if (details !== undefined) payload.details = details;
+      this.onLog(payload);
     }
   }
   

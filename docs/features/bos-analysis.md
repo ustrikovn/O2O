@@ -190,3 +190,4 @@ sequenceDiagram
 - [BOS API](../api/bos-api.md)
 - [Схема базы данных](../DATABASE.md)
 
+

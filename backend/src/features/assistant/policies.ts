@@ -24,6 +24,9 @@ const lastNotesAt = new Map<SessionKey, number>();
 /** Текст заметок на момент последней рекомендации */
 const textAtLastRecommendation = new Map<SessionKey, string>();
 
+/** Set слов baseline для проверки удалений */
+const baselineWordsSet = new Map<SessionKey, Set<string>>();
+
 /** Сессии, где уже предложили опрос */
 const surveyOffered = new Set<SessionKey>();
 
@@ -182,6 +185,140 @@ export function shouldAnalyze(
 }
 
 // ============================================
+// BASELINE И ПРОВЕРКА КОНТЕНТА (SET-BASED)
+// ============================================
+
+/**
+ * Разбивает текст на Set уникальных слов (lowercase)
+ */
+function textToWordsSet(text: string): Set<string> {
+  if (!text || typeof text !== 'string') return new Set();
+  return new Set(
+    text.toLowerCase()
+      .split(/[\s\n\r\t]+/)
+      .filter(word => word.length > 0)
+  );
+}
+
+/**
+ * Сохраняет baseline — Set слов на момент рекомендации
+ */
+export function saveBaseline(key: SessionKey, text: string): void {
+  const wordsSet = textToWordsSet(text);
+  baselineWordsSet.set(key, wordsSet);
+  textAtLastRecommendation.set(key, text);
+  console.log(`[Policies] Baseline сохранён: ${wordsSet.size} уникальных слов`);
+}
+
+/**
+ * Получает baseline Set слов
+ */
+export function getBaselineWordsSet(key: SessionKey): Set<string> {
+  return baselineWordsSet.get(key) || new Set();
+}
+
+/**
+ * Результат проверки контента после паузы
+ */
+export interface ContentCheckResult {
+  shouldAnalyze: boolean;
+  reason: string;
+  deletionDetected: boolean;
+  baselineReset: boolean;
+  newWordsCount: number;
+  currentWordsCount: number;
+  deletedWordsCount: number;
+  deletedPercent: number;
+}
+
+/**
+ * Проверяет контент после паузы:
+ * 1. Достаточно ли текста для анализа?
+ * 2. Было ли удаление из baseline?
+ * 3. Достаточно ли новых слов?
+ */
+export function checkContentAfterPause(key: SessionKey, currentText: string): ContentCheckResult {
+  const currentWordsSet = textToWordsSet(currentText);
+  const currentWordsCount = currentWordsSet.size;
+  const baselineSet = getBaselineWordsSet(key);
+  const baselineSize = baselineSet.size;
+  
+  // 1. Проверяем минимум текста для анализа
+  if (currentWordsCount < ASSISTANT_CONFIG.minWordsForAnalysis) {
+    return {
+      shouldAnalyze: false,
+      reason: `Мало текста: ${currentWordsCount} слов < ${ASSISTANT_CONFIG.minWordsForAnalysis} минимум`,
+      deletionDetected: false,
+      baselineReset: false,
+      newWordsCount: 0,
+      currentWordsCount,
+      deletedWordsCount: 0,
+      deletedPercent: 0
+    };
+  }
+  
+  // 2. Проверяем удаление из baseline
+  let deletedWordsCount = 0;
+  for (const word of baselineSet) {
+    if (!currentWordsSet.has(word)) {
+      deletedWordsCount++;
+    }
+  }
+  
+  const deletedPercent = baselineSize > 0 
+    ? (deletedWordsCount / baselineSize) * 100 
+    : 0;
+  
+  const significantDeletion = 
+    deletedPercent > ASSISTANT_CONFIG.deletionThresholdPercent ||
+    deletedWordsCount > ASSISTANT_CONFIG.deletionThresholdWords;
+  
+  if (significantDeletion && deletedWordsCount > 0) {
+    // Удаление обнаружено → сбрасываем baseline → анализируем весь текст
+    saveBaseline(key, currentText);
+    
+    return {
+      shouldAnalyze: true,
+      reason: `Удаление: ${deletedWordsCount} слов (${deletedPercent.toFixed(0)}%) — сброс baseline → анализ`,
+      deletionDetected: true,
+      baselineReset: true,
+      newWordsCount: currentWordsCount,
+      currentWordsCount,
+      deletedWordsCount,
+      deletedPercent
+    };
+  }
+  
+  // 3. Считаем новые слова (разница в количестве)
+  const newWordsCount = Math.max(0, currentWordsCount - baselineSize);
+  
+  if (newWordsCount >= ASSISTANT_CONFIG.minWordsDelta) {
+    return {
+      shouldAnalyze: true,
+      reason: `Новых слов: ${newWordsCount} >= ${ASSISTANT_CONFIG.minWordsDelta} → анализ`,
+      deletionDetected: false,
+      baselineReset: false,
+      newWordsCount,
+      currentWordsCount,
+      deletedWordsCount,
+      deletedPercent
+    };
+  }
+  
+  // 4. Мало новых слов — ждём
+  return {
+    shouldAnalyze: false,
+    reason: `Мало новых слов: ${newWordsCount} из ${ASSISTANT_CONFIG.minWordsDelta}`,
+    deletionDetected: false,
+    baselineReset: false,
+    newWordsCount,
+    currentWordsCount,
+    deletedWordsCount,
+    deletedPercent
+  };
+}
+
+// ============================================
 // УПРАВЛЕНИЕ ОПРОСОМ
 // ============================================
 
@@ -211,5 +348,6 @@ export function clearSession(key: SessionKey): void {
   lastMessageAt.delete(key);
   lastNotesAt.delete(key);
   textAtLastRecommendation.delete(key);
+  baselineWordsSet.delete(key);
   surveyOffered.delete(key);
 }
